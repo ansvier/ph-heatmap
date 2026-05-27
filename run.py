@@ -5,7 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from db import Snapshot, init_db, insert_snapshot, load_all_snapshots
-from heatmap import dump_json, render_heatmap
+from heatmap import dump_json, render_treemap_page
 from scraper import fetch_profile, fetch_top_pornstars, polite_sleep
 
 PROJECT_ROOT = Path(__file__).parent
@@ -60,7 +60,7 @@ def main() -> int:
     print(f"stored {len(rows)} rows", flush=True)
 
     snapshots_df = load_all_snapshots(conn)
-    render_heatmap(snapshots_df, HTML_PATH)
+    render_treemap_page(snapshots_df, HTML_PATH)
     print(f"wrote {HTML_PATH}", flush=True)
     dump_json(snapshots_df, JSON_PATH)
     print(f"wrote {JSON_PATH}", flush=True)
