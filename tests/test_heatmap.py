@@ -61,8 +61,17 @@ def test_render_heatmap_writes_html(tmp_path):
     render_heatmap(df, out)
     assert out.exists()
     content = out.read_text()
+
+    # Structural: it is an HTML document containing a Plotly figure.
     assert "<html" in content.lower()
     assert "plotly" in content.lower()
+
+    # Branding: HotMap title + inline SVG logo.
+    assert "HotMap" in content
+    assert "<svg" in content
+    # Footer present with key metadata.
+    assert "<footer" in content.lower()
+    # Display names from the latest snapshot appear on the Y axis.
     assert "Alice" in content
     assert "Carol" in content
 
