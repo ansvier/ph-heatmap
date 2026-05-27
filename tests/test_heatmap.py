@@ -65,3 +65,34 @@ def test_render_heatmap_writes_html(tmp_path):
     assert "plotly" in content.lower()
     assert "Alice" in content
     assert "Carol" in content
+
+
+import json
+
+from heatmap import dump_json
+
+
+def test_dump_json_writes_records(tmp_path):
+    df = _snapshot_rows()
+    out = tmp_path / "data.json"
+    dump_json(df, out)
+
+    assert out.exists()
+    records = json.loads(out.read_text())
+    assert isinstance(records, list)
+    assert len(records) == len(df)
+
+    first = records[0]
+    assert set(first.keys()) == {"snapshot_date", "slug", "name", "total_views", "rank"}
+
+    assert all(isinstance(r["snapshot_date"], str) for r in records)
+    assert all(len(r["snapshot_date"]) == 10 for r in records)
+
+
+def test_dump_json_is_round_trippable(tmp_path):
+    df = _snapshot_rows()
+    out = tmp_path / "data.json"
+    dump_json(df, out)
+
+    records = json.loads(out.read_text())
+    assert sum(r["total_views"] for r in records) == int(df["total_views"].sum())
