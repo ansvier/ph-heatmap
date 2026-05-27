@@ -105,3 +105,36 @@ def test_dump_json_is_round_trippable(tmp_path):
 
     records = json.loads(out.read_text())
     assert sum(r["total_views"] for r in records) == int(df["total_views"].sum())
+
+
+from heatmap import compute_window_growth
+
+
+def test_window_growth_1d_matches_pct_change():
+    df = _snapshot_rows()
+    result = compute_window_growth(df, window_days=1)
+    alice = result.loc["alice"]
+    assert alice["total_views"] == 1200
+    assert alice["growth_pct"] == pytest.approx(100 * (1200 - 1100) / 1100)
+    carol = result.loc["carol"]
+    assert carol["growth_pct"] == pytest.approx(50.0)
+
+
+def test_window_growth_only_includes_today_slugs():
+    df = _snapshot_rows()
+    result = compute_window_growth(df, window_days=1)
+    assert "bob" not in result.index
+    assert set(result.index) == {"alice", "carol"}
+
+
+def test_window_growth_nan_when_no_baseline():
+    df = _snapshot_rows()
+    result = compute_window_growth(df, window_days=30)
+    assert result["growth_pct"].isna().all()
+    assert result.loc["alice", "total_views"] == 1200
+
+
+def test_window_growth_carries_display_name():
+    df = _snapshot_rows()
+    result = compute_window_growth(df, window_days=1)
+    assert result.loc["alice", "name"] == "Alice"
