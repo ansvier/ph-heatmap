@@ -9,8 +9,10 @@ from heatmap import render_heatmap
 from scraper import fetch_profile, fetch_top_pornstars, polite_sleep
 
 PROJECT_ROOT = Path(__file__).parent
+PUBLIC_DIR = PROJECT_ROOT / "public"
 DB_PATH = PROJECT_ROOT / "data.db"
-HTML_PATH = PROJECT_ROOT / "heatmap.html"
+HTML_PATH = PUBLIC_DIR / "index.html"
+JSON_PATH = PUBLIC_DIR / "data.json"
 TOP_N = 50
 
 
@@ -52,6 +54,7 @@ def main() -> int:
         print("FATAL: no profiles parsed successfully", file=sys.stderr)
         return 1
 
+    PUBLIC_DIR.mkdir(exist_ok=True)
     conn = init_db(DB_PATH)
     insert_snapshot(conn, rows)
     print(f"stored {len(rows)} rows", flush=True)
