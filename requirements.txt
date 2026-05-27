@@ -1,0 +1,5 @@
+curl-cffi>=0.7
+selectolax>=0.3.21
+plotly>=5.20
+pandas>=2.2
+pytest>=8.0
