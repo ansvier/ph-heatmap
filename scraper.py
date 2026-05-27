@@ -14,17 +14,27 @@ from selectolax.parser import HTMLParser
 class ProfileData:
     name: str
     total_views: int
+    photo_url: str | None = None
 
 
 _SLUG_RE = re.compile(r"^/pornstar/([^/?#]+)")
 
 
 def parse_top_list(html: str, limit: int = 50) -> list[str]:
-    """Return up to `limit` unique pornstar slugs in document order."""
+    """Return up to `limit` unique pornstar slugs from the main top-list grid.
+
+    Scopes to `<ul id="popularPornstars">` so the gender filter on the URL is
+    actually respected — the page also contains a dropdown nav with cross-gender
+    recommendations that would leak into a naive scrape.
+    """
     tree = HTMLParser(html)
+    container = tree.css_first("ul#popularPornstars")
+    if container is None:
+        return []
+
     seen: set[str] = set()
     slugs: list[str] = []
-    for a in tree.css("a[href]"):
+    for a in container.css("a[href]"):
         match = _SLUG_RE.match(a.attributes.get("href", "") or "")
         if not match:
             continue
@@ -39,14 +49,34 @@ def parse_top_list(html: str, limit: int = 50) -> list[str]:
 
 
 def parse_profile(html: str) -> ProfileData:
-    """Extract display name and Video Views count from a profile page."""
+    """Extract display name, Video Views count, and avatar URL from a profile page."""
     tree = HTMLParser(html)
 
     name_node = tree.css_first("h1")
     name = name_node.text(strip=True) if name_node else ""
 
     total_views = _extract_video_views(tree)
-    return ProfileData(name=name, total_views=total_views)
+    photo_url = _extract_photo_url(tree)
+    return ProfileData(name=name, total_views=total_views, photo_url=photo_url)
+
+
+def _extract_photo_url(tree: HTMLParser) -> str | None:
+    """Return the performer's avatar image URL, or None if not found.
+
+    Pornhub puts the avatar inside `.topProfileHeader` — the first `<img>` whose
+    src contains `/avatar`. We avoid picking the cover banner by filtering on the
+    URL substring.
+    """
+    header = tree.css_first(".topProfileHeader")
+    if header is None:
+        return None
+    for img in header.css("img"):
+        src = img.attributes.get("src") or img.attributes.get("data-src")
+        if not src:
+            continue
+        if "/avatar" in src:
+            return src
+    return None
 
 
 _VIEWS_DATA_TITLE_RE = re.compile(r"Video views?\s*:\s*([\d,]+)", re.IGNORECASE)
