@@ -1,0 +1,47 @@
+name: daily scrape
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          PYTHONUNBUFFERED: "1"
+          PH_IMPERSONATE: ${{ vars.PH_IMPERSONATE || 'chrome120' }}
+        run: python run.py
+
+      - name: Commit and push artifacts
+        run: |
+          git config user.name "hotmap-bot"
+          git config user.email "hotmap-bot@users.noreply.github.com"
+          git add data.db public/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore(data): daily snapshot $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
+          git push
