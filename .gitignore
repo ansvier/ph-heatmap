@@ -5,3 +5,10 @@ venv/
 .pytest_cache/
 run.log
 tests/fixtures/*.live.html
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
