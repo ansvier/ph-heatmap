@@ -2,7 +2,7 @@
 
 A daily-refreshed heatmap of day-over-day view growth for the top-50 Most Viewed Pornstars on Pornhub.
 
-**Live site:** _to be filled after first Cloudflare Pages deploy_
+**Live site:** https://ph-heatmap.ansvier96.workers.dev
 
 ## How it works
 
