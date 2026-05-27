@@ -1,10 +1,9 @@
 from datetime import date
 
-import numpy as np
 import pandas as pd
 import pytest
 
-from heatmap import compute_growth_matrix, render_heatmap
+from heatmap import render_treemap_page
 
 
 def _snapshot_rows():
@@ -23,57 +22,39 @@ def _snapshot_rows():
     ])
 
 
-def test_growth_matrix_shape_and_index():
-    matrix = compute_growth_matrix(_snapshot_rows())
-    assert set(matrix.index) == {"alice", "bob", "carol"}
-    assert list(matrix.columns) == [
-        pd.Timestamp(date(2026, 5, 25)),
-        pd.Timestamp(date(2026, 5, 26)),
-        pd.Timestamp(date(2026, 5, 27)),
-    ]
-
-
-def test_growth_matrix_first_day_is_nan():
-    matrix = compute_growth_matrix(_snapshot_rows())
-    first_col = matrix[pd.Timestamp(date(2026, 5, 25))]
-    assert first_col.isna().all()
-
-
-def test_growth_matrix_values():
-    matrix = compute_growth_matrix(_snapshot_rows())
-    day2 = pd.Timestamp(date(2026, 5, 26))
-    assert matrix.loc["alice", day2] == pytest.approx(10.0)
-    assert matrix.loc["bob",   day2] == pytest.approx(20.0)
-    # Carol appeared on day 2 with no day-1 baseline.
-    assert np.isnan(matrix.loc["carol", day2])
-
-
-def test_growth_matrix_missing_slug_yields_nan():
-    matrix = compute_growth_matrix(_snapshot_rows())
-    day3 = pd.Timestamp(date(2026, 5, 27))
-    # Bob disappeared on day 3.
-    assert np.isnan(matrix.loc["bob", day3])
-
-
-def test_render_heatmap_writes_html(tmp_path):
+def test_render_treemap_page_writes_html(tmp_path):
     df = _snapshot_rows()
     out = tmp_path / "out.html"
-    render_heatmap(df, out)
+    render_treemap_page(df, out)
     assert out.exists()
     content = out.read_text()
 
-    # Structural: it is an HTML document containing a Plotly figure.
+    # Plotly + HotMap branding.
     assert "<html" in content.lower()
     assert "plotly" in content.lower()
-
-    # Branding: HotMap title + inline SVG logo.
     assert "HotMap" in content
     assert "<svg" in content
-    # Footer present with key metadata.
     assert "<footer" in content.lower()
-    # Display names from the latest snapshot appear on the Y axis.
+
+    # Three treemap containers (one per window) and the toggle buttons.
+    assert 'id="tm-1d"' in content
+    assert 'id="tm-7d"' in content
+    assert 'id="tm-30d"' in content
+    assert 'data-window="1"' in content
+    assert 'data-window="7"' in content
+    assert 'data-window="30"' in content
+
+    # Display names appear in the treemap data.
     assert "Alice" in content
     assert "Carol" in content
+
+
+def test_render_treemap_page_raises_on_empty(tmp_path):
+    with pytest.raises(ValueError, match="No snapshots"):
+        render_treemap_page(
+            pd.DataFrame(columns=["snapshot_date", "slug", "name", "total_views", "rank"]),
+            tmp_path / "out.html",
+        )
 
 
 import json
