@@ -46,6 +46,7 @@ def _scrape_gender(today: date, gender: str) -> list[Snapshot]:
             total_views=profile.total_views,
             rank=rank,
             gender=gender,
+            photo_url=profile.photo_url,
         ))
         polite_sleep()
 
