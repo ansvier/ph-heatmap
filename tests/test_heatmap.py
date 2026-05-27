@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from heatmap import compute_growth_matrix
+from heatmap import compute_growth_matrix, render_heatmap
 
 
 def _snapshot_rows():
@@ -53,3 +53,15 @@ def test_growth_matrix_missing_slug_yields_nan():
     day3 = pd.Timestamp(date(2026, 5, 27))
     # Bob disappeared on day 3.
     assert np.isnan(matrix.loc["bob", day3])
+
+
+def test_render_heatmap_writes_html(tmp_path):
+    df = _snapshot_rows()
+    out = tmp_path / "out.html"
+    render_heatmap(df, out)
+    assert out.exists()
+    content = out.read_text()
+    assert "<html" in content.lower()
+    assert "plotly" in content.lower()
+    assert "Alice" in content
+    assert "Carol" in content
