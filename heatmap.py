@@ -14,66 +14,153 @@ _PAGE_TEMPLATE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>HotMap — Daily Pornhub view-growth treemap</title>
-  <meta name="description" content="Treemap of the top Pornhub performers: tile size = cumulative views, color = growth relative to the median.">
+  <title>HotMap — who's growing fastest on Pornhub</title>
+  <meta name="description" content="Live heatmap of view growth: tile size = views gained in the window, color = growth pace relative to the median.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <style>
     :root {{
       --brand-orange: #ff9000;
-      --bg: #0f0f0f;
+      --bg: #0a0a0a;
       --fg: #f5f5f5;
-      --muted: #999;
-      --rule: #2a2a2a;
-      --btn-bg: #1a1a1a;
+      --muted: #9a9a9a;
+      --rule: #1f1f1f;
+      --btn-bg: #161616;
       --btn-bg-active: #ff9000;
-      --btn-fg: #f5f5f5;
+      --btn-fg: #e8e8e8;
       --btn-fg-active: #000;
     }}
     * {{ box-sizing: border-box; }}
+    html, body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
     body {{
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       max-width: 1400px;
       margin: 0 auto;
-      padding: 24px 16px 48px;
+      padding: 32px 16px 56px;
       color: var(--fg);
       background: var(--bg);
       line-height: 1.5;
+      font-feature-settings: 'cv11', 'ss01';
     }}
-    header {{ margin-bottom: 16px; }}
+    .hero {{
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }}
+    .hero-left {{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1 1 420px;
+      min-width: 280px;
+    }}
+    .top-perf-wrap {{
+      flex: 0 0 auto;
+      align-self: flex-start;
+      margin-right: 180px;
+    }}
+    @media (max-width: 1200px) {{ .top-perf-wrap {{ margin-right: 80px; }} }}
+    @media (max-width: 900px) {{ .top-perf-wrap {{ margin-right: 0; }} }}
+    .top-perf {{
+      display: none;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      background: var(--btn-bg);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--brand-orange);
+      border-radius: 8px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.12s, transform 0.12s;
+      max-width: 360px;
+    }}
+    .top-perf.active {{ display: flex; }}
+    .top-perf:hover {{ border-color: var(--brand-orange); transform: translateY(-1px); }}
+    .top-perf img {{
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #222;
+    }}
+    .top-perf-text {{ display: flex; flex-direction: column; gap: 2px; min-width: 0; }}
+    .top-perf-label {{
+      color: var(--brand-orange);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }}
+    .top-perf-name {{
+      color: var(--fg);
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }}
+    .top-perf-stat {{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }}
+    .top-perf-stat strong {{ color: #6cd36a; font-weight: 700; }}
     .logo {{
       display: block;
-      width: 280px;
+      width: 360px;
       max-width: 100%;
       height: auto;
-      margin-bottom: 12px;
     }}
-    header p {{ color: var(--muted); margin: 0; }}
+    .tagline {{
+      color: var(--fg);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 4px 0 0;
+    }}
+    .tagline .hint {{
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0;
+      margin-left: 8px;
+    }}
     .controls {{
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
-      margin: 16px 0;
+      gap: 24px;
+      margin: 16px 0 20px;
     }}
     .toggle {{
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
     }}
     .toggle-label {{
       color: var(--muted);
-      font-size: 13px;
+      font-size: 11px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-right: 4px;
+      letter-spacing: 1.5px;
+      margin-right: 6px;
     }}
     .toggle button {{
       background: var(--btn-bg);
       color: var(--btn-fg);
       border: 1px solid var(--rule);
-      padding: 8px 14px;
+      padding: 7px 14px;
       font: inherit;
       font-weight: 600;
+      font-size: 14px;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 6px;
       transition: background 0.12s, color 0.12s, border-color 0.12s;
     }}
     .toggle button:hover {{ border-color: var(--brand-orange); }}
@@ -82,6 +169,14 @@ _PAGE_TEMPLATE = """<!doctype html>
       color: var(--btn-fg-active);
       border-color: var(--brand-orange);
     }}
+    .share-btn {{
+      background: transparent;
+      border: 1px solid var(--brand-orange);
+      color: var(--brand-orange);
+    }}
+    .share-btn:hover {{ background: var(--brand-orange); color: #000; }}
+    .share-btn.busy {{ opacity: 0.6; cursor: progress; }}
+    .share-icon {{ font-weight: 700; margin-right: 4px; }}
     .panel {{ display: none; }}
     .panel.active {{ display: block; }}
     .panel .plotly-graph-div {{ cursor: pointer; }}
@@ -100,27 +195,30 @@ _PAGE_TEMPLATE = """<!doctype html>
   </style>
 </head>
 <body>
-  <header>
-    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">
-      <rect width="400" height="100" fill="#000"/>
-      <text x="20" y="78"
-            font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
-            font-weight="900" font-size="76" fill="#fff"
-            letter-spacing="-3">HOT</text>
-      <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
-      <text x="214" y="72"
-            font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
-            font-weight="900" font-size="60" fill="#000"
-            letter-spacing="-3">MAP</text>
-    </svg>
-    <p>Top Pornhub performers by cumulative video views. Tile size = total views. Color = growth relative to the median of the visible set. Click a tile to open the profile.</p>
+  <header class="hero">
+    <div class="hero-left">
+      <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+        <rect width="400" height="100" fill="#000"/>
+        <text x="20" y="78"
+              font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-weight="900" font-size="76" fill="#fff"
+              letter-spacing="-3">HOT</text>
+        <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
+        <text x="214" y="72"
+              font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-weight="900" font-size="60" fill="#000"
+              letter-spacing="-3">MAP</text>
+      </svg>
+      <p class="tagline">Today's hottest performers. <span class="hint">Click a tile to open the profile.</span></p>
+    </div>
+    {top_perf_card}
   </header>
 
   <div class="controls">
     <div class="toggle" role="tablist" aria-label="Gender filter">
       <span class="toggle-label">Gender</span>
-      <button type="button" class="active gender" data-gender="all">All</button>
-      <button type="button" class="gender" data-gender="female">Female</button>
+      <button type="button" class="gender" data-gender="all">All</button>
+      <button type="button" class="active gender" data-gender="female">Female</button>
       <button type="button" class="gender" data-gender="male">Male</button>
     </div>
     <div class="toggle" role="tablist" aria-label="Window">
@@ -129,6 +227,11 @@ _PAGE_TEMPLATE = """<!doctype html>
       <button type="button" class="window" data-window="7">7d</button>
       <button type="button" class="window" data-window="30">30d</button>
     </div>
+    <div class="toggle">
+      <button type="button" id="share-btn" class="share-btn" aria-label="Save image">
+        <span class="share-icon" aria-hidden="true">⤓</span> Share image
+      </button>
+    </div>
   </div>
 
   <main>
@@ -136,19 +239,23 @@ _PAGE_TEMPLATE = """<!doctype html>
   </main>
 
   <footer>
-    <p class="stats">Updated {last_updated} UTC · {n_days} days of history · {n_performers} performers tracked · <a href="https://github.com/ansvier/ph-heatmap">source on GitHub</a> · <a href="data.json">raw data (JSON)</a></p>
+    <p class="stats">Updated {last_updated} UTC · Refreshes daily at 04:00 UTC · {n_days} days of history · {n_performers} performers tracked · <a href="https://github.com/ansvier/ph-heatmap">source on GitHub</a> · <a href="data.json">raw data (JSON)</a></p>
     <p class="disclaimer">HotMap is an independent project. Data is collected from publicly visible Pornhub profile pages; no video content is hosted here.</p>
   </footer>
 
   <script>
     (function () {{
-      var state = {{ gender: 'all', window: '1' }};
+      var state = {{ gender: 'female', window: '1' }};
       var panels = document.querySelectorAll('.panel');
 
+      var topPerfCards = document.querySelectorAll('.top-perf');
       function refresh() {{
         var activeId = 'panel-' + state.gender + '-' + state.window;
         panels.forEach(function (p) {{
           p.classList.toggle('active', p.id === activeId);
+        }});
+        topPerfCards.forEach(function (c) {{
+          c.classList.toggle('active', c.getAttribute('data-gender') === state.gender);
         }});
         window.dispatchEvent(new Event('resize'));
       }}
@@ -190,6 +297,46 @@ _PAGE_TEMPLATE = """<!doctype html>
         attachClickHandlers();
         if (++attempts > 20) clearInterval(iv);
       }}, 250);
+
+      // Share: capture the hero + active treemap to PNG and download.
+      var shareBtn = document.getElementById('share-btn');
+      if (shareBtn) {{
+        shareBtn.addEventListener('click', function () {{
+          if (typeof html2canvas === 'undefined') {{
+            alert('Share library still loading — try again in a second.');
+            return;
+          }}
+          shareBtn.classList.add('busy');
+          var stamp = new Date().toISOString().slice(0, 10);
+          var activePanel = document.querySelector('.panel.active');
+          // Create a temporary capture wrapper containing logo + top-perf + active panel.
+          var wrap = document.createElement('div');
+          wrap.style.background = '#0a0a0a';
+          wrap.style.padding = '24px';
+          wrap.style.position = 'fixed';
+          wrap.style.top = '-99999px';
+          wrap.style.left = '0';
+          wrap.style.width = '1280px';
+          wrap.appendChild(document.querySelector('.hero').cloneNode(true));
+          if (activePanel) wrap.appendChild(activePanel.cloneNode(true));
+          document.body.appendChild(wrap);
+          html2canvas(wrap, {{ backgroundColor: '#0a0a0a', scale: 2, useCORS: true }})
+            .then(function (canvas) {{
+              var link = document.createElement('a');
+              link.download = 'hotmap-' + state.gender + '-' + state.window + 'd-' + stamp + '.png';
+              link.href = canvas.toDataURL('image/png');
+              link.click();
+            }})
+            .catch(function (err) {{
+              console.error('Share failed:', err);
+              alert('Could not generate image. See console.');
+            }})
+            .finally(function () {{
+              document.body.removeChild(wrap);
+              shareBtn.classList.remove('busy');
+            }});
+        }});
+      }}
     }})();
   </script>
 </body>
@@ -254,34 +401,44 @@ def _format_views(n: int) -> str:
 def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
     """Build one Plotly Treemap figure for a single (gender, window) view.
 
-    Color encodes growth relative to the median of the visible set so the user
-    sees who's running hotter/colder than the pack regardless of overall growth
-    magnitude. Tile labels display the absolute growth percentage.
+    Tile size encodes the absolute number of views gained over the window so
+    high-volume performers and rising stars both show up in relative scale.
+    Tile color is growth-rate relative to the median of the visible set
+    (green = running ahead of the pack, red = falling behind).
+    Rows without a baseline (no row N days ago) are dropped — they wouldn't
+    have a meaningful size or color value anyway.
     """
     rows = window.reset_index().copy()
-    finite = rows["growth_pct"].dropna()
+    rows["growth_amount"] = rows["total_views"] - rows["prev_views"]
+    rows = rows.dropna(subset=["growth_amount", "growth_pct"]).copy()
+    # Floor at 0; in theory views are monotonic, but data hiccups happen.
+    rows["growth_amount"] = rows["growth_amount"].clip(lower=0)
+
+    finite = rows["growth_pct"]
     median_growth = float(finite.median()) if len(finite) else 0.0
     rows["relative_growth"] = rows["growth_pct"] - median_growth
 
     rows["views_label"] = rows["total_views"].apply(_format_views)
-    rows["pct_label"] = rows["growth_pct"].apply(
-        lambda v: "n/a" if pd.isna(v) else f"{v:+.2f}%"
-    )
+    rows["pct_label"] = rows["growth_pct"].apply(lambda v: f"{v:+.2f}%")
+    # Visual hierarchy: name bold, views muted-small, growth large+bold.
     rows["tile_text"] = (
-        rows["name"] + "<br>" + rows["views_label"] + "<br>" + rows["pct_label"]
+        "<b>" + rows["name"] + "</b>"
+        + "<br><span style='font-size:11px;color:rgba(0,0,0,0.55)'>"
+        + rows["views_label"] + "</span>"
+        + "<br><span style='font-size:16px;font-weight:700'>"
+        + rows["pct_label"] + "</span>"
     )
 
-    rel_finite = rows["relative_growth"].dropna()
-    cmax = float(rel_finite.abs().max()) if len(rel_finite) else 1.0
+    cmax = float(rows["relative_growth"].abs().max()) if len(rows) else 1.0
     if cmax < 1e-9:
         cmax = 1.0
 
     figure = go.Figure(
         go.Treemap(
             labels=rows["tile_text"],
-            ids=rows["slug"],  # unique per tile
+            ids=rows["slug"],
             parents=[""] * len(rows),
-            values=rows["total_views"],
+            values=rows["growth_amount"],
             marker=dict(
                 colors=rows["relative_growth"],
                 colorscale="RdYlGn",
@@ -292,27 +449,34 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
                 colorbar=dict(
                     title=f"Δ vs median ({window_days}d)",
                     tickformat="+.2f",
+                    thickness=14,
+                    outlinewidth=0,
                 ),
             ),
-            customdata=rows[["name", "total_views", "growth_pct", "slug"]].values,
+            customdata=rows[["name", "total_views", "growth_pct", "slug", "growth_amount"]].values,
             hovertemplate=(
                 "<b>%{customdata[0]}</b><br>"
                 "Total views: %{customdata[1]:,}<br>"
-                "Growth (" + str(window_days) + "d): %{customdata[2]:+.3f}%<br>"
+                "Gained (" + str(window_days) + "d): +%{customdata[4]:,.0f} views<br>"
+                "Growth: %{customdata[2]:+.3f}%<br>"
                 "<i>click to open profile</i>"
                 "<extra></extra>"
             ),
             textposition="middle center",
-            textfont=dict(size=14, color="#000"),
-            tiling=dict(packing="squarify", pad=2),
+            textfont=dict(
+                family="Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+                size=13,
+                color="#000",
+            ),
+            tiling=dict(packing="squarify", pad=0),
         )
     )
     figure.update_layout(
-        paper_bgcolor="#0f0f0f",
-        plot_bgcolor="#0f0f0f",
+        paper_bgcolor="#0a0a0a",
+        plot_bgcolor="#0a0a0a",
         margin=dict(l=0, r=0, t=0, b=0),
         height=700,
-        font=dict(color="#f5f5f5"),
+        font=dict(family="Inter, sans-serif", color="#f5f5f5"),
     )
     return figure
 
@@ -321,13 +485,95 @@ _WINDOWS = (1, 7, 30)
 _GENDER_FILTERS = (("all", None), ("female", "female"), ("male", "male"))
 
 
+_TOP_PERF_LABELS = {
+    "all": "Top performer of the day",
+    "female": "Top female of the day",
+    "male": "Top male of the day",
+}
+
+
+_TOP_PERF_MIN_VIEWS = 100_000_000  # filter out micro-accounts with noisy % growth
+
+
+def _build_top_performer_card(
+    snapshots: pd.DataFrame,
+    gender_key: str,
+    gender_filter: str | None,
+    *,
+    is_default: bool,
+) -> str:
+    """Return the HTML for one Top Performer card (overall / female / male).
+
+    Top = highest 24h % growth among performers with at least 100M total views.
+    The threshold avoids amplifying tiny accounts whose % growth is statistical
+    noise. Returns an empty string if no qualifying performer exists.
+    """
+    window_df = compute_window_growth(snapshots, window_days=1, gender=gender_filter)
+    if window_df.empty:
+        return ""
+    window_df = window_df.copy()
+    window_df["growth_amount"] = window_df["total_views"] - window_df["prev_views"]
+    window_df = window_df.dropna(subset=["growth_pct"])
+    qualified = window_df[window_df["total_views"] >= _TOP_PERF_MIN_VIEWS]
+    if qualified.empty:
+        # Fallback: if nobody clears the bar (unlikely with a top-50 scrape),
+        # use the highest-growth among whatever we have.
+        qualified = window_df
+    if qualified.empty:
+        return ""
+
+    top = qualified.sort_values("growth_pct", ascending=False).iloc[0]
+    slug = top.name
+    name = top["name"]
+    pct = float(top["growth_pct"])
+    gain = int(top["growth_amount"]) if pd.notna(top["growth_amount"]) else 0
+
+    photo_url = ""
+    if "photo_url" in snapshots.columns:
+        rows = snapshots[(snapshots["slug"] == slug) & snapshots["photo_url"].notna()]
+        if not rows.empty:
+            photo_url = rows.sort_values("snapshot_date").iloc[-1]["photo_url"] or ""
+
+    profile_url = f"{_PROFILE_URL_BASE}{slug}"
+    img_tag = (
+        f'<img src="{photo_url}" alt="{name}" loading="lazy" referrerpolicy="no-referrer" crossorigin="anonymous">'
+        if photo_url else '<div style="width:56px;height:56px;border-radius:50%;background:#222;flex-shrink:0"></div>'
+    )
+    label = _TOP_PERF_LABELS.get(gender_key, "Top performer of the day")
+    active = " active" if is_default else ""
+
+    return (
+        f'<a class="top-perf{active}" data-gender="{gender_key}" href="{profile_url}" target="_blank" rel="noopener">'
+        f'{img_tag}'
+        f'<div class="top-perf-text">'
+        f'<span class="top-perf-label">{label}</span>'
+        f'<span class="top-perf-name">{name}</span>'
+        f'<span class="top-perf-stat"><strong>+{pct:.2f}%</strong> · +{gain:,} views (24h)</span>'
+        f'</div>'
+        f'</a>'
+    )
+
+
+def _build_all_top_performer_cards(snapshots: pd.DataFrame, default_gender: str) -> str:
+    cards: list[str] = []
+    for gender_key, gender_filter in _GENDER_FILTERS:
+        card = _build_top_performer_card(
+            snapshots, gender_key, gender_filter, is_default=(gender_key == default_gender)
+        )
+        if card:
+            cards.append(card)
+    if not cards:
+        return ""
+    return f'<div class="top-perf-wrap">{"".join(cards)}</div>'
+
+
 def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
     """Render the HotMap treemap page (3 windows x 3 gender filters)."""
     if snapshots.empty:
         raise ValueError("No snapshots to render")
 
     panels_html_parts: list[str] = []
-    default_gender, default_window = "all", 1
+    default_gender, default_window = "female", 1
     for gender_key, gender_filter in _GENDER_FILTERS:
         for window in _WINDOWS:
             window_df = compute_window_growth(snapshots, window_days=window, gender=gender_filter)
@@ -356,12 +602,15 @@ def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> Non
     n_performers = snapshots[snapshots["snapshot_date"] == latest_date]["slug"].nunique()
     last_updated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
+    top_perf_card = _build_all_top_performer_cards(snapshots, default_gender=default_gender)
+
     page = _PAGE_TEMPLATE.format(
         panels="\n    ".join(panels_html_parts),
         last_updated=last_updated,
         n_days=n_days,
         n_performers=n_performers,
         profile_url_base=_PROFILE_URL_BASE,
+        top_perf_card=top_perf_card,
     )
 
     Path(output_path).write_text(page)
