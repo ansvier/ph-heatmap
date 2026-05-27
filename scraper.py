@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import random
 import re
 import time
@@ -88,7 +89,7 @@ def _extract_video_views(tree: HTMLParser) -> int:
 
 _TOP_LIST_URL = "https://www.pornhub.com/pornstars?o=mv"
 _PROFILE_URL_TEMPLATE = "https://www.pornhub.com/pornstar/{slug}"
-_IMPERSONATE = "chrome120"
+_IMPERSONATE = os.environ.get("PH_IMPERSONATE", "chrome120")
 _REQUEST_TIMEOUT = 30  # seconds
 
 
