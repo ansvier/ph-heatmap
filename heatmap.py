@@ -12,27 +12,31 @@ _PAGE_TEMPLATE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>HotMap — Daily Pornhub view-growth heatmap</title>
-  <meta name="description" content="Day-over-day percentage growth of cumulative video views for the top-50 Most Viewed Pornstars on Pornhub. Updated daily.">
+  <title>HotMap — Daily Pornhub view-growth treemap</title>
+  <meta name="description" content="Treemap of the top-50 Most Viewed Pornstars on Pornhub: tile size = cumulative video views, color = view growth over the selected window.">
   <style>
     :root {{
       --brand-orange: #ff9000;
-      --bg: #ffffff;
-      --fg: #1a1a1a;
-      --muted: #666;
-      --rule: #eee;
+      --bg: #0f0f0f;
+      --fg: #f5f5f5;
+      --muted: #999;
+      --rule: #2a2a2a;
+      --btn-bg: #1a1a1a;
+      --btn-bg-active: #ff9000;
+      --btn-fg: #f5f5f5;
+      --btn-fg-active: #000;
     }}
     * {{ box-sizing: border-box; }}
     body {{
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      max-width: 1100px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 24px 16px 48px;
       color: var(--fg);
       background: var(--bg);
       line-height: 1.5;
     }}
-    header {{ margin-bottom: 24px; }}
+    header {{ margin-bottom: 16px; }}
     .logo {{
       display: block;
       max-width: 280px;
@@ -41,6 +45,30 @@ _PAGE_TEMPLATE = """<!doctype html>
       margin-bottom: 12px;
     }}
     header p {{ color: var(--muted); margin: 0; }}
+    .toggle {{
+      display: flex;
+      gap: 8px;
+      margin: 16px 0;
+    }}
+    .toggle button {{
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border: 1px solid var(--rule);
+      padding: 8px 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.12s, color 0.12s;
+    }}
+    .toggle button:hover {{ border-color: var(--brand-orange); }}
+    .toggle button.active {{
+      background: var(--btn-bg-active);
+      color: var(--btn-fg-active);
+      border-color: var(--brand-orange);
+    }}
+    .panel {{ display: none; }}
+    .panel.active {{ display: block; }}
     main {{ margin: 0; }}
     footer {{
       margin-top: 32px;
@@ -63,17 +91,46 @@ _PAGE_TEMPLATE = """<!doctype html>
       <rect x="245" y="20" width="220" height="80" rx="16" fill="#ff9000"/>
       <text x="262" y="84" font-family="-apple-system, Helvetica, Arial, sans-serif" font-weight="900" font-size="76" fill="#000" letter-spacing="-2">MAP</text>
     </svg>
-    <p>Daily view-growth heatmap of Pornhub's top-50 performers. Brighter cells = faster day-over-day growth in cumulative video views.</p>
+    <p>Top-50 Pornhub performers by cumulative video views. Tile size = total views. Color = % growth over the selected window. Hover for details.</p>
   </header>
 
+  <div class="toggle" role="tablist">
+    <button type="button" class="active" data-window="1">1d</button>
+    <button type="button" data-window="7">7d</button>
+    <button type="button" data-window="30">30d</button>
+  </div>
+
   <main>
-    {plot_div}
+    <div id="tm-1d" class="panel active">{plot_1d}</div>
+    <div id="tm-7d" class="panel">{plot_7d}</div>
+    <div id="tm-30d" class="panel">{plot_30d}</div>
   </main>
 
   <footer>
     <p class="stats">Updated {last_updated} UTC · {n_days} days of history · {n_performers} performers tracked · <a href="https://github.com/ansvier/ph-heatmap">source on GitHub</a> · <a href="data.json">raw data (JSON)</a></p>
     <p class="disclaimer">HotMap is an independent project. Data is collected from publicly visible Pornhub profile pages; no video content is hosted here.</p>
   </footer>
+
+  <script>
+    (function () {{
+      var buttons = document.querySelectorAll('.toggle button');
+      var panels = {{
+        '1': document.getElementById('tm-1d'),
+        '7': document.getElementById('tm-7d'),
+        '30': document.getElementById('tm-30d'),
+      }};
+      buttons.forEach(function (btn) {{
+        btn.addEventListener('click', function () {{
+          var w = btn.getAttribute('data-window');
+          buttons.forEach(function (b) {{ b.classList.toggle('active', b === btn); }});
+          Object.keys(panels).forEach(function (k) {{
+            panels[k].classList.toggle('active', k === w);
+          }});
+          window.dispatchEvent(new Event('resize'));
+        }});
+      }});
+    }})();
+  </script>
 </body>
 </html>
 """
@@ -107,88 +164,98 @@ def compute_window_growth(snapshots: pd.DataFrame, window_days: int) -> pd.DataF
     return out
 
 
-def compute_growth_matrix(snapshots: pd.DataFrame) -> pd.DataFrame:
-    """Return a (slug x date) matrix of day-over-day % growth in total_views.
+def _format_views(n: int) -> str:
+    """Compact: 464_114_451 -> '464M', 1_234_567 -> '1.2M', 950 -> '950'."""
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.0f}M" if n >= 100_000_000 else f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}K"
+    return str(n)
 
-    Cells where either the current or previous day's value is missing become NaN.
-    The first column is always NaN (no prior day to diff against).
-    """
-    pivot = snapshots.pivot_table(
-        index="slug",
-        columns="snapshot_date",
-        values="total_views",
-        aggfunc="first",
+
+def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
+    """Build one Plotly Treemap figure for a single window."""
+    rows = window.reset_index().copy()
+    rows["views_label"] = rows["total_views"].apply(_format_views)
+    rows["pct_label"] = rows["growth_pct"].apply(
+        lambda v: "n/a" if pd.isna(v) else f"{v:+.2f}%"
     )
-    pivot = pivot.sort_index(axis=1)
-    pct = pivot.pct_change(axis=1) * 100
-    return pct
-
-
-def render_heatmap(snapshots: pd.DataFrame, output_path: Path | str) -> None:
-    """Render the growth heatmap to a standalone HTML file."""
-    if snapshots.empty:
-        raise ValueError("No snapshots to render")
-
-    growth = compute_growth_matrix(snapshots)
-
-    latest_date = snapshots["snapshot_date"].max()
-    latest = (
-        snapshots[snapshots["snapshot_date"] == latest_date]
-        .set_index("slug")["total_views"]
+    rows["tile_text"] = (
+        rows["name"] + "<br>" + rows["views_label"] + "<br>" + rows["pct_label"]
     )
-    ordered_slugs = (
-        latest.reindex(growth.index)
-        .sort_values(ascending=False, na_position="last")
-        .index.tolist()
-    )
-    growth = growth.loc[ordered_slugs]
 
-    latest_names = (
-        snapshots.sort_values("snapshot_date")
-        .drop_duplicates("slug", keep="last")
-        .set_index("slug")["name"]
-    )
-    y_labels = [latest_names.get(slug, slug) for slug in growth.index]
-
-    views_pivot = (
-        snapshots.pivot_table(index="slug", columns="snapshot_date", values="total_views", aggfunc="first")
-        .reindex(index=growth.index, columns=growth.columns)
-    )
+    finite = rows["growth_pct"].dropna()
+    cmax = max(1.0, float(finite.abs().max()) if len(finite) else 1.0)
 
     figure = go.Figure(
-        data=go.Heatmap(
-            z=growth.values,
-            x=[d.strftime("%Y-%m-%d") for d in growth.columns],
-            y=y_labels,
-            colorscale="YlOrRd",
-            zmin=0,
-            colorbar=dict(title="% growth"),
-            customdata=views_pivot.values,
-            hovertemplate=(
-                "<b>%{y}</b><br>"
-                "Date: %{x}<br>"
-                "Total views: %{customdata:,}<br>"
-                "Growth: %{z:.2f}%<extra></extra>"
+        go.Treemap(
+            labels=rows["tile_text"],
+            parents=[""] * len(rows),
+            values=rows["total_views"],
+            marker=dict(
+                colors=rows["growth_pct"],
+                colorscale="RdYlGn",
+                cmid=0,
+                cmin=-cmax,
+                cmax=cmax,
+                showscale=True,
+                colorbar=dict(
+                    title=f"% growth ({window_days}d)",
+                    tickformat="+.2f",
+                ),
             ),
+            customdata=rows[["name", "total_views", "growth_pct"]].values,
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                "Total views: %{customdata[1]:,}<br>"
+                "Growth (" + str(window_days) + "d): %{customdata[2]:+.3f}%"
+                "<extra></extra>"
+            ),
+            textposition="middle center",
+            textfont=dict(size=14, color="white"),
+            tiling=dict(packing="squarify", pad=2),
         )
     )
     figure.update_layout(
-        title=None,
-        xaxis_title="Date",
-        yaxis_title=None,
-        yaxis=dict(autorange="reversed"),
-        margin=dict(l=140, r=20, t=20, b=40),
-        height=max(400, 18 * len(growth.index) + 200),
+        paper_bgcolor="#0f0f0f",
+        plot_bgcolor="#0f0f0f",
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=700,
+        font=dict(color="#f5f5f5"),
     )
+    return figure
 
-    plot_div = figure.to_html(include_plotlyjs="cdn", full_html=False)
+
+def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
+    """Render the HotMap treemap page (3 windows + toggle) to `output_path`."""
+    if snapshots.empty:
+        raise ValueError("No snapshots to render")
+
+    def _plot_div(window_days: int) -> str:
+        window = compute_window_growth(snapshots, window_days=window_days)
+        figure = _build_treemap_figure(window, window_days=window_days)
+        return figure.to_html(include_plotlyjs="cdn", full_html=False)
+
+    plot_1d = _plot_div(1)
+    plot_7d = _plot_div(7)
+    plot_30d = _plot_div(30)
+
+    snapshots = snapshots.copy()
+    snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
+    n_days = snapshots["snapshot_date"].nunique()
+    latest_date = snapshots["snapshot_date"].max()
+    n_performers = snapshots[snapshots["snapshot_date"] == latest_date]["slug"].nunique()
     last_updated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
     page = _PAGE_TEMPLATE.format(
-        plot_div=plot_div,
+        plot_1d=plot_1d,
+        plot_7d=plot_7d,
+        plot_30d=plot_30d,
         last_updated=last_updated,
-        n_days=growth.shape[1],
-        n_performers=growth.shape[0],
+        n_days=n_days,
+        n_performers=n_performers,
     )
 
     Path(output_path).write_text(page)
