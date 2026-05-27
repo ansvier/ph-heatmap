@@ -14,30 +14,28 @@ DB_PATH = PROJECT_ROOT / "data.db"
 HTML_PATH = PUBLIC_DIR / "index.html"
 JSON_PATH = PUBLIC_DIR / "data.json"
 TOP_N = 50
+GENDERS = ("female", "male")
 
 
-def main() -> int:
-    today = date.today()
-    print(f"[{today}] starting snapshot run", flush=True)
-
+def _scrape_gender(today: date, gender: str) -> list[Snapshot]:
     try:
-        slugs = fetch_top_pornstars(limit=TOP_N)
+        slugs = fetch_top_pornstars(limit=TOP_N, gender=gender)
     except Exception as exc:
-        print(f"FATAL: could not fetch top list: {exc}", file=sys.stderr)
-        return 1
+        print(f"WARN: could not fetch {gender} top list: {exc}", file=sys.stderr)
+        return []
 
     if not slugs:
-        print("FATAL: top list was empty", file=sys.stderr)
-        return 1
+        print(f"WARN: {gender} top list was empty", file=sys.stderr)
+        return []
 
-    print(f"got {len(slugs)} slugs", flush=True)
+    print(f"got {len(slugs)} {gender} slugs", flush=True)
 
     rows: list[Snapshot] = []
     for rank, slug in enumerate(slugs, start=1):
         try:
             profile = fetch_profile(slug)
         except Exception as exc:
-            print(f"WARN: skipping {slug}: {exc}", file=sys.stderr)
+            print(f"WARN: skipping {gender}/{slug}: {exc}", file=sys.stderr)
             polite_sleep()
             continue
 
@@ -47,17 +45,29 @@ def main() -> int:
             name=profile.name or slug,
             total_views=profile.total_views,
             rank=rank,
+            gender=gender,
         ))
         polite_sleep()
 
-    if not rows:
-        print("FATAL: no profiles parsed successfully", file=sys.stderr)
+    return rows
+
+
+def main() -> int:
+    today = date.today()
+    print(f"[{today}] starting snapshot run", flush=True)
+
+    all_rows: list[Snapshot] = []
+    for gender in GENDERS:
+        all_rows.extend(_scrape_gender(today, gender))
+
+    if not all_rows:
+        print("FATAL: no profiles parsed successfully for any gender", file=sys.stderr)
         return 1
 
     PUBLIC_DIR.mkdir(exist_ok=True)
     conn = init_db(DB_PATH)
-    insert_snapshot(conn, rows)
-    print(f"stored {len(rows)} rows", flush=True)
+    insert_snapshot(conn, all_rows)
+    print(f"stored {len(all_rows)} rows total", flush=True)
 
     snapshots_df = load_all_snapshots(conn)
     render_treemap_page(snapshots_df, HTML_PATH)
