@@ -80,3 +80,20 @@ def render_heatmap(snapshots: pd.DataFrame, output_path: Path | str) -> None:
     )
 
     figure.write_html(str(output_path), include_plotlyjs="cdn", full_html=True)
+
+
+def dump_json(snapshots: pd.DataFrame, output_path: Path | str) -> None:
+    """Write snapshot rows to a JSON file as an array of records.
+
+    Dates are serialized as ISO date strings (YYYY-MM-DD), not epoch millis,
+    so the file is human-readable and stable across pandas versions.
+    """
+    if snapshots.empty:
+        Path(output_path).write_text("[]")
+        return
+
+    out = snapshots.copy()
+    out["snapshot_date"] = pd.to_datetime(out["snapshot_date"]).dt.strftime("%Y-%m-%d")
+    out[["snapshot_date", "slug", "name", "total_views", "rank"]].to_json(
+        output_path, orient="records"
+    )
