@@ -87,7 +87,7 @@ def _extract_video_views(tree: HTMLParser) -> int:
     raise ValueError("Could not find 'Video Views' on profile page")
 
 
-_TOP_LIST_URL = "https://www.pornhub.com/pornstars?o=mv"
+_TOP_LIST_URL_TEMPLATE = "https://www.pornhub.com/pornstars?o=mv&gender={gender}"
 _PROFILE_URL_TEMPLATE = "https://www.pornhub.com/pornstar/{slug}"
 _IMPERSONATE = os.environ.get("PH_IMPERSONATE", "chrome120")
 _REQUEST_TIMEOUT = 30  # seconds
@@ -99,8 +99,11 @@ def _fetch(url: str) -> str:
     return response.text
 
 
-def fetch_top_pornstars(limit: int = 50) -> list[str]:
-    return parse_top_list(_fetch(_TOP_LIST_URL), limit=limit)
+def fetch_top_pornstars(limit: int = 50, gender: str = "female") -> list[str]:
+    if gender not in {"female", "male"}:
+        raise ValueError(f"gender must be 'female' or 'male', got {gender!r}")
+    url = _TOP_LIST_URL_TEMPLATE.format(gender=gender)
+    return parse_top_list(_fetch(url), limit=limit)
 
 
 def fetch_profile(slug: str) -> ProfileData:
