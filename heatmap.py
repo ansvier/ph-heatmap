@@ -79,6 +79,34 @@ _PAGE_TEMPLATE = """<!doctype html>
 """
 
 
+def compute_window_growth(snapshots: pd.DataFrame, window_days: int) -> pd.DataFrame:
+    """Return a per-slug snapshot with % growth over a N-day window.
+
+    Output columns: `name`, `total_views` (today), `prev_views` (N days ago,
+    or NaN if no row exists for that date+slug), `growth_pct` (NaN if no baseline).
+    Index: `slug`. Only slugs present in the latest snapshot are included.
+    """
+    if snapshots.empty:
+        return pd.DataFrame(columns=["name", "total_views", "prev_views", "growth_pct"])
+
+    snapshots = snapshots.copy()
+    snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
+
+    latest_date = snapshots["snapshot_date"].max()
+    baseline_date = latest_date - pd.Timedelta(days=window_days)
+
+    today = snapshots[snapshots["snapshot_date"] == latest_date].set_index("slug")
+    baseline = (
+        snapshots[snapshots["snapshot_date"] == baseline_date]
+        .set_index("slug")["total_views"]
+        .rename("prev_views")
+    )
+
+    out = today[["name", "total_views"]].join(baseline, how="left")
+    out["growth_pct"] = (out["total_views"] - out["prev_views"]) / out["prev_views"] * 100
+    return out
+
+
 def compute_growth_matrix(snapshots: pd.DataFrame) -> pd.DataFrame:
     """Return a (slug x date) matrix of day-over-day % growth in total_views.
 
