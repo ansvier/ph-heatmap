@@ -1,14 +1,24 @@
 <!doctype html>
 <html>
 <body>
-<div class="topProfileHeader">
-  <img src="https://example.com/pics/users/000/000/000/cover123/banner.jpg" alt="cover">
-  <img src="https://example.com/pics/users/000/000/000/avatar123/200x200.jpg" alt="Alice Example">
+<div class="withCover" itemscope itemtype="http://schema.org/Person">
+  <section class="topProfileHeader">
+    <img src="https://example.com/pics/users/000/000/000/cover123/banner.jpg" alt="cover">
+    <div id="avatarPicture">
+      <div class="previewAvatarPicture">
+        <img id="getAvatar" src="https://example.com/pics/users/000/000/000/avatar123/200x200.jpg" alt="Alice Example">
+      </div>
+    </div>
+  </section>
 </div>
 <div class="infoBox rankDetails"><span class="big">61</span><div class="title">Yearly Rank</div></div>
 <div class="tooltipTrig infoBox videoViews" data-title="Video views: 123,456,789">
   <span class="big">123M</span>
   <div class="title" itemscope itemtype="http://schema.org/UserPageVisits">Video views</div>
+</div>
+<!-- Decoy: a recommended performer in sidebar, must NOT be picked. -->
+<div class="communityContent">
+  <img src="https://example.com/pics/users/999/999/999/avatar999/200x200.jpg" alt="DecoyPerson">
 </div>
 <h1>Alice Example</h1>
 </body>
