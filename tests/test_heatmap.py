@@ -33,12 +33,17 @@ def test_render_treemap_page_writes_html(tmp_path):
     assert "<svg" in content
     assert "<footer" in content.lower()
 
-    # Nine panels: 3 windows × 3 gender filters.
-    for gender in ("all", "female", "male"):
-        for window in (1, 7, 30):
-            assert f'id="panel-{gender}-{window}"' in content, f"missing panel-{gender}-{window}"
+    # 27 panels: 3 modes × 3 gender filters × 3 windows.
+    for mode in ("rising", "gems", "celebs"):
+        for gender in ("all", "female", "male"):
+            for window in (1, 7, 30):
+                assert f'id="panel-{mode}-{gender}-{window}"' in content, \
+                    f"missing panel-{mode}-{gender}-{window}"
 
-    # Both toggle dimensions present.
+    # All three toggle dimensions present.
+    assert 'data-mode="rising"' in content
+    assert 'data-mode="gems"' in content
+    assert 'data-mode="celebs"' in content
     assert 'data-window="1"' in content
     assert 'data-window="7"' in content
     assert 'data-window="30"' in content

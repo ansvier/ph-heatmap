@@ -215,6 +215,12 @@ _PAGE_TEMPLATE = """<!doctype html>
   </header>
 
   <div class="controls">
+    <div class="toggle" role="tablist" aria-label="Mode">
+      <span class="toggle-label">Mode</span>
+      <button type="button" class="active mode" data-mode="rising">Rising Stars</button>
+      <button type="button" class="mode" data-mode="gems">Hidden Gems</button>
+      <button type="button" class="mode" data-mode="celebs">Celebrities</button>
+    </div>
     <div class="toggle" role="tablist" aria-label="Gender filter">
       <span class="toggle-label">Gender</span>
       <button type="button" class="gender" data-gender="all">All</button>
@@ -245,17 +251,19 @@ _PAGE_TEMPLATE = """<!doctype html>
 
   <script>
     (function () {{
-      var state = {{ gender: 'female', window: '1' }};
+      var state = {{ mode: 'rising', gender: 'female', window: '1' }};
       var panels = document.querySelectorAll('.panel');
 
       var topPerfCards = document.querySelectorAll('.top-perf');
       function refresh() {{
-        var activeId = 'panel-' + state.gender + '-' + state.window;
+        var activeId = 'panel-' + state.mode + '-' + state.gender + '-' + state.window;
         panels.forEach(function (p) {{
           p.classList.toggle('active', p.id === activeId);
         }});
         topPerfCards.forEach(function (c) {{
-          c.classList.toggle('active', c.getAttribute('data-gender') === state.gender);
+          var matches = c.getAttribute('data-mode') === state.mode
+                     && c.getAttribute('data-gender') === state.gender;
+          c.classList.toggle('active', matches);
         }});
         window.dispatchEvent(new Event('resize'));
       }}
@@ -271,6 +279,7 @@ _PAGE_TEMPLATE = """<!doctype html>
         }});
       }}
 
+      bind('.mode', 'mode');
       bind('.gender', 'gender');
       bind('.window', 'window');
 
@@ -484,13 +493,68 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
 
 _WINDOWS = (1, 7, 30)
 _GENDER_FILTERS = (("all", None), ("female", "female"), ("male", "male"))
+_MODES = ("rising", "gems", "celebs")
+_CELEBRITY_TOP_N = 50          # ranks 1..N = celebrities
+_RISING_RANK_FLOOR = 250       # rising = ranks 51..N (= 200 performers)
+# Soft safety ceilings (almost never trigger; safeguard if PH ranks a 1B-view
+# performer unusually low one day).
+_RISING_VIEW_CEILING = 2_000_000_000
+_GEMS_VIEW_CEILING = 500_000_000
+_TREEMAP_MAX_TILES = 100
 
 
 _TOP_PERF_LABELS = {
-    "all": "Top performer of the day",
-    "female": "Top female of the day",
-    "male": "Top male of the day",
+    "rising": {
+        "all": "Rising star of the day",
+        "female": "Rising female of the day",
+        "male": "Rising male of the day",
+    },
+    "gems": {
+        "all": "Hidden gem of the day",
+        "female": "Hidden female gem",
+        "male": "Hidden male gem",
+    },
+    "celebs": {
+        "all": "Top celebrity of the day",
+        "female": "Top female celebrity",
+        "male": "Top male celebrity",
+    },
 }
+
+
+def _apply_mode_filter(window_df: pd.DataFrame, mode: str) -> pd.DataFrame:
+    """Slice the window DataFrame into the requested mode cohort.
+
+    Tiers are rank-based (after sorting by current total_views desc):
+      - 'celebs':  ranks 1..50         (the established names)
+      - 'rising':  ranks 51..250       (the 200 middle-tier performers)
+      - 'gems':    ranks 251..N        (the deeper tail — genuinely smaller)
+    Each non-celeb mode shows the TOP_MAX_TILES with the highest % growth.
+    """
+    if window_df.empty:
+        return window_df
+    df = window_df.copy()
+    df = df.sort_values("total_views", ascending=False)
+    df["_rank"] = range(1, len(df) + 1)
+
+    if mode == "celebs":
+        return df.head(_CELEBRITY_TOP_N).drop(columns="_rank")
+
+    if mode == "rising":
+        cohort = df[
+            (df["_rank"] > _CELEBRITY_TOP_N)
+            & (df["_rank"] <= _RISING_RANK_FLOOR)
+            & (df["total_views"] < _RISING_VIEW_CEILING)
+        ]
+    else:  # mode == 'gems'
+        cohort = df[
+            (df["_rank"] > _RISING_RANK_FLOOR)
+            & (df["total_views"] < _GEMS_VIEW_CEILING)
+        ]
+
+    cohort = cohort.dropna(subset=["growth_pct"])
+    cohort = cohort.sort_values("growth_pct", ascending=False).head(_TREEMAP_MAX_TILES)
+    return cohort.drop(columns="_rank")
 
 
 _TOP_PERF_MIN_VIEWS = 100_000_000  # filter out micro-accounts with noisy % growth
@@ -500,6 +564,7 @@ def _build_top_performer_card(
     snapshots: pd.DataFrame,
     gender_key: str,
     gender_filter: str | None,
+    mode: str,
     *,
     is_default: bool,
 ) -> str:
@@ -515,11 +580,14 @@ def _build_top_performer_card(
     window_df = window_df.copy()
     window_df["growth_amount"] = window_df["total_views"] - window_df["prev_views"]
     window_df = window_df.dropna(subset=["growth_pct"])
-    qualified = window_df[window_df["total_views"] >= _TOP_PERF_MIN_VIEWS]
-    if qualified.empty:
-        # Fallback: if nobody clears the bar (unlikely with a top-50 scrape),
-        # use the highest-growth among whatever we have.
-        qualified = window_df
+    cohort = _apply_mode_filter(window_df, mode)
+    # For celebs, still require the min-views floor so noise tiny pages don't win.
+    if mode == "celebs":
+        qualified = cohort[cohort["total_views"] >= _TOP_PERF_MIN_VIEWS]
+        if qualified.empty:
+            qualified = cohort
+    else:
+        qualified = cohort
     if qualified.empty:
         return ""
 
@@ -540,11 +608,11 @@ def _build_top_performer_card(
         f'<img src="{photo_url}" alt="{name}" loading="lazy" referrerpolicy="no-referrer">'
         if photo_url else '<div style="width:56px;height:56px;border-radius:50%;background:#222;flex-shrink:0"></div>'
     )
-    label = _TOP_PERF_LABELS.get(gender_key, "Top performer of the day")
+    label = _TOP_PERF_LABELS.get(mode, {}).get(gender_key, "Top performer of the day")
     active = " active" if is_default else ""
 
     return (
-        f'<a class="top-perf{active}" data-gender="{gender_key}" href="{profile_url}" target="_blank" rel="noopener">'
+        f'<a class="top-perf{active}" data-mode="{mode}" data-gender="{gender_key}" href="{profile_url}" target="_blank" rel="noopener">'
         f'{img_tag}'
         f'<div class="top-perf-text">'
         f'<span class="top-perf-label">{label}</span>'
@@ -555,46 +623,55 @@ def _build_top_performer_card(
     )
 
 
-def _build_all_top_performer_cards(snapshots: pd.DataFrame, default_gender: str) -> str:
+def _build_all_top_performer_cards(snapshots: pd.DataFrame, default_mode: str, default_gender: str) -> str:
     cards: list[str] = []
-    for gender_key, gender_filter in _GENDER_FILTERS:
-        card = _build_top_performer_card(
-            snapshots, gender_key, gender_filter, is_default=(gender_key == default_gender)
-        )
-        if card:
-            cards.append(card)
+    for mode in _MODES:
+        for gender_key, gender_filter in _GENDER_FILTERS:
+            is_default = (mode == default_mode and gender_key == default_gender)
+            card = _build_top_performer_card(
+                snapshots, gender_key, gender_filter, mode, is_default=is_default
+            )
+            if card:
+                cards.append(card)
     if not cards:
         return ""
     return f'<div class="top-perf-wrap">{"".join(cards)}</div>'
 
 
 def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
-    """Render the HotMap treemap page (3 windows x 3 gender filters)."""
+    """Render the HotMap treemap page (2 modes x 3 genders x 3 windows = 18 panels)."""
     if snapshots.empty:
         raise ValueError("No snapshots to render")
 
     panels_html_parts: list[str] = []
-    default_gender, default_window = "female", 1
-    for gender_key, gender_filter in _GENDER_FILTERS:
-        for window in _WINDOWS:
-            window_df = compute_window_growth(snapshots, window_days=window, gender=gender_filter)
-            if window_df.empty:
-                # Show an empty grey panel for missing data (e.g., no male rows yet).
-                placeholder = (
-                    f'<div class="empty-panel" style="height:700px;display:flex;'
-                    f'align-items:center;justify-content:center;color:#666;'
-                    f'border:1px dashed #2a2a2a;border-radius:4px;">'
-                    f'No data for {gender_key} performers yet</div>'
-                )
-                inner = placeholder
-            else:
-                figure = _build_treemap_figure(window_df, window_days=window)
-                inner = figure.to_html(include_plotlyjs="cdn", full_html=False)
+    default_mode, default_gender, default_window = "rising", "female", 1
+    for mode in _MODES:
+        for gender_key, gender_filter in _GENDER_FILTERS:
+            for window in _WINDOWS:
+                full_window = compute_window_growth(snapshots, window_days=window, gender=gender_filter)
+                cohort = _apply_mode_filter(full_window, mode) if not full_window.empty else full_window
+                if cohort.empty:
+                    placeholder_msg = (
+                        f'No rising stars for {gender_key} yet'
+                        if mode == "rising"
+                        else f'No data for {gender_key} celebrities yet'
+                    )
+                    inner = (
+                        f'<div class="empty-panel" style="height:700px;display:flex;'
+                        f'align-items:center;justify-content:center;color:#666;'
+                        f'border:1px dashed #2a2a2a;border-radius:4px;">'
+                        f'{placeholder_msg}</div>'
+                    )
+                else:
+                    figure = _build_treemap_figure(cohort, window_days=window)
+                    inner = figure.to_html(include_plotlyjs="cdn", full_html=False)
 
-            active = " active" if (gender_key == default_gender and window == default_window) else ""
-            panels_html_parts.append(
-                f'<div id="panel-{gender_key}-{window}" class="panel{active}">{inner}</div>'
-            )
+                active = " active" if (
+                    mode == default_mode and gender_key == default_gender and window == default_window
+                ) else ""
+                panels_html_parts.append(
+                    f'<div id="panel-{mode}-{gender_key}-{window}" class="panel{active}">{inner}</div>'
+                )
 
     snapshots = snapshots.copy()
     snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
@@ -603,7 +680,7 @@ def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> Non
     n_performers = snapshots[snapshots["snapshot_date"] == latest_date]["slug"].nunique()
     last_updated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
-    top_perf_card = _build_all_top_performer_cards(snapshots, default_gender=default_gender)
+    top_perf_card = _build_all_top_performer_cards(snapshots, default_mode=default_mode, default_gender=default_gender)
 
     page = _PAGE_TEMPLATE.format(
         panels="\n    ".join(panels_html_parts),

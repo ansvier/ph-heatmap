@@ -133,10 +133,38 @@ def _fetch(url: str) -> str:
 
 
 def fetch_top_pornstars(limit: int = 50, gender: str = "female") -> list[str]:
+    """Fetch up to `limit` slugs from the top-list, paginating as needed.
+
+    Each PH list page returns ~50 slugs from `ul#popularPornstars`. Pages are
+    requested with `&page=N`. We stop when we either hit the limit or get a page
+    that returns no new slugs (end of list).
+    """
     if gender not in {"female", "male"}:
         raise ValueError(f"gender must be 'female' or 'male', got {gender!r}")
-    url = _TOP_LIST_URL_TEMPLATE.format(gender=gender)
-    return parse_top_list(_fetch(url), limit=limit)
+
+    base_url = _TOP_LIST_URL_TEMPLATE.format(gender=gender)
+    seen: set[str] = set()
+    slugs: list[str] = []
+    page = 1
+    while len(slugs) < limit:
+        url = base_url if page == 1 else f"{base_url}&page={page}"
+        page_slugs = parse_top_list(_fetch(url), limit=limit)
+        new_count = 0
+        for s in page_slugs:
+            if s in seen:
+                continue
+            seen.add(s)
+            slugs.append(s)
+            new_count += 1
+            if len(slugs) >= limit:
+                break
+        if new_count == 0:
+            break  # end of list, no point requesting more pages
+        page += 1
+        if page > 20:  # safety net — shouldn't happen at sensible limits
+            break
+        polite_sleep()  # between page requests
+    return slugs
 
 
 def fetch_profile(slug: str) -> ProfileData:
