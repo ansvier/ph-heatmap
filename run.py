@@ -7,9 +7,42 @@ from pathlib import Path
 from db import Snapshot, init_db, insert_snapshot, load_all_snapshots
 from heatmap import dump_json, render_treemap_page
 from scraper import fetch_profile, fetch_top_pornstars, polite_sleep
+from curl_cffi import requests as cffi_requests
+import os
+
+_AVATAR_IMPERSONATE = os.environ.get("PH_IMPERSONATE", "chrome120")
+
+
+def _download_avatar(remote_url: str, dest_dir: Path, slug: str) -> str | None:
+    """Download an avatar image to dest_dir/<slug>.<ext>, return public path or None.
+
+    Saves the file using slug as the filename so we don't accumulate stale versions
+    per snapshot — each scrape overwrites the previous avatar for that performer.
+    Returns the path relative to PUBLIC_DIR (e.g. 'avatars/lana-rhoades.jpg').
+    """
+    if not remote_url:
+        return None
+    try:
+        r = cffi_requests.get(remote_url, impersonate=_AVATAR_IMPERSONATE, timeout=15)
+        r.raise_for_status()
+    except Exception as exc:
+        print(f"  WARN: avatar download failed for {slug}: {exc}", file=sys.stderr)
+        return None
+    # Determine extension from content-type, falling back to .jpg.
+    ext = ".jpg"
+    ctype = r.headers.get("content-type", "").lower()
+    if "png" in ctype:
+        ext = ".png"
+    elif "webp" in ctype:
+        ext = ".webp"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = dest_dir / f"{slug}{ext}"
+    dest_path.write_bytes(r.content)
+    return f"avatars/{slug}{ext}"
 
 PROJECT_ROOT = Path(__file__).parent
 PUBLIC_DIR = PROJECT_ROOT / "public"
+AVATAR_DIR = PUBLIC_DIR / "avatars"
 DB_PATH = PROJECT_ROOT / "data.db"
 HTML_PATH = PUBLIC_DIR / "index.html"
 JSON_PATH = PUBLIC_DIR / "data.json"
@@ -39,6 +72,7 @@ def _scrape_gender(today: date, gender: str) -> list[Snapshot]:
             polite_sleep()
             continue
 
+        local_photo = _download_avatar(profile.photo_url or "", AVATAR_DIR, slug) if profile.photo_url else None
         rows.append(Snapshot(
             snapshot_date=today,
             slug=slug,
@@ -46,7 +80,7 @@ def _scrape_gender(today: date, gender: str) -> list[Snapshot]:
             total_views=profile.total_views,
             rank=rank,
             gender=gender,
-            photo_url=profile.photo_url,
+            photo_url=local_photo,
         ))
         polite_sleep()
 
