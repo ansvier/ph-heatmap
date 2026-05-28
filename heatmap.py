@@ -280,6 +280,16 @@ _PAGE_TEMPLATE = """<!doctype html>
       var panels = document.querySelectorAll('.panel');
 
       var topPerfCards = document.querySelectorAll('.top-perf');
+      var MODE_PATHS = {{ rising: '/rising', gems: '/gems', celebs: '/celebs' }};
+
+      function syncUrl() {{
+        var desired = MODE_PATHS[state.mode] || '/';
+        var current = window.location.pathname.replace(/\\/$/, '') || '/';
+        if (current !== desired) {{
+          history.replaceState({{ mode: state.mode }}, '', desired);
+        }}
+      }}
+
       function refresh() {{
         var activeId = 'panel-' + state.mode + '-' + state.gender + '-' + state.window;
         panels.forEach(function (p) {{
@@ -290,8 +300,22 @@ _PAGE_TEMPLATE = """<!doctype html>
                      && c.getAttribute('data-gender') === state.gender;
           c.classList.toggle('active', matches);
         }});
+        syncUrl();
         window.dispatchEvent(new Event('resize'));
       }}
+
+      // Handle browser back/forward — keep UI in sync if user uses history nav.
+      window.addEventListener('popstate', function () {{
+        var path = window.location.pathname.replace(/\\/$/, '') || '/';
+        var found = Object.keys(MODE_PATHS).find(function (m) {{ return MODE_PATHS[m] === path; }});
+        if (found && found !== state.mode) {{
+          state.mode = found;
+          document.querySelectorAll('.mode').forEach(function (b) {{
+            b.classList.toggle('active', b.getAttribute('data-mode') === state.mode);
+          }});
+          refresh();
+        }}
+      }});
 
       function bind(selector, key) {{
         var buttons = document.querySelectorAll(selector);
