@@ -46,7 +46,7 @@ AVATAR_DIR = PUBLIC_DIR / "avatars"
 DB_PATH = PROJECT_ROOT / "data.db"
 HTML_PATH = PUBLIC_DIR / "index.html"
 JSON_PATH = PUBLIC_DIR / "data.json"
-TOP_N = 50
+TOP_N = 500
 GENDERS = ("female", "male")
 
 
