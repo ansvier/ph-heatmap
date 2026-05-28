@@ -221,7 +221,9 @@ _PAGE_TEMPLATE = """<!doctype html>
       flex-wrap: wrap;
       gap: 24px;
       margin: 16px 0 20px;
+      margin-right: 110px;
     }}
+    @media (max-width: 900px) {{ .controls {{ margin-right: 0; }} }}
     .toggle {{
       display: flex;
       gap: 6px;
@@ -261,9 +263,10 @@ _PAGE_TEMPLATE = """<!doctype html>
     .share-btn:hover {{ background: var(--brand-orange); color: #000; }}
     .share-btn.busy {{ opacity: 0.6; cursor: progress; }}
     .share-icon {{ font-weight: 700; margin-right: 4px; }}
-    .panel {{ display: none; }}
+    .panel {{ display: none; margin-right: 110px; }}
     .panel.active {{ display: block; }}
     .panel .plotly-graph-div {{ cursor: pointer; }}
+    @media (max-width: 900px) {{ .panel {{ margin-right: 0; }} }}
     main {{ margin: 0; }}
     footer {{
       margin-top: 32px;
