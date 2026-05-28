@@ -34,9 +34,11 @@ def test_parse_profile_extracts_views_and_name(profile_html):
 def test_parse_profile_extracts_avatar_url(profile_html):
     result = parse_profile(profile_html)
     assert result.photo_url is not None
-    assert "/avatar" in result.photo_url
-    # Cover/banner image must NOT be selected — the avatar URL must contain /avatar.
+    # The picked URL must be the one under #getAvatar (the canonical profile photo).
+    assert "/avatar123/" in result.photo_url
+    # Banner and decoy images must NOT be selected.
     assert "cover" not in result.photo_url
+    assert "999" not in result.photo_url  # decoy "DecoyPerson" avatar
 
 
 def test_parse_profile_photo_url_is_none_when_missing():

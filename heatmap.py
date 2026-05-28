@@ -411,12 +411,16 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
     rows = window.reset_index().copy()
     rows["growth_amount"] = rows["total_views"] - rows["prev_views"]
     rows = rows.dropna(subset=["growth_amount", "growth_pct"]).copy()
-    # Floor at 0; in theory views are monotonic, but data hiccups happen.
     rows["growth_amount"] = rows["growth_amount"].clip(lower=0)
 
-    finite = rows["growth_pct"]
-    median_growth = float(finite.median()) if len(finite) else 0.0
-    rows["relative_growth"] = rows["growth_pct"] - median_growth
+    # Color by percentile rank so the visible spread fills the palette even when
+    # raw % growth values are tightly clustered (everyone +0.01..+0.07% etc).
+    # `rank(pct=True)` returns [0..1]; we re-center to [-0.5..+0.5] so the diverging
+    # scale's mid maps to the median performer.
+    if len(rows) > 1:
+        rows["color_value"] = rows["growth_pct"].rank(method="average", pct=True) - 0.5
+    else:
+        rows["color_value"] = 0.0
 
     rows["views_label"] = rows["total_views"].apply(_format_views)
     rows["pct_label"] = rows["growth_pct"].apply(lambda v: f"{v:+.2f}%")
@@ -429,10 +433,6 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
         + rows["pct_label"] + "</span>"
     )
 
-    cmax = float(rows["relative_growth"].abs().max()) if len(rows) else 1.0
-    if cmax < 1e-9:
-        cmax = 1.0
-
     figure = go.Figure(
         go.Treemap(
             labels=rows["tile_text"],
@@ -440,15 +440,16 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
             parents=[""] * len(rows),
             values=rows["growth_amount"],
             marker=dict(
-                colors=rows["relative_growth"],
+                colors=rows["color_value"],
                 colorscale="RdYlGn",
                 cmid=0,
-                cmin=-cmax,
-                cmax=cmax,
+                cmin=-0.5,
+                cmax=0.5,
                 showscale=True,
                 colorbar=dict(
-                    title=f"Δ vs median ({window_days}d)",
-                    tickformat="+.2f",
+                    title=f"Rank ({window_days}d)",
+                    tickvals=[-0.5, -0.25, 0, 0.25, 0.5],
+                    ticktext=["bottom", "low", "median", "high", "top"],
                     thickness=14,
                     outlinewidth=0,
                 ),
