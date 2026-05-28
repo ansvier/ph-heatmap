@@ -121,7 +121,7 @@ _PAGE_TEMPLATE = """<!doctype html>
     * {{ box-sizing: border-box; }}
     html, body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
     body {{
-      max-width: 1400px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 32px 16px 56px;
       color: var(--fg);
@@ -879,7 +879,7 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
     * {{ box-sizing: border-box; }}
     html, body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
     body {{
-      max-width: 900px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 24px 16px 56px;
       color: var(--fg);
@@ -1236,7 +1236,7 @@ _STATS_PAGE_TEMPLATE = """<!doctype html>
     * {{ box-sizing: border-box; }}
     html, body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }}
     body {{
-      max-width: 900px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 32px 16px 56px;
       color: var(--fg);
@@ -1600,7 +1600,7 @@ _CHARTS_PAGE_TEMPLATE = """<!doctype html>
     * {{ box-sizing: border-box; }}
     html, body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }}
     body {{
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 32px 16px 56px;
       color: var(--fg);
