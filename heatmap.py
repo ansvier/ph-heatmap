@@ -21,9 +21,26 @@ _PAGE_TEMPLATE = """<!doctype html>
   <meta property="og:description" content="Daily heatmap of view growth for top performers, ranked by momentum. Rising stars, hidden gems, and celebrities.">
   <meta property="og:url" content="https://hotmap.cam/">
   <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script type="application/ld+json">{{
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "name": "HotMap — Pornhub top-500 view growth",
+    "description": "Daily snapshot of cumulative video views for the top-500 Pornhub performers, broken down by gender, with day-over-day growth rates over 1d / 7d / 30d windows.",
+    "url": "https://hotmap.cam/",
+    "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {{ "@type": "Person", "name": "ansvier" }},
+    "distribution": [
+      {{ "@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://hotmap.cam/data.json" }}
+    ],
+    "keywords": ["pornstars", "view growth", "analytics", "treemap", "rankings"],
+    "isAccessibleForFree": true
+  }}</script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <style>
     :root {{
@@ -697,6 +714,388 @@ def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> Non
     )
 
     Path(output_path).write_text(page)
+
+
+_SITE_BASE_URL = "https://hotmap.cam"
+
+
+_PERFORMER_PAGE_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{name} — view statistics, growth, ranking | HotMap</title>
+  <meta name="description" content="{name} has {views_label} cumulative video views as of {last_date}. Daily growth: {growth_label}. Ranked #{rank} on HotMap's top-500 tracker. Updated daily.">
+  <link rel="canonical" href="{site}/p/{slug}">
+  <meta property="og:type" content="profile">
+  <meta property="og:title" content="{name} — HotMap statistics">
+  <meta property="og:description" content="{name}: {views_label} cumulative views. Ranked #{rank}. Daily growth: {growth_label}.">
+  <meta property="og:url" content="{site}/p/{slug}">
+  {og_image_tag}
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script type="application/ld+json">{json_ld}</script>
+  <style>
+    :root {{
+      --brand-orange: #ff9000;
+      --bg: #0a0a0a;
+      --fg: #f5f5f5;
+      --muted: #9a9a9a;
+      --rule: #1f1f1f;
+      --card-bg: #161616;
+      --positive: #6cd36a;
+    }}
+    * {{ box-sizing: border-box; }}
+    html, body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
+    body {{
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 56px;
+      color: var(--fg);
+      background: var(--bg);
+      line-height: 1.5;
+    }}
+    a {{ color: var(--brand-orange); text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
+    .topnav {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }}
+    .topnav .logo {{
+      width: 200px;
+      height: auto;
+    }}
+    .topnav a {{
+      color: var(--muted);
+      font-size: 13px;
+    }}
+    .topnav a:hover {{ color: var(--brand-orange); }}
+    .hero {{
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 10px;
+      border-left: 4px solid var(--brand-orange);
+      margin-bottom: 20px;
+    }}
+    .hero img {{
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #222;
+      flex-shrink: 0;
+    }}
+    .hero h1 {{
+      margin: 0 0 6px;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }}
+    .hero .meta {{
+      color: var(--muted);
+      font-size: 14px;
+    }}
+    .hero .rank-pill {{
+      display: inline-block;
+      background: var(--brand-orange);
+      color: #000;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 6px;
+      letter-spacing: 0.5px;
+    }}
+    .stats {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }}
+    .stat {{
+      padding: 14px 16px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      border: 1px solid var(--rule);
+    }}
+    .stat .label {{
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }}
+    .stat .value {{
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }}
+    .stat .value.pos {{ color: var(--positive); }}
+    .stat .value.neu {{ color: var(--muted); }}
+    section h2 {{
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin: 24px 0 12px;
+      font-weight: 600;
+    }}
+    .chart {{
+      background: var(--card-bg);
+      border-radius: 8px;
+      border: 1px solid var(--rule);
+      padding: 8px;
+      margin-bottom: 24px;
+    }}
+    .external {{
+      display: inline-block;
+      padding: 10px 18px;
+      background: var(--brand-orange);
+      color: #000;
+      font-weight: 700;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }}
+    .external:hover {{ text-decoration: none; opacity: 0.9; }}
+    footer {{
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 12px;
+    }}
+    footer a {{ color: var(--muted); text-decoration: underline; }}
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <a href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+      <rect width="400" height="100" fill="#000"/>
+      <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
+      <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
+      <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
+    </svg></a>
+    <a href="/">← back to map</a>
+  </nav>
+
+  <div class="hero">
+    {photo_tag}
+    <div>
+      <h1>{name}<span class="rank-pill">#{rank}</span></h1>
+      <p class="meta">{gender_label} performer · tracked by HotMap</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <p class="label">Cumulative views</p>
+      <p class="value">{views_label}</p>
+    </div>
+    <div class="stat">
+      <p class="label">1d growth</p>
+      <p class="value {growth_class_1d}">{growth_label_1d}</p>
+    </div>
+    <div class="stat">
+      <p class="label">7d growth</p>
+      <p class="value {growth_class_7d}">{growth_label_7d}</p>
+    </div>
+    <div class="stat">
+      <p class="label">30d growth</p>
+      <p class="value {growth_class_30d}">{growth_label_30d}</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>Views over time</h2>
+    <div class="chart">{sparkline}</div>
+  </section>
+
+  <a class="external" href="{profile_url}" target="_blank" rel="noopener">Open {name}'s profile on Pornhub →</a>
+
+  <footer>
+    Updated {last_date} · Part of the <a href="/">HotMap top-500 tracker</a> · Data collected from publicly visible profile pages.
+  </footer>
+</body>
+</html>
+"""
+
+
+def _format_growth(pct: float | None) -> tuple[str, str]:
+    """Return (label, css_class) for a % growth value."""
+    if pct is None or pd.isna(pct):
+        return "n/a", "neu"
+    cls = "pos" if pct > 0 else ("neu" if pct == 0 else "pos")  # all positive in practice
+    return f"+{pct:.3f}%", cls
+
+
+def _build_sparkline_html(history: pd.DataFrame) -> str:
+    """Build a minimal Plotly sparkline (line chart) for a performer's view history."""
+    if history.empty:
+        return '<div style="padding:40px;color:#666;text-align:center;">Not enough history to chart yet — check back in a few days.</div>'
+    history = history.sort_values("snapshot_date").copy()
+    fig = go.Figure(
+        go.Scatter(
+            x=history["snapshot_date"],
+            y=history["total_views"],
+            mode="lines+markers",
+            line=dict(color="#ff9000", width=2.5),
+            marker=dict(size=6, color="#ff9000"),
+            hovertemplate="%{x|%Y-%m-%d}: %{y:,} views<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        paper_bgcolor="#161616",
+        plot_bgcolor="#161616",
+        margin=dict(l=50, r=20, t=10, b=40),
+        height=240,
+        xaxis=dict(showgrid=False, color="#9a9a9a"),
+        yaxis=dict(gridcolor="#222", color="#9a9a9a", tickformat=",d"),
+        font=dict(family="Inter, sans-serif", color="#f5f5f5", size=11),
+    )
+    return fig.to_html(include_plotlyjs="cdn", full_html=False)
+
+
+def render_performer_page(
+    snapshots: pd.DataFrame,
+    slug: str,
+    output_path: Path | str,
+) -> None:
+    """Render a per-performer landing page at `output_path`.
+
+    The page is SEO-optimized (canonical link, Open Graph, Schema.org Person,
+    long-tail title) and includes a Plotly sparkline of view history plus 1d/7d/30d
+    growth stats. Designed to capture organic search traffic on performer names.
+    """
+    rows = snapshots[snapshots["slug"] == slug].copy()
+    if rows.empty:
+        raise ValueError(f"No snapshots for slug {slug!r}")
+
+    rows["snapshot_date"] = pd.to_datetime(rows["snapshot_date"])
+    rows = rows.sort_values("snapshot_date")
+    latest = rows.iloc[-1]
+
+    name = str(latest["name"])
+    gender = str(latest.get("gender") or "")
+    total_views = int(latest["total_views"])
+    rank = int(latest["rank"])
+    last_date = latest["snapshot_date"].strftime("%Y-%m-%d")
+    raw_photo = latest.get("photo_url")
+    photo_url = "" if (raw_photo is None or pd.isna(raw_photo)) else str(raw_photo)
+
+    # Growth windows
+    growth_labels = {}
+    growth_classes = {}
+    for window in (1, 7, 30):
+        baseline_date = latest["snapshot_date"] - pd.Timedelta(days=window)
+        baseline_rows = rows[rows["snapshot_date"] == baseline_date]
+        if not baseline_rows.empty:
+            prev = int(baseline_rows.iloc[0]["total_views"])
+            pct = (total_views - prev) / prev * 100 if prev else None
+        else:
+            pct = None
+        label, cls = _format_growth(pct)
+        growth_labels[window] = label
+        growth_classes[window] = cls
+
+    # Photo and og:image
+    if photo_url:
+        photo_tag = f'<img src="/{photo_url}" alt="{name}" loading="lazy">' if not photo_url.startswith("http") else f'<img src="{photo_url}" alt="{name}" loading="lazy">'
+        og_image_url = f"{_SITE_BASE_URL}/{photo_url}" if not photo_url.startswith("http") else photo_url
+        og_image_tag = f'<meta property="og:image" content="{og_image_url}">'
+    else:
+        photo_tag = '<div style="width:96px;height:96px;border-radius:50%;background:#222;flex-shrink:0"></div>'
+        og_image_tag = ""
+
+    # Schema.org Person JSON-LD
+    import json as _json
+    json_ld = _json.dumps({
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": name,
+        "url": f"{_SITE_BASE_URL}/p/{slug}",
+        "sameAs": [f"{_PROFILE_URL_BASE}{slug}"],
+        "interactionStatistic": {
+            "@type": "InteractionCounter",
+            "interactionType": {"@type": "WatchAction"},
+            "userInteractionCount": total_views,
+        },
+    })
+
+    sparkline = _build_sparkline_html(rows)
+    gender_label = {"female": "Female", "male": "Male"}.get(gender, "")
+
+    page = _PERFORMER_PAGE_TEMPLATE.format(
+        name=name,
+        slug=slug,
+        rank=rank,
+        gender_label=gender_label,
+        last_date=last_date,
+        views_label=f"{total_views:,}",
+        growth_label=growth_labels[1],
+        growth_label_1d=growth_labels[1],
+        growth_label_7d=growth_labels[7],
+        growth_label_30d=growth_labels[30],
+        growth_class_1d=growth_classes[1],
+        growth_class_7d=growth_classes[7],
+        growth_class_30d=growth_classes[30],
+        site=_SITE_BASE_URL,
+        photo_tag=photo_tag,
+        og_image_tag=og_image_tag,
+        profile_url=f"{_PROFILE_URL_BASE}{slug}",
+        sparkline=sparkline,
+        json_ld=json_ld,
+    )
+
+    Path(output_path).write_text(page)
+
+
+def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) -> None:
+    """Write sitemap.xml (home + per-performer pages) and robots.txt."""
+    public = Path(public_dir)
+    public.mkdir(parents=True, exist_ok=True)
+
+    if snapshots.empty:
+        slugs: list[str] = []
+        last_mod = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
+    else:
+        snapshots = snapshots.copy()
+        snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
+        latest_date = snapshots["snapshot_date"].max()
+        slugs = sorted(snapshots[snapshots["snapshot_date"] == latest_date]["slug"].unique().tolist())
+        last_mod = latest_date.strftime("%Y-%m-%d")
+
+    urls = [f"{_SITE_BASE_URL}/"] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
+    sitemap_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+                     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for u in urls:
+        sitemap_lines.extend([
+            "  <url>",
+            f"    <loc>{u}</loc>",
+            f"    <lastmod>{last_mod}</lastmod>",
+            "    <changefreq>daily</changefreq>",
+            "  </url>",
+        ])
+    sitemap_lines.append("</urlset>")
+    (public / "sitemap.xml").write_text("\n".join(sitemap_lines))
+
+    robots = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        f"Sitemap: {_SITE_BASE_URL}/sitemap.xml\n"
+    )
+    (public / "robots.txt").write_text(robots)
 
 
 def dump_json(snapshots: pd.DataFrame, output_path: Path | str) -> None:

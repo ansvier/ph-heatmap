@@ -5,7 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from db import Snapshot, init_db, insert_snapshot, load_all_snapshots
-from heatmap import dump_json, render_treemap_page
+from heatmap import dump_json, render_performer_page, render_treemap_page, write_sitemap_and_robots
 from scraper import fetch_profile, fetch_top_pornstars, polite_sleep
 from curl_cffi import requests as cffi_requests
 import os
@@ -43,6 +43,7 @@ def _download_avatar(remote_url: str, dest_dir: Path, slug: str) -> str | None:
 PROJECT_ROOT = Path(__file__).parent
 PUBLIC_DIR = PROJECT_ROOT / "public"
 AVATAR_DIR = PUBLIC_DIR / "avatars"
+PERFORMER_DIR = PUBLIC_DIR / "p"
 DB_PATH = PROJECT_ROOT / "data.db"
 HTML_PATH = PUBLIC_DIR / "index.html"
 JSON_PATH = PUBLIC_DIR / "data.json"
@@ -109,6 +110,22 @@ def main() -> int:
     print(f"wrote {HTML_PATH}", flush=True)
     dump_json(snapshots_df, JSON_PATH)
     print(f"wrote {JSON_PATH}", flush=True)
+
+    # Per-performer landing pages for the latest snapshot — SEO long-tail target.
+    PERFORMER_DIR.mkdir(parents=True, exist_ok=True)
+    latest_date = snapshots_df["snapshot_date"].max()
+    latest_slugs = snapshots_df[snapshots_df["snapshot_date"] == latest_date]["slug"].unique()
+    written = 0
+    for slug in latest_slugs:
+        try:
+            render_performer_page(snapshots_df, slug=slug, output_path=PERFORMER_DIR / f"{slug}.html")
+            written += 1
+        except Exception as exc:
+            print(f"  WARN: performer page failed for {slug}: {exc}", file=sys.stderr)
+    print(f"wrote {written} performer pages under {PERFORMER_DIR}", flush=True)
+
+    write_sitemap_and_robots(snapshots_df, public_dir=PUBLIC_DIR)
+    print("wrote sitemap.xml + robots.txt", flush=True)
     return 0
 
 
