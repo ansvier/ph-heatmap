@@ -221,9 +221,9 @@ _PAGE_TEMPLATE = """<!doctype html>
       flex-wrap: wrap;
       gap: 24px;
       margin: 16px 0 20px;
-      margin-right: 110px;
     }}
-    @media (max-width: 900px) {{ .controls {{ margin-right: 0; }} }}
+    .controls .toggle.spacer {{ margin-left: auto; }}
+    @media (max-width: 900px) {{ .controls .toggle.spacer {{ margin-left: 0; }} }}
     .toggle {{
       display: flex;
       gap: 6px;
@@ -263,10 +263,9 @@ _PAGE_TEMPLATE = """<!doctype html>
     .share-btn:hover {{ background: var(--brand-orange); color: #000; }}
     .share-btn.busy {{ opacity: 0.6; cursor: progress; }}
     .share-icon {{ font-weight: 700; margin-right: 4px; }}
-    .panel {{ display: none; margin-right: 110px; }}
+    .panel {{ display: none; }}
     .panel.active {{ display: block; }}
     .panel .plotly-graph-div {{ cursor: pointer; }}
-    @media (max-width: 900px) {{ .panel {{ margin-right: 0; }} }}
     main {{ margin: 0; }}
     footer {{
       margin-top: 32px;
@@ -307,7 +306,7 @@ _PAGE_TEMPLATE = """<!doctype html>
       <button type="button" class="window" data-window="7">7d</button>
       <button type="button" class="window" data-window="30">30d</button>
     </div>
-    <div class="toggle">
+    <div class="toggle spacer">
       <button type="button" id="share-btn" class="share-btn" aria-label="Save image">
         <span class="share-icon" aria-hidden="true">⤓</span> Share image
       </button>
@@ -584,7 +583,7 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
     figure.update_layout(
         paper_bgcolor="#0a0a0a",
         plot_bgcolor="#0a0a0a",
-        margin=dict(l=0, r=0, t=0, b=0),
+        margin=dict(l=0, r=120, t=0, b=0),  # 120px right reserved for colorbar
         height=700,
         font=dict(family="Inter, sans-serif", color="#f5f5f5"),
     )
