@@ -140,10 +140,9 @@ _PAGE_TEMPLATE = """<!doctype html>
     }}
     .top-perf-wrap {{
       flex: 0 0 auto;
-      /* Align the card's right edge with where the treemap tiles end —
-         Plotly's colorbar eats ~100px on the right of the figure, so we
-         pull the card in by the same amount on wide viewports. */
-      margin-right: 110px;
+      /* Align card right edge with tile right edge (Plotly reserves ~120px
+         for the colorbar, so the actual tiles end ~130px from page right). */
+      margin-right: 130px;
     }}
     @media (max-width: 900px) {{ .top-perf-wrap {{ margin-right: 0; }} }}
     .top-perf {{
@@ -222,7 +221,7 @@ _PAGE_TEMPLATE = """<!doctype html>
       gap: 24px;
       margin: 16px 0 20px;
     }}
-    .controls .toggle.spacer {{ margin-left: auto; margin-right: 110px; }}
+    .controls .toggle.spacer {{ margin-left: auto; margin-right: 130px; }}
     @media (max-width: 900px) {{ .controls .toggle.spacer {{ margin-left: 0; margin-right: 0; }} }}
     .toggle {{
       display: flex;
