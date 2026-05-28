@@ -263,6 +263,42 @@ _PAGE_TEMPLATE = """<!doctype html>
     .share-btn:hover {{ background: var(--brand-orange); color: #000; }}
     .share-btn.busy {{ opacity: 0.6; cursor: progress; }}
     .share-icon {{ font-weight: 700; margin-right: 4px; }}
+    .share-btn .caret {{ font-size: 10px; margin-left: 4px; opacity: 0.8; }}
+    .share-menu {{ position: relative; }}
+    .share-menu-items {{
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 200px;
+      background: var(--btn-bg);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: none;
+      z-index: 100;
+    }}
+    .share-menu.open .share-menu-items {{ display: block; }}
+    .share-menu-items > * {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 12px;
+      background: transparent;
+      color: var(--fg);
+      border: 0;
+      border-radius: 5px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: left;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.12s;
+    }}
+    .share-menu-items > *:hover {{ background: rgba(255,144,0,0.15); }}
+    .share-menu-items span[aria-hidden] {{ width: 18px; font-size: 14px; }}
     .panel {{ display: none; }}
     .panel.active {{ display: block; }}
     .panel .plotly-graph-div {{ cursor: pointer; }}
@@ -306,10 +342,16 @@ _PAGE_TEMPLATE = """<!doctype html>
       <button type="button" class="window" data-window="7">7d</button>
       <button type="button" class="window" data-window="30">30d</button>
     </div>
-    <div class="toggle spacer">
-      <button type="button" id="share-btn" class="share-btn" aria-label="Save image">
-        <span class="share-icon" aria-hidden="true">⤓</span> Share image
+    <div class="toggle spacer share-menu" id="share-menu">
+      <button type="button" id="share-toggle" class="share-btn" aria-haspopup="true" aria-expanded="false">
+        Share <span class="caret" aria-hidden="true">▾</span>
       </button>
+      <div class="share-menu-items" role="menu">
+        <button type="button" id="share-save" role="menuitem"><span aria-hidden="true">⤓</span> Save image (PNG)</button>
+        <a id="share-tweet" href="#" target="_blank" rel="noopener" role="menuitem"><span aria-hidden="true">𝕏</span> Tweet</a>
+        <a id="share-telegram" href="#" target="_blank" rel="noopener" role="menuitem"><span aria-hidden="true">📨</span> Telegram</a>
+        <button type="button" id="share-copy" role="menuitem"><span aria-hidden="true">🔗</span> Copy link</button>
+      </div>
     </div>
   </div>
 
@@ -406,18 +448,68 @@ _PAGE_TEMPLATE = """<!doctype html>
         if (++attempts > 20) clearInterval(iv);
       }}, 250);
 
-      // Share: capture the hero + active treemap to PNG and download.
-      var shareBtn = document.getElementById('share-btn');
-      if (shareBtn) {{
-        shareBtn.addEventListener('click', function () {{
+      // Share dropdown — toggle menu, set share links live, wire Save image.
+      var shareMenu = document.getElementById('share-menu');
+      var shareToggle = document.getElementById('share-toggle');
+      var shareTweet = document.getElementById('share-tweet');
+      var shareTelegram = document.getElementById('share-telegram');
+      var shareCopy = document.getElementById('share-copy');
+      var shareSave = document.getElementById('share-save');
+
+      function currentShareUrl() {{
+        // Use the canonical URL of the active mode so the link opens the
+        // same view the user is on (rising/gems/celebs).
+        var modePath = state.mode === 'rising' ? '/' : '/' + state.mode;
+        return 'https://hotmap.cam' + modePath;
+      }}
+      function currentShareText() {{
+        var labels = {{ rising: 'Rising Stars', gems: 'Hidden Gems', celebs: 'Top Celebrities' }};
+        return "Today's hottest performers on HotMap — " + (labels[state.mode] || 'Rising Stars');
+      }}
+
+      function refreshShareLinks() {{
+        var url = currentShareUrl();
+        var text = currentShareText();
+        shareTweet.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
+        shareTelegram.href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
+      }}
+
+      if (shareToggle) {{
+        shareToggle.addEventListener('click', function (e) {{
+          e.stopPropagation();
+          refreshShareLinks();
+          var willOpen = !shareMenu.classList.contains('open');
+          shareMenu.classList.toggle('open', willOpen);
+          shareToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        }});
+        document.addEventListener('click', function () {{
+          shareMenu.classList.remove('open');
+          shareToggle.setAttribute('aria-expanded', 'false');
+        }});
+        shareMenu.addEventListener('click', function (e) {{ e.stopPropagation(); }});
+      }}
+
+      if (shareCopy) {{
+        shareCopy.addEventListener('click', function () {{
+          var url = currentShareUrl();
+          navigator.clipboard.writeText(url).then(function () {{
+            var orig = shareCopy.innerHTML;
+            shareCopy.innerHTML = '<span aria-hidden="true">✓</span> Copied!';
+            setTimeout(function () {{ shareCopy.innerHTML = orig; }}, 1400);
+          }});
+        }});
+      }}
+
+      // Save image: capture the hero + active treemap to PNG and download.
+      if (shareSave) {{
+        shareSave.addEventListener('click', function () {{
           if (typeof html2canvas === 'undefined') {{
             alert('Share library still loading — try again in a second.');
             return;
           }}
-          shareBtn.classList.add('busy');
+          shareToggle.classList.add('busy');
           var stamp = new Date().toISOString().slice(0, 10);
           var activePanel = document.querySelector('.panel.active');
-          // Create a temporary capture wrapper containing logo + top-perf + active panel.
           var wrap = document.createElement('div');
           wrap.style.background = '#0a0a0a';
           wrap.style.padding = '24px';
@@ -431,17 +523,17 @@ _PAGE_TEMPLATE = """<!doctype html>
           html2canvas(wrap, {{ backgroundColor: '#0a0a0a', scale: 2, useCORS: true }})
             .then(function (canvas) {{
               var link = document.createElement('a');
-              link.download = 'hotmap-' + state.gender + '-' + state.window + 'd-' + stamp + '.png';
+              link.download = 'hotmap-' + state.mode + '-' + state.gender + '-' + state.window + 'd-' + stamp + '.png';
               link.href = canvas.toDataURL('image/png');
               link.click();
             }})
             .catch(function (err) {{
-              console.error('Share failed:', err);
+              console.error('Save failed:', err);
               alert('Could not generate image. See console.');
             }})
             .finally(function () {{
               document.body.removeChild(wrap);
-              shareBtn.classList.remove('busy');
+              shareToggle.classList.remove('busy');
             }});
         }});
       }}
