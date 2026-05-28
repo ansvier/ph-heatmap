@@ -675,7 +675,7 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
     figure.update_layout(
         paper_bgcolor="#0a0a0a",
         plot_bgcolor="#0a0a0a",
-        margin=dict(l=0, r=160, t=0, b=0),  # reserve room so colorbar labels end at the same offset as card/share (110px from page right)
+        margin=dict(l=0, r=120, t=0, b=0),  # 120px right reserved for colorbar
         height=700,
         font=dict(family="Inter, sans-serif", color="#f5f5f5"),
     )
