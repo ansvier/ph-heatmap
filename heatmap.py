@@ -222,8 +222,8 @@ _PAGE_TEMPLATE = """<!doctype html>
       gap: 24px;
       margin: 16px 0 20px;
     }}
-    .controls .toggle.spacer {{ margin-left: auto; }}
-    @media (max-width: 900px) {{ .controls .toggle.spacer {{ margin-left: 0; }} }}
+    .controls .toggle.spacer {{ margin-left: auto; margin-right: 110px; }}
+    @media (max-width: 900px) {{ .controls .toggle.spacer {{ margin-left: 0; margin-right: 0; }} }}
     .toggle {{
       display: flex;
       gap: 6px;
