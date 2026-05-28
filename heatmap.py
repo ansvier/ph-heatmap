@@ -46,7 +46,7 @@ _TOP_NAV_CSS = """
     }
     .topnav .brand { display: inline-block; line-height: 0; }
     .topnav .logo { width: 240px; max-width: 50vw; height: auto; }
-    .navlinks { display: flex; gap: 2px; flex-wrap: wrap; margin-right: 110px; }
+    .navlinks { display: flex; gap: 2px; flex-wrap: wrap; margin-right: 130px; }
     .navlink {
       color: rgba(245,245,245,0.4);
       font-weight: 500;
@@ -673,7 +673,7 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
     figure.update_layout(
         paper_bgcolor="#0a0a0a",
         plot_bgcolor="#0a0a0a",
-        margin=dict(l=0, r=120, t=0, b=0),  # 120px right reserved for colorbar
+        margin=dict(l=0, r=130, t=0, b=0),  # reserve right margin so colorbar ends at same offset as card / Share / nav (130px)
         height=700,
         font=dict(family="Inter, sans-serif", color="#f5f5f5"),
     )
