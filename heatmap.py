@@ -38,35 +38,21 @@ def _top_nav(active: str) -> str:
 
 _TOP_NAV_CSS = """
     .topnav {
-      position: relative;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 24px;
-      padding: 8px 0;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
     }
-    .topnav .brand {
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      display: inline-block;
-      line-height: 0;
-    }
-    .topnav .logo { width: 180px; max-width: 30vw; height: auto; }
-    .navlinks {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+    .topnav .brand { display: inline-block; line-height: 0; }
+    .topnav .logo { width: 240px; max-width: 50vw; height: auto; }
+    .navlinks { display: flex; gap: 2px; flex-wrap: wrap; }
     .navlink {
-      color: rgba(245,245,245,0.45);
+      color: rgba(245,245,245,0.4);
       font-weight: 500;
       font-size: 13px;
       letter-spacing: 0.3px;
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 6px;
       text-decoration: none;
       transition: color 0.15s, background 0.15s;
@@ -76,11 +62,9 @@ _TOP_NAV_CSS = """
       color: rgba(245,245,245,0.95);
       background: rgba(255,144,0,0.12);
     }
-    @media (max-width: 640px) {
-      .topnav { justify-content: flex-start; padding-top: 56px; }
-      .topnav .brand { left: 0; top: 0; transform: none; }
-      .topnav .logo { width: 140px; }
-      .navlinks { width: 100%; justify-content: flex-start; }
+    @media (max-width: 520px) {
+      .topnav { flex-wrap: wrap; }
+      .topnav .logo { width: 160px; }
     }
 """
 
@@ -146,25 +130,14 @@ _PAGE_TEMPLATE = """<!doctype html>
     .hero {{
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      gap: 24px;
-      margin-bottom: 24px;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
-    }}
-    .hero-left {{
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      flex: 1 1 420px;
-      min-width: 280px;
     }}
     .top-perf-wrap {{
       flex: 0 0 auto;
-      align-self: flex-start;
-      margin-right: 180px;
     }}
-    @media (max-width: 1200px) {{ .top-perf-wrap {{ margin-right: 80px; }} }}
-    @media (max-width: 900px) {{ .top-perf-wrap {{ margin-right: 0; }} }}
     .top-perf {{
       display: none;
       align-items: center;
@@ -220,10 +193,12 @@ _PAGE_TEMPLATE = """<!doctype html>
     }}
     .tagline {{
       color: var(--fg);
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       letter-spacing: -0.02em;
-      margin: 4px 0 0;
+      margin: 0;
+      flex: 1 1 320px;
+      min-width: 0;
     }}
     .tagline .hint {{
       color: var(--muted);
@@ -297,9 +272,7 @@ _PAGE_TEMPLATE = """<!doctype html>
 <body>
   {top_nav}
   <header class="hero">
-    <div class="hero-left">
-      <p class="tagline">Today's hottest performers. <span class="hint">Click a tile to open the profile.</span></p>
-    </div>
+    <p class="tagline">Today's hottest performers. <span class="hint">Click a tile to open the profile.</span></p>
     {top_perf_card}
   </header>
 
