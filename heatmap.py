@@ -7,7 +7,8 @@ import pandas as pd
 import plotly.graph_objects as go
 
 
-_PROFILE_URL_BASE = "https://www.pornhub.com/pornstar/"
+_PROFILE_URL_BASE = "https://www.pornhub.com/pornstar/"  # canonical PH URL (Schema.org sameAs)
+_REDIRECT_URL_BASE = "/r/"  # outbound clicks go through CF Worker (click tracking + future affiliate)
 
 _PAGE_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -307,10 +308,10 @@ _PAGE_TEMPLATE = """<!doctype html>
       bind('.gender', 'gender');
       bind('.window', 'window');
 
-      // Click any tile to open the performer profile directly — preserves
-      // the conversion funnel (1 click to destination). The /p/<slug> stats
-      // pages still exist as SEO landing targets for organic search traffic.
-      var PROFILE_URL_BASE = '{profile_url_base}';
+      // Click any tile → outbound bounce through /r/<slug>. The CF Worker
+      // logs the click and 302-redirects to PH. Single point of attribution
+      // for future affiliate tracking, no UX change for the user.
+      var REDIRECT_BASE = '{redirect_url_base}';
       function attachClickHandlers() {{
         document.querySelectorAll('.plotly-graph-div').forEach(function (div) {{
           if (div._hotmapBound) return;
@@ -319,7 +320,7 @@ _PAGE_TEMPLATE = """<!doctype html>
             if (!evt || !evt.points || !evt.points.length) return;
             var slug = evt.points[0].customdata && evt.points[0].customdata[3];
             if (slug) {{
-              window.open(PROFILE_URL_BASE + slug, '_blank', 'noopener');
+              window.open(REDIRECT_BASE + slug, '_blank', 'noopener');
             }}
             // Prevent the default zoom-into-tile behavior.
             return false;
@@ -629,7 +630,7 @@ def _build_top_performer_card(
         if not rows.empty:
             photo_url = rows.sort_values("snapshot_date").iloc[-1]["photo_url"] or ""
 
-    profile_url = f"{_PROFILE_URL_BASE}{slug}"
+    profile_url = f"{_REDIRECT_URL_BASE}{slug}"  # tracked outbound via CF Worker
     # Force absolute path so the img resolves correctly from /, /rising/,
     # /gems/, and /celebs/ alike. Relative 'avatars/...' would break on the
     # per-mode landing pages.
@@ -753,6 +754,7 @@ def render_treemap_page(
         n_days=n_days,
         n_performers=n_performers,
         profile_url_base=_PROFILE_URL_BASE,
+        redirect_url_base=_REDIRECT_URL_BASE,
         top_perf_card=top_perf_card,
         default_mode=default_mode,
         seo_title=meta["title"],
@@ -1140,7 +1142,7 @@ def render_performer_page(
         site=_SITE_BASE_URL,
         photo_tag=photo_tag,
         og_image_tag=og_image_tag,
-        profile_url=f"{_PROFILE_URL_BASE}{slug}",
+        profile_url=f"{_REDIRECT_URL_BASE}{slug}",  # tracked outbound
         sparkline=sparkline,
         json_ld=json_ld,
         share_url=share_url,

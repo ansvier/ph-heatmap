@@ -9,26 +9,30 @@ from heatmap import dump_json, render_performer_page, render_treemap_page, write
 from scraper import fetch_profile, fetch_top_pornstars, polite_sleep
 from curl_cffi import requests as cffi_requests
 import os
+import time
 
 _AVATAR_IMPERSONATE = os.environ.get("PH_IMPERSONATE", "chrome120")
 
 
-def _download_avatar(remote_url: str, dest_dir: Path, slug: str) -> str | None:
-    """Download an avatar image to dest_dir/<slug>.<ext>, return public path or None.
-
-    Saves the file using slug as the filename so we don't accumulate stale versions
-    per snapshot — each scrape overwrites the previous avatar for that performer.
-    Returns the path relative to PUBLIC_DIR (e.g. 'avatars/lana-rhoades.jpg').
-    """
+def _download_avatar(remote_url: str, dest_dir: Path, slug: str, *, max_retries: int = 3) -> str | None:
+    """Download an avatar image with retries. Returns public path or None on terminal failure."""
     if not remote_url:
         return None
-    try:
-        r = cffi_requests.get(remote_url, impersonate=_AVATAR_IMPERSONATE, timeout=15)
-        r.raise_for_status()
-    except Exception as exc:
-        print(f"  WARN: avatar download failed for {slug}: {exc}", file=sys.stderr)
-        return None
-    # Determine extension from content-type, falling back to .jpg.
+
+    last_exc: Exception | None = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            r = cffi_requests.get(remote_url, impersonate=_AVATAR_IMPERSONATE, timeout=15)
+            r.raise_for_status()
+            break
+        except Exception as exc:
+            last_exc = exc
+            if attempt < max_retries:
+                time.sleep(0.5 * attempt)  # 0.5s, 1.0s
+                continue
+            print(f"  WARN: avatar failed for {slug} after {max_retries} tries: {exc}", file=sys.stderr)
+            return None
+
     ext = ".jpg"
     ctype = r.headers.get("content-type", "").lower()
     if "png" in ctype:
@@ -39,6 +43,38 @@ def _download_avatar(remote_url: str, dest_dir: Path, slug: str) -> str | None:
     dest_path = dest_dir / f"{slug}{ext}"
     dest_path.write_bytes(r.content)
     return f"avatars/{slug}{ext}"
+
+
+def _backfill_missing_avatars(conn, today_str: str) -> int:
+    """For performers in today's snapshot with NULL photo_url, refetch their
+    profile and try to grab the avatar. Returns count of newly populated."""
+    cur = conn.execute("""
+        SELECT slug FROM snapshots
+        WHERE snapshot_date = ? AND (photo_url IS NULL OR photo_url = '')
+    """, (today_str,))
+    slugs = [row[0] for row in cur]
+    if not slugs:
+        return 0
+    print(f"backfilling avatars for {len(slugs)} performers", flush=True)
+
+    filled = 0
+    for slug in slugs:
+        try:
+            profile = fetch_profile(slug)
+        except Exception:
+            polite_sleep()
+            continue
+        if profile.photo_url:
+            local = _download_avatar(profile.photo_url, AVATAR_DIR, slug)
+            if local:
+                conn.execute(
+                    "UPDATE snapshots SET photo_url = ? WHERE snapshot_date = ? AND slug = ?",
+                    (local, today_str, slug),
+                )
+                filled += 1
+        polite_sleep()
+    conn.commit()
+    return filled
 
 PROJECT_ROOT = Path(__file__).parent
 PUBLIC_DIR = PROJECT_ROOT / "public"
@@ -104,6 +140,11 @@ def main() -> int:
     conn = init_db(DB_PATH)
     insert_snapshot(conn, all_rows)
     print(f"stored {len(all_rows)} rows total", flush=True)
+
+    # Backfill any avatars the main scrape missed (transient PH errors etc).
+    filled = _backfill_missing_avatars(conn, today.isoformat())
+    if filled:
+        print(f"backfilled {filled} missing avatars", flush=True)
 
     snapshots_df = load_all_snapshots(conn)
     render_treemap_page(snapshots_df, HTML_PATH, default_mode="rising", canonical_path="/", seo_key="home")
