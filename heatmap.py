@@ -10,6 +10,57 @@ import plotly.graph_objects as go
 _PROFILE_URL_BASE = "https://www.pornhub.com/pornstar/"  # canonical PH URL (Schema.org sameAs)
 _REDIRECT_URL_BASE = "/r/"  # outbound clicks go through CF Worker (click tracking + future affiliate)
 
+
+_LOGO_SVG = (
+    '<svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">'
+    '<rect width="400" height="100" fill="#000"/>'
+    '<text x="20" y="78" font-family="\'Arial Black\',\'Helvetica Neue\',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>'
+    '<rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>'
+    '<text x="214" y="72" font-family="\'Arial Black\',\'Helvetica Neue\',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>'
+    '</svg>'
+)
+
+_NAV_ITEMS = [
+    ("map",    "/",       "Map"),
+    ("stats",  "/stats",  "Stats"),
+    ("charts", "/charts", "Charts"),
+]
+
+
+def _top_nav(active: str) -> str:
+    """Return the site-wide top nav HTML. `active` ∈ {'map','stats','charts',''}."""
+    links = "".join(
+        f'<a href="{href}" class="navlink{" active" if key == active else ""}">{label}</a>'
+        for key, href, label in _NAV_ITEMS
+    )
+    return f'<nav class="topnav"><a class="brand" href="/">{_LOGO_SVG}</a><div class="navlinks">{links}</div></nav>'
+
+
+_TOP_NAV_CSS = """
+    .topnav {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }}
+    .topnav .brand {{ display: inline-block; line-height: 0; }}
+    .topnav .logo {{ width: 220px; max-width: 100%; height: auto; }}
+    .navlinks {{ display: flex; gap: 4px; flex-wrap: wrap; }}
+    .navlink {{
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 14px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: color 0.12s, background 0.12s;
+    }}
+    .navlink:hover {{ color: var(--fg); text-decoration: none; }}
+    .navlink.active {{ color: #000; background: var(--brand-orange); }}
+"""
+
 _PAGE_TEMPLATE = """<!doctype html>
 <html lang="en">
 <head>
@@ -68,6 +119,7 @@ _PAGE_TEMPLATE = """<!doctype html>
       line-height: 1.5;
       font-feature-settings: 'cv11', 'ss01';
     }}
+{nav_css}
     .hero {{
       display: flex;
       justify-content: space-between;
@@ -220,20 +272,9 @@ _PAGE_TEMPLATE = """<!doctype html>
   </style>
 </head>
 <body>
+  {top_nav}
   <header class="hero">
     <div class="hero-left">
-      <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">
-        <rect width="400" height="100" fill="#000"/>
-        <text x="20" y="78"
-              font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
-              font-weight="900" font-size="76" fill="#fff"
-              letter-spacing="-3">HOT</text>
-        <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
-        <text x="214" y="72"
-              font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
-              font-weight="900" font-size="60" fill="#000"
-              letter-spacing="-3">MAP</text>
-      </svg>
       <p class="tagline">Today's hottest performers. <span class="hint">Click a tile to open the profile.</span></p>
     </div>
     {top_perf_card}
@@ -787,6 +828,8 @@ def render_treemap_page(
         mode_btn_active_rising=" active" if default_mode == "rising" else "",
         mode_btn_active_gems=" active" if default_mode == "gems" else "",
         mode_btn_active_celebs=" active" if default_mode == "celebs" else "",
+        top_nav=_top_nav("map"),
+        nav_css=_TOP_NAV_CSS,
     )
 
     Path(output_path).write_text(page)
@@ -840,21 +883,7 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
     }}
     a {{ color: var(--brand-orange); text-decoration: none; }}
     a:hover {{ text-decoration: underline; }}
-    .topnav {{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }}
-    .topnav .logo {{
-      width: 200px;
-      height: auto;
-    }}
-    .topnav a {{
-      color: var(--muted);
-      font-size: 13px;
-    }}
-    .topnav a:hover {{ color: var(--brand-orange); }}
+{nav_css}
     .hero {{
       display: flex;
       gap: 20px;
@@ -979,15 +1008,7 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
   </style>
 </head>
 <body>
-  <nav class="topnav">
-    <a href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">
-      <rect width="400" height="100" fill="#000"/>
-      <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
-      <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
-      <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
-    </svg></a>
-    <a href="/">← back to map</a>
-  </nav>
+  {top_nav}
 
   <div class="hero">
     {photo_tag}
@@ -1171,6 +1192,8 @@ def render_performer_page(
         json_ld=json_ld,
         share_url=share_url,
         share_text=share_text,
+        top_nav=_top_nav(""),  # no nav item highlighted on individual performer
+        nav_css=_TOP_NAV_CSS,
     )
 
     Path(output_path).write_text(page)
@@ -1217,14 +1240,7 @@ _STATS_PAGE_TEMPLATE = """<!doctype html>
     }}
     a {{ color: var(--brand-orange); text-decoration: none; }}
     a:hover {{ text-decoration: underline; }}
-    .topnav {{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-    }}
-    .topnav .logo {{ width: 240px; height: auto; }}
-    .topnav a {{ color: var(--muted); font-size: 13px; }}
+{nav_css}
     h1 {{
       font-size: 38px;
       font-weight: 800;
@@ -1366,15 +1382,7 @@ _STATS_PAGE_TEMPLATE = """<!doctype html>
   </style>
 </head>
 <body>
-  <nav class="topnav">
-    <a href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">
-      <rect width="400" height="100" fill="#000"/>
-      <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
-      <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
-      <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
-    </svg></a>
-    <a href="/">← back to map</a>
-  </nav>
+  {top_nav}
 
   <h1>HotMap Stats</h1>
   <p class="lede">A live snapshot of Pornhub's view-growth landscape — updated daily at 04:17 UTC.</p>
@@ -1451,9 +1459,11 @@ def _human_views(n: int) -> str:
     return str(n)
 
 
-def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
+def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str, gender: str = "female") -> None:
     """Render a public summary page at /stats — hero numbers + leaderboards.
 
+    By default scoped to female performers (the main audience focus) so the
+    page reads as a coherent narrative. `gender=None` to include both.
     Designed to look great as a single screenshot for social shares.
     """
     if snapshots.empty:
@@ -1461,6 +1471,13 @@ def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
 
     snapshots = snapshots.copy()
     snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
+
+    # Scope to the requested gender slice for the entire page.
+    if gender is not None and "gender" in snapshots.columns:
+        snapshots = snapshots[snapshots["gender"] == gender]
+        if snapshots.empty:
+            raise ValueError(f"No snapshots for gender={gender!r}")
+
     latest_date = snapshots["snapshot_date"].max()
     today = snapshots[snapshots["snapshot_date"] == latest_date]
 
@@ -1468,7 +1485,8 @@ def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
     n_days = int(snapshots["snapshot_date"].nunique())
     total_views_raw = int(today["total_views"].sum())
 
-    # 1d window for "biggest mover" + leaderboards
+    # 1d window for "biggest mover" + leaderboards — compute on the already-
+    # filtered snapshot frame (no need to re-pass gender since it's pre-sliced).
     window = compute_window_growth(snapshots, window_days=1)
     window = window.copy()
     window["growth_amount"] = window["total_views"] - window["prev_views"]
@@ -1540,8 +1558,319 @@ def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
         share_text=share_text,
         share_url=share_url,
         last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+        top_nav=_top_nav("stats"),
+        nav_css=_TOP_NAV_CSS,
     )
 
+    Path(output_path).write_text(page)
+
+
+_CHARTS_PAGE_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Performer index — HotMap charts</title>
+  <meta name="description" content="Alphabetical index of all {n} Pornhub performers tracked by HotMap. Search by name, jump by letter, click through to per-performer stats.">
+  <link rel="canonical" href="https://hotmap.cam/charts">
+  <meta property="og:title" content="HotMap Charts — A-Z performer index">
+  <meta property="og:description" content="All {n} tracked performers. Search, browse, see per-performer view-growth stats.">
+  <meta property="og:url" content="https://hotmap.cam/charts">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {{
+      --brand-orange: #ff9000;
+      --bg: #0a0a0a;
+      --fg: #f5f5f5;
+      --muted: #9a9a9a;
+      --rule: #1f1f1f;
+      --card: #161616;
+    }}
+    * {{ box-sizing: border-box; }}
+    html, body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }}
+    body {{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 16px 56px;
+      color: var(--fg);
+      background: var(--bg);
+      line-height: 1.5;
+    }}
+    a {{ color: var(--brand-orange); text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
+{nav_css}
+    h1 {{
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin: 0 0 4px;
+    }}
+    .lede {{ color: var(--muted); margin: 0 0 20px; font-size: 14px; }}
+    .controls {{
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      padding: 10px 0;
+      z-index: 5;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 16px;
+    }}
+    .search {{
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--card);
+      color: var(--fg);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 15px;
+      outline: none;
+    }}
+    .search:focus {{ border-color: var(--brand-orange); }}
+    .gender-tabs {{
+      display: flex;
+      gap: 6px;
+      margin: 10px 0 0;
+    }}
+    .gender-tabs button {{
+      background: var(--card);
+      color: var(--fg);
+      border: 1px solid var(--rule);
+      padding: 7px 14px;
+      font: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+    }}
+    .gender-tabs button.active {{
+      background: var(--brand-orange);
+      color: #000;
+      border-color: var(--brand-orange);
+    }}
+    .alphabet {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      margin-bottom: 18px;
+    }}
+    .alphabet a {{
+      display: inline-block;
+      width: 28px;
+      text-align: center;
+      padding: 5px 0;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--muted);
+      border-radius: 4px;
+    }}
+    .alphabet a:hover {{ background: var(--card); color: var(--brand-orange); text-decoration: none; }}
+    .letter-section {{ margin-bottom: 32px; }}
+    .letter-section h2 {{
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--brand-orange);
+      margin: 0 0 8px;
+      padding: 4px 0 4px 8px;
+      border-left: 3px solid var(--brand-orange);
+    }}
+    .grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px;
+    }}
+    .row {{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--fg);
+      transition: border-color 0.12s, transform 0.12s;
+    }}
+    .row:hover {{ border-color: var(--brand-orange); text-decoration: none; transform: translateY(-1px); }}
+    .row img {{
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #222;
+    }}
+    .row .name {{ font-weight: 600; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+    .row .badge {{ color: var(--muted); font-size: 11px; flex-shrink: 0; }}
+    .row[data-gender="male"] .badge::before {{ content: "♂"; color: #88aaff; margin-right: 4px; }}
+    .row[data-gender="female"] .badge::before {{ content: "♀"; color: #ff88aa; margin-right: 4px; }}
+    .empty-state {{ color: var(--muted); text-align: center; padding: 40px; }}
+    footer {{
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 12px;
+    }}
+  </style>
+</head>
+<body>
+  {top_nav}
+  <h1>Performer index</h1>
+  <p class="lede">{n} performers tracked. Search by name or jump by letter — click any card for the full stats page.</p>
+
+  <div class="controls">
+    <input type="search" id="search" class="search" placeholder="Search performers..." autocomplete="off">
+    <div class="gender-tabs">
+      <button type="button" class="active" data-gender="all">All</button>
+      <button type="button" data-gender="female">Female</button>
+      <button type="button" data-gender="male">Male</button>
+    </div>
+  </div>
+
+  <div class="alphabet">{alphabet_links}</div>
+
+  <main id="list">{letter_sections}</main>
+
+  <p id="empty" class="empty-state" style="display:none">No performers match your search.</p>
+
+  <footer>
+    Updated {last_updated} UTC · <a href="/">explore the treemap</a> · <a href="/stats">view stats</a> · <a href="/data.json">raw data</a>
+  </footer>
+
+  <script>
+    (function () {{
+      var search = document.getElementById('search');
+      var rows = document.querySelectorAll('.row');
+      var sections = document.querySelectorAll('.letter-section');
+      var empty = document.getElementById('empty');
+      var genderBtns = document.querySelectorAll('.gender-tabs button');
+      var state = {{ q: '', gender: 'all' }};
+
+      function filter() {{
+        var anyVisible = false;
+        sections.forEach(function (sec) {{
+          var sectionVisible = false;
+          sec.querySelectorAll('.row').forEach(function (r) {{
+            var nameMatch = !state.q || r.dataset.search.indexOf(state.q) !== -1;
+            var genderMatch = state.gender === 'all' || r.dataset.gender === state.gender;
+            var show = nameMatch && genderMatch;
+            r.style.display = show ? '' : 'none';
+            if (show) sectionVisible = true;
+          }});
+          sec.style.display = sectionVisible ? '' : 'none';
+          if (sectionVisible) anyVisible = true;
+        }});
+        empty.style.display = anyVisible ? 'none' : 'block';
+      }}
+
+      search.addEventListener('input', function () {{
+        state.q = search.value.trim().toLowerCase();
+        filter();
+      }});
+      genderBtns.forEach(function (b) {{
+        b.addEventListener('click', function () {{
+          genderBtns.forEach(function (x) {{ x.classList.toggle('active', x === b); }});
+          state.gender = b.getAttribute('data-gender');
+          filter();
+        }});
+      }});
+    }})();
+  </script>
+</body>
+</html>
+"""
+
+
+def render_charts_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
+    """Render an alphabetical performer index at /charts.
+
+    Lists every performer ever seen in the DB, grouped by first letter,
+    with a search box and gender filter. Each row links to /p/<slug>.
+    """
+    if snapshots.empty:
+        raise ValueError("No snapshots to render")
+
+    snapshots = snapshots.copy()
+    snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
+
+    # For each slug pick the most-recent row (best name + most-current photo)
+    latest_per_slug = (
+        snapshots.sort_values("snapshot_date")
+        .drop_duplicates(subset="slug", keep="last")
+        .copy()
+    )
+    latest_per_slug = latest_per_slug.sort_values("name", key=lambda s: s.str.lower())
+
+    # Group by first uppercase letter of the display name (or '#' for non-alpha).
+    def _bucket(name: str) -> str:
+        if not name:
+            return "#"
+        c = name.strip()[:1].upper()
+        return c if c.isalpha() else "#"
+
+    latest_per_slug["bucket"] = latest_per_slug["name"].fillna("").apply(_bucket)
+    buckets_present = sorted(latest_per_slug["bucket"].unique(), key=lambda b: (b == "#", b))
+
+    # Build alphabet bar
+    alphabet_links = "".join(
+        f'<a href="#letter-{b}">{b}</a>' for b in buckets_present
+    )
+
+    # Build per-letter sections
+    def _photo_path(p):
+        if p is None or pd.isna(p):
+            return None
+        s = str(p)
+        if s.startswith(("http://", "https://", "/")):
+            return s
+        return f"/{s}"
+
+    def _row(r):
+        slug = r["slug"]
+        name = str(r["name"])
+        gender = str(r.get("gender") or "")
+        photo = _photo_path(r.get("photo_url"))
+        rank = int(r["rank"]) if pd.notna(r.get("rank")) else None
+        img_tag = (
+            f'<img src="{photo}" alt="" loading="lazy">'
+            if photo
+            else '<div style="width:40px;height:40px;border-radius:50%;background:#222;flex-shrink:0"></div>'
+        )
+        rank_html = f'<span class="badge">#{rank}</span>' if rank else '<span class="badge">—</span>'
+        # data-search is used by JS for filtering — lowercased name
+        return (
+            f'<a class="row" href="/p/{slug}" data-gender="{gender}"'
+            f' data-search="{name.lower()}">'
+            f'{img_tag}<span class="name">{name}</span>{rank_html}</a>'
+        )
+
+    letter_sections_parts = []
+    for b in buckets_present:
+        rows = latest_per_slug[latest_per_slug["bucket"] == b]
+        rows_html = "".join(_row(r) for _, r in rows.iterrows())
+        letter_sections_parts.append(
+            f'<section class="letter-section" id="letter-{b}">'
+            f'<h2>{b}</h2>'
+            f'<div class="grid">{rows_html}</div>'
+            f'</section>'
+        )
+    letter_sections_html = "\n".join(letter_sections_parts)
+
+    page = _CHARTS_PAGE_TEMPLATE.format(
+        n=len(latest_per_slug),
+        alphabet_links=alphabet_links,
+        letter_sections=letter_sections_html,
+        last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+        top_nav=_top_nav("charts"),
+        nav_css=_TOP_NAV_CSS,
+    )
     Path(output_path).write_text(page)
 
 
@@ -1568,6 +1897,7 @@ def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) ->
         f"{_SITE_BASE_URL}/gems",
         f"{_SITE_BASE_URL}/celebs",
         f"{_SITE_BASE_URL}/stats",
+        f"{_SITE_BASE_URL}/charts",
     ] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
     sitemap_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
