@@ -106,8 +106,21 @@ def main() -> int:
     print(f"stored {len(all_rows)} rows total", flush=True)
 
     snapshots_df = load_all_snapshots(conn)
-    render_treemap_page(snapshots_df, HTML_PATH)
+    render_treemap_page(snapshots_df, HTML_PATH, default_mode="rising", canonical_path="/", seo_key="home")
     print(f"wrote {HTML_PATH}", flush=True)
+
+    # Per-mode landing pages — shareable URLs that open directly on the mode.
+    for mode in ("rising", "gems", "celebs"):
+        mode_dir = PUBLIC_DIR / mode
+        mode_dir.mkdir(exist_ok=True)
+        render_treemap_page(
+            snapshots_df,
+            mode_dir / "index.html",
+            default_mode=mode,
+            canonical_path=f"/{mode}",
+            seo_key=mode,
+        )
+        print(f"wrote /{mode}/index.html", flush=True)
     dump_json(snapshots_df, JSON_PATH)
     print(f"wrote {JSON_PATH}", flush=True)
 

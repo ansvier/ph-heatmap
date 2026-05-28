@@ -14,12 +14,12 @@ _PAGE_TEMPLATE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>HotMap — who's growing fastest on Pornhub</title>
-  <meta name="description" content="Live heatmap of view growth: tile size = views gained in the window, color = growth pace relative to the median.">
-  <link rel="canonical" href="https://hotmap.cam/">
-  <meta property="og:title" content="HotMap — who's growing fastest on Pornhub">
-  <meta property="og:description" content="Daily heatmap of view growth for top performers, ranked by momentum. Rising stars, hidden gems, and celebrities.">
-  <meta property="og:url" content="https://hotmap.cam/">
+  <title>{seo_title}</title>
+  <meta name="description" content="{seo_description}">
+  <link rel="canonical" href="https://hotmap.cam{seo_canonical_path}">
+  <meta property="og:title" content="{seo_title}">
+  <meta property="og:description" content="{seo_description}">
+  <meta property="og:url" content="https://hotmap.cam{seo_canonical_path}">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
@@ -241,9 +241,9 @@ _PAGE_TEMPLATE = """<!doctype html>
   <div class="controls">
     <div class="toggle" role="tablist" aria-label="Mode">
       <span class="toggle-label">Mode</span>
-      <button type="button" class="active mode" data-mode="rising">Rising Stars</button>
-      <button type="button" class="mode" data-mode="gems">Hidden Gems</button>
-      <button type="button" class="mode" data-mode="celebs">Celebrities</button>
+      <button type="button" class="mode{mode_btn_active_rising}" data-mode="rising">Rising Stars</button>
+      <button type="button" class="mode{mode_btn_active_gems}" data-mode="gems">Hidden Gems</button>
+      <button type="button" class="mode{mode_btn_active_celebs}" data-mode="celebs">Celebrities</button>
     </div>
     <div class="toggle" role="tablist" aria-label="Gender filter">
       <span class="toggle-label">Gender</span>
@@ -275,7 +275,7 @@ _PAGE_TEMPLATE = """<!doctype html>
 
   <script>
     (function () {{
-      var state = {{ mode: 'rising', gender: 'female', window: '1' }};
+      var state = {{ mode: '{default_mode}', gender: 'female', window: '1' }};
       var panels = document.querySelectorAll('.panel');
 
       var topPerfCards = document.querySelectorAll('.top-perf');
@@ -664,13 +664,44 @@ def _build_all_top_performer_cards(snapshots: pd.DataFrame, default_mode: str, d
     return f'<div class="top-perf-wrap">{"".join(cards)}</div>'
 
 
-def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
-    """Render the HotMap treemap page (2 modes x 3 genders x 3 windows = 18 panels)."""
+_MODE_LANDING_META = {
+    "rising": {
+        "title": "Rising Stars — HotMap",
+        "description": "Today's fastest-growing performers in the middle tier (ranks 51-250). Treemap of view growth, updated daily. Spot the next breakout.",
+    },
+    "gems": {
+        "title": "Hidden Gems — HotMap",
+        "description": "Niche performers (ranks 251-500) gaining traction fast. The deep-cut tier — small accounts with real momentum. Daily heatmap.",
+    },
+    "celebs": {
+        "title": "Top Celebrities — HotMap",
+        "description": "The most-viewed performers on Pornhub: top-50 by cumulative views. Daily growth heatmap tracking the established names.",
+    },
+    "home": {
+        "title": "HotMap — who's growing fastest on Pornhub",
+        "description": "Live heatmap of view growth: tile size = views gained in the window, color = growth pace relative to the median.",
+    },
+}
+
+
+def render_treemap_page(
+    snapshots: pd.DataFrame,
+    output_path: Path | str,
+    default_mode: str = "rising",
+    canonical_path: str = "/",
+    seo_key: str = "home",
+) -> None:
+    """Render the HotMap treemap page (3 modes x 3 genders x 3 windows = 27 panels).
+
+    `default_mode` controls which Mode button is active on initial load and
+    which panel is shown. `canonical_path` + `seo_key` drive the SEO meta tags
+    so we can serve distinct landing pages at /, /rising, /gems, /celebs.
+    """
     if snapshots.empty:
         raise ValueError("No snapshots to render")
 
     panels_html_parts: list[str] = []
-    default_mode, default_gender, default_window = "rising", "female", 1
+    default_gender, default_window = "female", 1
     for mode in _MODES:
         for gender_key, gender_filter in _GENDER_FILTERS:
             for window in _WINDOWS:
@@ -708,6 +739,7 @@ def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> Non
 
     top_perf_card = _build_all_top_performer_cards(snapshots, default_mode=default_mode, default_gender=default_gender)
 
+    meta = _MODE_LANDING_META.get(seo_key, _MODE_LANDING_META["home"])
     page = _PAGE_TEMPLATE.format(
         panels="\n    ".join(panels_html_parts),
         last_updated=last_updated,
@@ -715,6 +747,13 @@ def render_treemap_page(snapshots: pd.DataFrame, output_path: Path | str) -> Non
         n_performers=n_performers,
         profile_url_base=_PROFILE_URL_BASE,
         top_perf_card=top_perf_card,
+        default_mode=default_mode,
+        seo_title=meta["title"],
+        seo_description=meta["description"],
+        seo_canonical_path=canonical_path,
+        mode_btn_active_rising=" active" if default_mode == "rising" else "",
+        mode_btn_active_gems=" active" if default_mode == "gems" else "",
+        mode_btn_active_celebs=" active" if default_mode == "celebs" else "",
     )
 
     Path(output_path).write_text(page)
@@ -1121,7 +1160,12 @@ def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) ->
         slugs = sorted(snapshots["slug"].unique().tolist())
         last_mod = latest_date.strftime("%Y-%m-%d")
 
-    urls = [f"{_SITE_BASE_URL}/"] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
+    urls = [
+        f"{_SITE_BASE_URL}/",
+        f"{_SITE_BASE_URL}/rising",
+        f"{_SITE_BASE_URL}/gems",
+        f"{_SITE_BASE_URL}/celebs",
+    ] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
     sitemap_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:
