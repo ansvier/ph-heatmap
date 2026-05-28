@@ -3,7 +3,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from heatmap import render_treemap_page
+from heatmap import render_performer_page, render_treemap_page, write_sitemap_and_robots
 
 
 def _snapshot_rows():
@@ -97,6 +97,54 @@ def test_dump_json_is_round_trippable(tmp_path):
 
     records = json.loads(out.read_text())
     assert sum(r["total_views"] for r in records) == int(df["total_views"].sum())
+
+
+def test_render_performer_page_writes_html(tmp_path):
+    df = _snapshot_rows()
+    out = tmp_path / "alice.html"
+    render_performer_page(df, slug="alice", output_path=out)
+    assert out.exists()
+    content = out.read_text()
+
+    # Performer-identifying content
+    assert "Alice" in content
+    assert "alice" in content
+    assert "1,200" in content  # latest total_views formatted with commas
+
+    # SEO basics
+    assert '<link rel="canonical"' in content
+    assert "https://hotmap.cam/p/alice" in content
+    assert '"@type": "Person"' in content  # Schema.org JSON-LD
+
+    # Plotly sparkline embedded
+    assert "plotly" in content.lower()
+
+    # Link back to hub
+    assert 'href="/"' in content or 'href="https://hotmap.cam"' in content
+
+
+def test_render_performer_page_unknown_slug_raises(tmp_path):
+    df = _snapshot_rows()
+    with pytest.raises(ValueError, match="No snapshots for slug"):
+        render_performer_page(df, slug="nobody", output_path=tmp_path / "x.html")
+
+
+def test_write_sitemap_and_robots(tmp_path):
+    df = _snapshot_rows()
+    write_sitemap_and_robots(df, public_dir=tmp_path)
+
+    sitemap = (tmp_path / "sitemap.xml").read_text()
+    robots = (tmp_path / "robots.txt").read_text()
+
+    # Sitemap lists home + each performer page
+    assert "<loc>https://hotmap.cam/</loc>" in sitemap
+    assert "<loc>https://hotmap.cam/p/alice</loc>" in sitemap
+    assert "<loc>https://hotmap.cam/p/carol</loc>" in sitemap
+
+    # robots.txt allows all and points to sitemap
+    assert "User-agent: *" in robots
+    assert "Allow: /" in robots
+    assert "Sitemap: https://hotmap.cam/sitemap.xml" in robots
 
 
 from heatmap import compute_window_growth
