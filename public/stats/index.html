@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HotMap Stats — 870 performers tracked, 247.78B cumulative views</title>
+  <meta name="description" content="HotMap tracks 870 Pornhub performers across 3 days of view-growth history. Updated daily. Today's biggest mover: Thiago Lopez (+0.50%, +940.8K views).">
+  <link rel="canonical" href="https://hotmap.cam/stats">
+  <meta property="og:title" content="HotMap Stats — 870 performers, 247.78B cumulative views">
+  <meta property="og:description" content="Today's biggest mover: Thiago Lopez (+0.50%, +940.8K views). Live view-growth tracker.">
+  <meta property="og:url" content="https://hotmap.cam/stats">
+  <meta property="og:image" content="https://hotmap.cam/avatars/thiago-lopez.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-orange: #ff9000;
+      --bg: #0a0a0a;
+      --fg: #f5f5f5;
+      --muted: #9a9a9a;
+      --rule: #1f1f1f;
+      --card: #161616;
+      --positive: #6cd36a;
+    }
+    * { box-sizing: border-box; }
+    html, body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 16px 56px;
+      color: var(--fg);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+    a { color: var(--brand-orange); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topnav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .topnav .logo { width: 240px; height: auto; }
+    .topnav a { color: var(--muted); font-size: 13px; }
+    h1 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin: 0 0 6px;
+    }
+    .lede {
+      color: var(--muted);
+      font-size: 16px;
+      margin: 0 0 28px;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .hero-card {
+      padding: 18px 20px;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+    }
+    .hero-card .label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      margin: 0 0 6px;
+    }
+    .hero-card .value {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    .hero-card .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 4px 0 0;
+    }
+    section { margin-bottom: 32px; }
+    section h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin: 0 0 12px;
+      font-weight: 700;
+    }
+    .biggest-mover {
+      display: flex;
+      gap: 18px;
+      padding: 20px;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-left: 4px solid var(--brand-orange);
+      border-radius: 10px;
+      align-items: center;
+    }
+    .biggest-mover img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #222;
+    }
+    .biggest-mover .name {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      margin: 0 0 4px;
+    }
+    .biggest-mover .name a { color: var(--fg); }
+    .biggest-mover .stat {
+      font-size: 15px;
+      color: var(--muted);
+    }
+    .biggest-mover .stat strong { color: var(--positive); font-weight: 700; }
+    .leaderboard {
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .leaderboard .row {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--rule);
+      align-items: center;
+    }
+    .leaderboard .row:first-child { border-top: 0; }
+    .leaderboard .rank {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 14px;
+      text-align: center;
+    }
+    .leaderboard .name { font-weight: 600; font-size: 15px; }
+    .leaderboard .name a { color: var(--fg); }
+    .leaderboard .value {
+      font-weight: 700;
+      color: var(--positive);
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+    }
+    footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    footer a { color: var(--muted); text-decoration: underline; }
+    .share {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .share-btn {
+      display: inline-block;
+      padding: 8px 14px;
+      background: var(--card);
+      color: var(--fg);
+      font: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .share-btn:hover { border-color: var(--brand-orange); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <a href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+      <rect width="400" height="100" fill="#000"/>
+      <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
+      <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
+      <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
+    </svg></a>
+    <a href="/">← back to map</a>
+  </nav>
+
+  <h1>HotMap Stats</h1>
+  <p class="lede">A live snapshot of Pornhub's view-growth landscape — updated daily at 04:17 UTC.</p>
+
+  <div class="hero-grid">
+    <div class="hero-card">
+      <p class="label">Performers tracked</p>
+      <p class="value">870</p>
+      <p class="sub">across 3 days of history</p>
+    </div>
+    <div class="hero-card">
+      <p class="label">Cumulative views</p>
+      <p class="value">247.78B</p>
+      <p class="sub">247,780,608,441 total</p>
+    </div>
+    <div class="hero-card">
+      <p class="label">Views gained (24h)</p>
+      <p class="value">+411.7M</p>
+      <p class="sub">across all tracked performers</p>
+    </div>
+    <div class="hero-card">
+      <p class="label">Average daily growth</p>
+      <p class="value">+0.245%</p>
+      <p class="sub">across the full cohort</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>🔥 Biggest mover today</h2>
+    <div class="biggest-mover">
+      <img src="/avatars/thiago-lopez.jpg" alt="Thiago Lopez" loading="lazy">
+      <div>
+        <p class="name"><a href="/r/thiago-lopez" target="_blank" rel="noopener">Thiago Lopez</a></p>
+        <p class="stat"><strong>+0.50%</strong> · +940.8K views in 24h</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>📈 Top % growth (24h)</h2>
+    <div class="leaderboard"><div class="row"><span class="rank">#1</span><span class="name"><a href="/p/thiago-lopez">Thiago Lopez</a></span><span class="value">+0.50%</span></div><div class="row"><span class="rank">#2</span><span class="name"><a href="/p/vanessa-vega">Vanessa Vega</a></span><span class="value">+0.50%</span></div><div class="row"><span class="rank">#3</span><span class="name"><a href="/p/jasmine-grey">Jasmine Grey</a></span><span class="value">+0.50%</span></div><div class="row"><span class="rank">#4</span><span class="name"><a href="/p/richard-mann">Richard Mann</a></span><span class="value">+0.50%</span></div><div class="row"><span class="rank">#5</span><span class="name"><a href="/p/james-band-porn">James Band Porn</a></span><span class="value">+0.50%</span></div></div>
+  </section>
+
+  <section>
+    <h2>🚀 Top volume gained (24h)</h2>
+    <div class="leaderboard"><div class="row"><span class="rank">#1</span><span class="name"><a href="/p/kristof-cale">Kristof Cale</a></span><span class="value">+3.0M</span></div><div class="row"><span class="rank">#2</span><span class="name"><a href="/p/jean-val-jean">Jean Val Jean</a></span><span class="value">+2.9M</span></div><div class="row"><span class="rank">#3</span><span class="name"><a href="/p/peter-green">Peter Green</a></span><span class="value">+2.7M</span></div><div class="row"><span class="rank">#4</span><span class="name"><a href="/p/chloe-temple">Chloe Temple</a></span><span class="value">+2.7M</span></div><div class="row"><span class="rank">#5</span><span class="name"><a href="/p/valentina-nappi">Valentina Nappi</a></span><span class="value">+2.6M</span></div></div>
+  </section>
+
+  <section>
+    <h2>Share these stats</h2>
+    <div class="share">
+      <a class="share-btn" href="https://twitter.com/intent/tweet?text=HotMap%20tracks%20870%20performers%20across%203%20days.%20Today%27s%20biggest%20mover%3A%20Thiago%20Lopez%20%28%2B0.50%25%29.&url=https%3A%2F%2Fhotmap.cam%2Fstats" target="_blank" rel="noopener">𝕏 Share on X</a>
+      <a class="share-btn" href="https://t.me/share/url?url=https%3A%2F%2Fhotmap.cam%2Fstats&text=HotMap%20tracks%20870%20performers%20across%203%20days.%20Today%27s%20biggest%20mover%3A%20Thiago%20Lopez%20%28%2B0.50%25%29." target="_blank" rel="noopener">📨 Telegram</a>
+      <button class="share-btn" type="button" onclick="navigator.clipboard.writeText('https://hotmap.cam/stats').then(()=>{this.textContent='✓ Copied!';setTimeout(()=>this.textContent='🔗 Copy link',1500);});">🔗 Copy link</button>
+    </div>
+  </section>
+
+  <footer>
+    Updated 2026-05-28 14:33 UTC · Data collected from publicly visible Pornhub profile pages ·
+    <a href="/">explore the full treemap</a> · <a href="/data.json">raw data (CC0)</a>
+  </footer>
+</body>
+</html>
