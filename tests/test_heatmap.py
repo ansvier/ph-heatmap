@@ -3,7 +3,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from heatmap import render_performer_page, render_treemap_page, write_sitemap_and_robots
+from heatmap import render_performer_page, render_stats_page, render_treemap_page, write_sitemap_and_robots
 
 
 def _snapshot_rows():
@@ -127,6 +127,33 @@ def test_render_performer_page_unknown_slug_raises(tmp_path):
     df = _snapshot_rows()
     with pytest.raises(ValueError, match="No snapshots for slug"):
         render_performer_page(df, slug="nobody", output_path=tmp_path / "x.html")
+
+
+def test_render_stats_page_writes_html(tmp_path):
+    df = _snapshot_rows()
+    out = tmp_path / "stats.html"
+    render_stats_page(df, output_path=out)
+    assert out.exists()
+    content = out.read_text()
+
+    # Branding + SEO
+    assert "HotMap" in content
+    assert "<svg" in content
+    assert '<link rel="canonical"' in content
+    assert "https://hotmap.cam/stats" in content
+
+    # Hero numbers — at minimum the performer count and a total-views number
+    assert "3" in content  # 3 unique slugs in fixture (alice/bob/carol)
+    # Biggest mover should reference a name from the fixture
+    assert "Alice" in content or "Carol" in content or "Bob" in content
+
+
+def test_render_stats_page_empty_raises(tmp_path):
+    with pytest.raises(ValueError, match="No snapshots"):
+        render_stats_page(
+            pd.DataFrame(columns=["snapshot_date", "slug", "name", "total_views", "rank", "gender"]),
+            tmp_path / "stats.html",
+        )
 
 
 def test_write_sitemap_and_robots(tmp_path):

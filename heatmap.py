@@ -1176,6 +1176,375 @@ def render_performer_page(
     Path(output_path).write_text(page)
 
 
+_STATS_PAGE_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HotMap Stats — {n_performers} performers tracked, {total_views_human} cumulative views</title>
+  <meta name="description" content="HotMap tracks {n_performers} Pornhub performers across {n_days} days of view-growth history. Updated daily. Today's biggest mover: {hero_name} (+{hero_pct:.2f}%, +{hero_gain_human} views).">
+  <link rel="canonical" href="https://hotmap.cam/stats">
+  <meta property="og:title" content="HotMap Stats — {n_performers} performers, {total_views_human} cumulative views">
+  <meta property="og:description" content="Today's biggest mover: {hero_name} (+{hero_pct:.2f}%, +{hero_gain_human} views). Live view-growth tracker.">
+  <meta property="og:url" content="https://hotmap.cam/stats">
+  <meta property="og:image" content="https://hotmap.cam/{hero_photo_path}">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {{
+      --brand-orange: #ff9000;
+      --bg: #0a0a0a;
+      --fg: #f5f5f5;
+      --muted: #9a9a9a;
+      --rule: #1f1f1f;
+      --card: #161616;
+      --positive: #6cd36a;
+    }}
+    * {{ box-sizing: border-box; }}
+    html, body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }}
+    body {{
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 16px 56px;
+      color: var(--fg);
+      background: var(--bg);
+      line-height: 1.5;
+    }}
+    a {{ color: var(--brand-orange); text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
+    .topnav {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }}
+    .topnav .logo {{ width: 240px; height: auto; }}
+    .topnav a {{ color: var(--muted); font-size: 13px; }}
+    h1 {{
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin: 0 0 6px;
+    }}
+    .lede {{
+      color: var(--muted);
+      font-size: 16px;
+      margin: 0 0 28px;
+    }}
+    .hero-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }}
+    .hero-card {{
+      padding: 18px 20px;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+    }}
+    .hero-card .label {{
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      margin: 0 0 6px;
+    }}
+    .hero-card .value {{
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }}
+    .hero-card .sub {{
+      color: var(--muted);
+      font-size: 13px;
+      margin: 4px 0 0;
+    }}
+    section {{ margin-bottom: 32px; }}
+    section h2 {{
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin: 0 0 12px;
+      font-weight: 700;
+    }}
+    .biggest-mover {{
+      display: flex;
+      gap: 18px;
+      padding: 20px;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-left: 4px solid var(--brand-orange);
+      border-radius: 10px;
+      align-items: center;
+    }}
+    .biggest-mover img {{
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #222;
+    }}
+    .biggest-mover .name {{
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      margin: 0 0 4px;
+    }}
+    .biggest-mover .name a {{ color: var(--fg); }}
+    .biggest-mover .stat {{
+      font-size: 15px;
+      color: var(--muted);
+    }}
+    .biggest-mover .stat strong {{ color: var(--positive); font-weight: 700; }}
+    .leaderboard {{
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      overflow: hidden;
+    }}
+    .leaderboard .row {{
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--rule);
+      align-items: center;
+    }}
+    .leaderboard .row:first-child {{ border-top: 0; }}
+    .leaderboard .rank {{
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 14px;
+      text-align: center;
+    }}
+    .leaderboard .name {{ font-weight: 600; font-size: 15px; }}
+    .leaderboard .name a {{ color: var(--fg); }}
+    .leaderboard .value {{
+      font-weight: 700;
+      color: var(--positive);
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+    }}
+    footer {{
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 12px;
+    }}
+    footer a {{ color: var(--muted); text-decoration: underline; }}
+    .share {{
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }}
+    .share-btn {{
+      display: inline-block;
+      padding: 8px 14px;
+      background: var(--card);
+      color: var(--fg);
+      font: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }}
+    .share-btn:hover {{ border-color: var(--brand-orange); text-decoration: none; }}
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <a href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+      <rect width="400" height="100" fill="#000"/>
+      <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
+      <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
+      <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
+    </svg></a>
+    <a href="/">← back to map</a>
+  </nav>
+
+  <h1>HotMap Stats</h1>
+  <p class="lede">A live snapshot of Pornhub's view-growth landscape — updated daily at 04:17 UTC.</p>
+
+  <div class="hero-grid">
+    <div class="hero-card">
+      <p class="label">Performers tracked</p>
+      <p class="value">{n_performers:,}</p>
+      <p class="sub">across {n_days} days of history</p>
+    </div>
+    <div class="hero-card">
+      <p class="label">Cumulative views</p>
+      <p class="value">{total_views_human}</p>
+      <p class="sub">{total_views_raw:,} total</p>
+    </div>
+    <div class="hero-card">
+      <p class="label">Views gained (24h)</p>
+      <p class="value">+{daily_gain_human}</p>
+      <p class="sub">across all tracked performers</p>
+    </div>
+    <div class="hero-card">
+      <p class="label">Average daily growth</p>
+      <p class="value">+{avg_growth:.3f}%</p>
+      <p class="sub">across the full cohort</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>🔥 Biggest mover today</h2>
+    <div class="biggest-mover">
+      <img src="/{hero_photo_path}" alt="{hero_name}" loading="lazy">
+      <div>
+        <p class="name"><a href="/r/{hero_slug}" target="_blank" rel="noopener">{hero_name}</a></p>
+        <p class="stat"><strong>+{hero_pct:.2f}%</strong> · +{hero_gain_human} views in 24h</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>📈 Top % growth (24h)</h2>
+    <div class="leaderboard">{top_pct_rows}</div>
+  </section>
+
+  <section>
+    <h2>🚀 Top volume gained (24h)</h2>
+    <div class="leaderboard">{top_vol_rows}</div>
+  </section>
+
+  <section>
+    <h2>Share these stats</h2>
+    <div class="share">
+      <a class="share-btn" href="https://twitter.com/intent/tweet?text={share_text}&url={share_url}" target="_blank" rel="noopener">𝕏 Share on X</a>
+      <a class="share-btn" href="https://t.me/share/url?url={share_url}&text={share_text}" target="_blank" rel="noopener">📨 Telegram</a>
+      <button class="share-btn" type="button" onclick="navigator.clipboard.writeText('https://hotmap.cam/stats').then(()=>{{this.textContent='✓ Copied!';setTimeout(()=>this.textContent='🔗 Copy link',1500);}});">🔗 Copy link</button>
+    </div>
+  </section>
+
+  <footer>
+    Updated {last_updated} UTC · Data collected from publicly visible Pornhub profile pages ·
+    <a href="/">explore the full treemap</a> · <a href="/data.json">raw data (CC0)</a>
+  </footer>
+</body>
+</html>
+"""
+
+
+def _human_views(n: int) -> str:
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.2f}B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}K"
+    return str(n)
+
+
+def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
+    """Render a public summary page at /stats — hero numbers + leaderboards.
+
+    Designed to look great as a single screenshot for social shares.
+    """
+    if snapshots.empty:
+        raise ValueError("No snapshots to render")
+
+    snapshots = snapshots.copy()
+    snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
+    latest_date = snapshots["snapshot_date"].max()
+    today = snapshots[snapshots["snapshot_date"] == latest_date]
+
+    n_performers = int(today["slug"].nunique())
+    n_days = int(snapshots["snapshot_date"].nunique())
+    total_views_raw = int(today["total_views"].sum())
+
+    # 1d window for "biggest mover" + leaderboards
+    window = compute_window_growth(snapshots, window_days=1)
+    window = window.copy()
+    window["growth_amount"] = window["total_views"] - window["prev_views"]
+    window = window.dropna(subset=["growth_pct", "growth_amount"])
+
+    daily_gain_total = int(window["growth_amount"].clip(lower=0).sum())
+    avg_growth = float(window["growth_pct"].mean()) if len(window) else 0.0
+
+    # Hero: highest % growth among performers with at least 100M views (filter noise)
+    qualified = window[window["total_views"] >= _TOP_PERF_MIN_VIEWS]
+    if qualified.empty:
+        qualified = window
+    hero = qualified.sort_values("growth_pct", ascending=False).iloc[0]
+    hero_slug = hero.name
+    hero_name = hero["name"]
+    hero_pct = float(hero["growth_pct"])
+    hero_gain = int(hero["growth_amount"])
+
+    # Hero photo path
+    hero_photo = ""
+    if "photo_url" in snapshots.columns:
+        rows = snapshots[(snapshots["slug"] == hero_slug) & snapshots["photo_url"].notna()]
+        if not rows.empty:
+            raw = rows.sort_values("snapshot_date").iloc[-1]["photo_url"]
+            if raw and not str(raw).startswith(("http://", "https://")):
+                hero_photo = str(raw)
+    if not hero_photo:
+        hero_photo = "favicon-512.png"  # fallback if no avatar
+
+    # Build leaderboards (top 5 each by % and absolute)
+    def _leaderboard_html(df: pd.DataFrame, value_fn) -> str:
+        rows = []
+        for rank, (_, r) in enumerate(df.iterrows(), start=1):
+            rows.append(
+                f'<div class="row">'
+                f'<span class="rank">#{rank}</span>'
+                f'<span class="name"><a href="/p/{r.name}">{r["name"]}</a></span>'
+                f'<span class="value">{value_fn(r)}</span>'
+                f'</div>'
+            )
+        return "".join(rows) or '<div class="row" style="color:#666;justify-content:center">Not enough data yet</div>'
+
+    top_pct_df = qualified.sort_values("growth_pct", ascending=False).head(5)
+    top_vol_df = window.sort_values("growth_amount", ascending=False).head(5)
+    top_pct_rows = _leaderboard_html(top_pct_df, lambda r: f"+{float(r['growth_pct']):.2f}%")
+    top_vol_rows = _leaderboard_html(top_vol_df, lambda r: f"+{_human_views(int(r['growth_amount']))}")
+
+    from urllib.parse import quote
+    share_text = quote(
+        f"HotMap tracks {n_performers} performers across {n_days} days. "
+        f"Today's biggest mover: {hero_name} (+{hero_pct:.2f}%)."
+    )
+    share_url = quote("https://hotmap.cam/stats", safe="")
+
+    page = _STATS_PAGE_TEMPLATE.format(
+        n_performers=n_performers,
+        n_days=n_days,
+        total_views_raw=total_views_raw,
+        total_views_human=_human_views(total_views_raw),
+        daily_gain_human=_human_views(daily_gain_total),
+        avg_growth=avg_growth,
+        hero_slug=hero_slug,
+        hero_name=hero_name,
+        hero_pct=hero_pct,
+        hero_gain_human=_human_views(hero_gain),
+        hero_photo_path=hero_photo,
+        top_pct_rows=top_pct_rows,
+        top_vol_rows=top_vol_rows,
+        share_text=share_text,
+        share_url=share_url,
+        last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+    )
+
+    Path(output_path).write_text(page)
+
+
 def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) -> None:
     """Write sitemap.xml (home + per-performer pages) and robots.txt."""
     public = Path(public_dir)
@@ -1198,6 +1567,7 @@ def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) ->
         f"{_SITE_BASE_URL}/rising",
         f"{_SITE_BASE_URL}/gems",
         f"{_SITE_BASE_URL}/celebs",
+        f"{_SITE_BASE_URL}/stats",
     ] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
     sitemap_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']

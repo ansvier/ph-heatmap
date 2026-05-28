@@ -5,7 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from db import Snapshot, init_db, insert_snapshot, load_all_snapshots
-from heatmap import dump_json, render_performer_page, render_treemap_page, write_sitemap_and_robots
+from heatmap import dump_json, render_performer_page, render_stats_page, render_treemap_page, write_sitemap_and_robots
 from scraper import fetch_profile, fetch_top_pornstars, polite_sleep
 from curl_cffi import requests as cffi_requests
 import os
@@ -178,6 +178,12 @@ def main() -> int:
         except Exception as exc:
             print(f"  WARN: performer page failed for {slug}: {exc}", file=sys.stderr)
     print(f"wrote {written} performer pages under {PERFORMER_DIR}", flush=True)
+
+    # /stats summary page — single-image hook for social shares.
+    stats_dir = PUBLIC_DIR / "stats"
+    stats_dir.mkdir(exist_ok=True)
+    render_stats_page(snapshots_df, stats_dir / "index.html")
+    print(f"wrote /stats/index.html", flush=True)
 
     write_sitemap_and_robots(snapshots_df, public_dir=PUBLIC_DIR)
     print("wrote sitemap.xml + robots.txt", flush=True)
