@@ -63,18 +63,21 @@ def parse_profile(html: str) -> ProfileData:
 def _extract_photo_url(tree: HTMLParser) -> str | None:
     """Return the performer's avatar image URL, or None if not found.
 
-    Pornhub puts the avatar inside `.topProfileHeader` — the first `<img>` whose
-    src contains `/avatar`. We avoid picking the cover banner by filtering on the
-    URL substring.
+    Strategy:
+      1. Prefer an `<img>` inside `.topProfileHeader` whose src contains `/avatar`.
+      2. Fall back to ANY `<img>` on the page whose src contains `/avatar` —
+         Pornhub uses different markup variants per profile; the avatar URL
+         pattern (`/avatar<id>/<size>.jpg`) is stable across them.
     """
     header = tree.css_first(".topProfileHeader")
-    if header is None:
-        return None
-    for img in header.css("img"):
+    if header is not None:
+        for img in header.css("img"):
+            src = img.attributes.get("src") or img.attributes.get("data-src")
+            if src and "/avatar" in src:
+                return src
+    for img in tree.css("img"):
         src = img.attributes.get("src") or img.attributes.get("data-src")
-        if not src:
-            continue
-        if "/avatar" in src:
+        if src and "/avatar" in src:
             return src
     return None
 
