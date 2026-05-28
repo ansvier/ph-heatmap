@@ -863,6 +863,13 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
       padding: 8px;
       margin-bottom: 24px;
     }}
+    .actions {{
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 24px;
+    }}
     .external {{
       display: inline-block;
       padding: 10px 18px;
@@ -870,9 +877,23 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
       color: #000;
       font-weight: 700;
       border-radius: 6px;
-      margin-bottom: 24px;
     }}
     .external:hover {{ text-decoration: none; opacity: 0.9; }}
+    .share {{ display: flex; gap: 8px; flex-wrap: wrap; }}
+    .share-btn {{
+      display: inline-block;
+      padding: 8px 14px;
+      background: var(--card-bg);
+      color: var(--fg);
+      font: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }}
+    .share-btn:hover {{ border-color: var(--brand-orange); text-decoration: none; }}
     footer {{
       margin-top: 32px;
       padding-top: 16px;
@@ -926,7 +947,14 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
     <div class="chart">{sparkline}</div>
   </section>
 
-  <a class="external" href="{profile_url}" target="_blank" rel="noopener">Open {name}'s profile on Pornhub →</a>
+  <div class="actions">
+    <a class="external" href="{profile_url}" target="_blank" rel="noopener">Open {name}'s profile on Pornhub →</a>
+    <div class="share">
+      <a class="share-btn" href="https://twitter.com/intent/tweet?text={share_text}&url={share_url}" target="_blank" rel="noopener" aria-label="Share on X">𝕏 Share</a>
+      <a class="share-btn" href="https://t.me/share/url?url={share_url}&text={share_text}" target="_blank" rel="noopener" aria-label="Share on Telegram">📨 Telegram</a>
+      <button class="share-btn" type="button" onclick="navigator.clipboard.writeText('{share_url}').then(()=>{{this.textContent='✓ Copied!';setTimeout(()=>this.textContent='🔗 Copy link',1500);}});">🔗 Copy link</button>
+    </div>
+  </div>
 
   <footer>
     Updated {last_date} · Part of the <a href="/">HotMap top-500 tracker</a> · Data collected from publicly visible profile pages.
@@ -1040,6 +1068,13 @@ def render_performer_page(
     sparkline = _build_sparkline_html(rows)
     gender_label = {"female": "Female", "male": "Male"}.get(gender, "")
 
+    # URL-encode share text + url for href attributes
+    from urllib.parse import quote
+    share_url_raw = f"{_SITE_BASE_URL}/p/{slug}"
+    share_text_raw = f"{name} — {total_views:,} views, ranked #{rank} on @hotmapcam"
+    share_url = quote(share_url_raw, safe="")
+    share_text = quote(share_text_raw, safe="")
+
     page = _PERFORMER_PAGE_TEMPLATE.format(
         name=name,
         slug=slug,
@@ -1060,6 +1095,8 @@ def render_performer_page(
         profile_url=f"{_PROFILE_URL_BASE}{slug}",
         sparkline=sparkline,
         json_ld=json_ld,
+        share_url=share_url,
+        share_text=share_text,
     )
 
     Path(output_path).write_text(page)
@@ -1077,7 +1114,9 @@ def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) ->
         snapshots = snapshots.copy()
         snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
         latest_date = snapshots["snapshot_date"].max()
-        slugs = sorted(snapshots[snapshots["snapshot_date"] == latest_date]["slug"].unique().tolist())
+        # Include every slug ever seen — performers who dropped out still get
+        # indexable pages, preserving SEO continuity for old search rankings.
+        slugs = sorted(snapshots["slug"].unique().tolist())
         last_mod = latest_date.strftime("%Y-%m-%d")
 
     urls = [f"{_SITE_BASE_URL}/"] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]

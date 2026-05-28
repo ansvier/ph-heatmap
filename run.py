@@ -111,12 +111,13 @@ def main() -> int:
     dump_json(snapshots_df, JSON_PATH)
     print(f"wrote {JSON_PATH}", flush=True)
 
-    # Per-performer landing pages for the latest snapshot — SEO long-tail target.
+    # Per-performer landing pages for EVERY slug ever seen — not just today's.
+    # When a performer drops out of top-500, their page stays live (SEO continuity)
+    # with the most recent data available for them.
     PERFORMER_DIR.mkdir(parents=True, exist_ok=True)
-    latest_date = snapshots_df["snapshot_date"].max()
-    latest_slugs = snapshots_df[snapshots_df["snapshot_date"] == latest_date]["slug"].unique()
+    all_slugs = snapshots_df["slug"].unique()
     written = 0
-    for slug in latest_slugs:
+    for slug in all_slugs:
         try:
             render_performer_page(snapshots_df, slug=slug, output_path=PERFORMER_DIR / f"{slug}.html")
             written += 1
