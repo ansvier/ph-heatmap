@@ -209,11 +209,12 @@ _PAGE_TEMPLATE = """<!doctype html>
       min-width: 0;
     }}
     .tagline .hint {{
+      display: block;
       color: var(--muted);
       font-size: 14px;
       font-weight: 400;
       letter-spacing: 0;
-      margin-left: 8px;
+      margin: 4px 0 0;
     }}
     .controls {{
       display: flex;
