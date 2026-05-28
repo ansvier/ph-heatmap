@@ -233,7 +233,7 @@ _PAGE_TEMPLATE = """<!doctype html>
               font-weight="900" font-size="60" fill="#000"
               letter-spacing="-3">MAP</text>
       </svg>
-      <p class="tagline">Today's hottest performers. <span class="hint">Click a tile to open the stats page.</span></p>
+      <p class="tagline">Today's hottest performers. <span class="hint">Click a tile to open the profile.</span></p>
     </div>
     {top_perf_card}
   </header>
@@ -307,8 +307,10 @@ _PAGE_TEMPLATE = """<!doctype html>
       bind('.gender', 'gender');
       bind('.window', 'window');
 
-      // Click any tile to open the performer's HotMap page (which has stats
-      // plus a CTA to the PH profile).
+      // Click any tile to open the performer profile directly — preserves
+      // the conversion funnel (1 click to destination). The /p/<slug> stats
+      // pages still exist as SEO landing targets for organic search traffic.
+      var PROFILE_URL_BASE = '{profile_url_base}';
       function attachClickHandlers() {{
         document.querySelectorAll('.plotly-graph-div').forEach(function (div) {{
           if (div._hotmapBound) return;
@@ -317,7 +319,7 @@ _PAGE_TEMPLATE = """<!doctype html>
             if (!evt || !evt.points || !evt.points.length) return;
             var slug = evt.points[0].customdata && evt.points[0].customdata[3];
             if (slug) {{
-              window.location.href = '/p/' + slug;
+              window.open(PROFILE_URL_BASE + slug, '_blank', 'noopener');
             }}
             // Prevent the default zoom-into-tile behavior.
             return false;
@@ -493,7 +495,7 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
                 "Total views: %{customdata[1]:,}<br>"
                 "Gained (" + str(window_days) + "d): +%{customdata[4]:,.0f} views<br>"
                 "Growth: %{customdata[2]:+.3f}%<br>"
-                "<i>click for stats →</i>"
+                "<i>click to open profile</i>"
                 "<extra></extra>"
             ),
             textposition="middle center",
