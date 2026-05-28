@@ -324,7 +324,6 @@ _PAGE_TEMPLATE = """<!doctype html>
 
   <div class="controls">
     <div class="toggle" role="tablist" aria-label="Mode">
-      <span class="toggle-label">Mode</span>
       <button type="button" class="mode{mode_btn_active_rising}" data-mode="rising">Rising Stars</button>
       <button type="button" class="mode{mode_btn_active_gems}" data-mode="gems">Hidden Gems</button>
       <button type="button" class="mode{mode_btn_active_celebs}" data-mode="celebs">Celebrities</button>
