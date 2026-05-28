@@ -630,8 +630,15 @@ def _build_top_performer_card(
             photo_url = rows.sort_values("snapshot_date").iloc[-1]["photo_url"] or ""
 
     profile_url = f"{_PROFILE_URL_BASE}{slug}"
+    # Force absolute path so the img resolves correctly from /, /rising/,
+    # /gems/, and /celebs/ alike. Relative 'avatars/...' would break on the
+    # per-mode landing pages.
+    if photo_url and not photo_url.startswith(("http://", "https://", "/")):
+        img_src = f"/{photo_url}"
+    else:
+        img_src = photo_url
     img_tag = (
-        f'<img src="{photo_url}" alt="{name}" loading="lazy" referrerpolicy="no-referrer">'
+        f'<img src="{img_src}" alt="{name}" loading="lazy" referrerpolicy="no-referrer">'
         if photo_url else '<div style="width:56px;height:56px;border-radius:50%;background:#222;flex-shrink:0"></div>'
     )
     label = _TOP_PERF_LABELS.get(mode, {}).get(gender_key, "Top performer of the day")
