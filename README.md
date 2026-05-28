@@ -29,7 +29,7 @@ Environment variables:
 
 ### GitHub Actions (scraper)
 
-Already configured at [.github/workflows/daily-scrape.yml](.github/workflows/daily-scrape.yml). Schedule: `0 4 * * *` UTC, plus manual trigger via the Actions tab.
+Already configured at [.github/workflows/daily-scrape.yml](.github/workflows/daily-scrape.yml). Schedule: `17 4 * * *` UTC (off the round-hour to avoid GitHub's scheduler congestion), plus manual trigger via the Actions tab.
 
 To override the curl-cffi fingerprint at the workflow level:
 Settings → Secrets and variables → Actions → Variables → add `PH_IMPERSONATE`.

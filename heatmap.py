@@ -239,7 +239,7 @@ _PAGE_TEMPLATE = """<!doctype html>
   </main>
 
   <footer>
-    <p class="stats">Updated {last_updated} UTC · Refreshes daily at 04:00 UTC · {n_days} days of history · {n_performers} performers tracked · <a href="https://github.com/ansvier/ph-heatmap">source on GitHub</a> · <a href="data.json">raw data (JSON)</a></p>
+    <p class="stats">Updated {last_updated} UTC · Refreshes daily at 04:17 UTC · {n_days} days of history · {n_performers} performers tracked · <a href="https://github.com/ansvier/ph-heatmap">source on GitHub</a> · <a href="data.json">raw data (JSON)</a></p>
     <p class="disclaimer">HotMap is an independent project. Data is collected from publicly visible Pornhub profile pages; no video content is hosted here.</p>
   </footer>
 
