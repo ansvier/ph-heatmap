@@ -46,7 +46,7 @@ _TOP_NAV_CSS = """
     }
     .topnav .brand { display: inline-block; line-height: 0; }
     .topnav .logo { width: 240px; max-width: 50vw; height: auto; }
-    .navlinks { display: flex; gap: 2px; flex-wrap: wrap; }
+    .navlinks { display: flex; gap: 2px; flex-wrap: wrap; margin-right: 110px; }
     .navlink {
       color: rgba(245,245,245,0.4);
       font-weight: 500;
@@ -61,6 +61,9 @@ _TOP_NAV_CSS = """
     .navlink.active {
       color: rgba(245,245,245,0.95);
       background: rgba(255,144,0,0.12);
+    }
+    @media (max-width: 900px) {
+      .navlinks { margin-right: 0; }
     }
     @media (max-width: 520px) {
       .topnav { flex-wrap: wrap; }
