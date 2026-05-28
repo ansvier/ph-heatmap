@@ -16,6 +16,11 @@ _PAGE_TEMPLATE = """<!doctype html>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>HotMap — who's growing fastest on Pornhub</title>
   <meta name="description" content="Live heatmap of view growth: tile size = views gained in the window, color = growth pace relative to the median.">
+  <link rel="canonical" href="https://hotmap.cam/">
+  <meta property="og:title" content="HotMap — who's growing fastest on Pornhub">
+  <meta property="og:description" content="Daily heatmap of view growth for top performers, ranked by momentum. Rising stars, hidden gems, and celebrities.">
+  <meta property="og:url" content="https://hotmap.cam/">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
