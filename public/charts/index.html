@@ -39,35 +39,21 @@
     a:hover { text-decoration: underline; }
 
     .topnav {
-      position: relative;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 24px;
-      padding: 8px 0;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
     }
-    .topnav .brand {
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      display: inline-block;
-      line-height: 0;
-    }
-    .topnav .logo { width: 180px; max-width: 30vw; height: auto; }
-    .navlinks {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+    .topnav .brand { display: inline-block; line-height: 0; }
+    .topnav .logo { width: 240px; max-width: 50vw; height: auto; }
+    .navlinks { display: flex; gap: 2px; flex-wrap: wrap; margin-right: 110px; }
     .navlink {
-      color: rgba(245,245,245,0.45);
+      color: rgba(245,245,245,0.4);
       font-weight: 500;
       font-size: 13px;
       letter-spacing: 0.3px;
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 6px;
       text-decoration: none;
       transition: color 0.15s, background 0.15s;
@@ -77,11 +63,12 @@
       color: rgba(245,245,245,0.95);
       background: rgba(255,144,0,0.12);
     }
-    @media (max-width: 640px) {
-      .topnav { justify-content: flex-start; padding-top: 56px; }
-      .topnav .brand { left: 0; top: 0; transform: none; }
-      .topnav .logo { width: 140px; }
-      .navlinks { width: 100%; justify-content: flex-start; }
+    @media (max-width: 900px) {
+      .navlinks { margin-right: 0; }
+    }
+    @media (max-width: 520px) {
+      .topnav { flex-wrap: wrap; }
+      .topnav .logo { width: 160px; }
     }
 
     h1 {
@@ -245,7 +232,7 @@
   <p id="empty" class="empty-state" style="display:none">No performers match your search.</p>
 
   <footer>
-    Updated 2026-05-28 14:50 UTC · <a href="/">explore the treemap</a> · <a href="/stats">view stats</a> · <a href="/data.json">raw data</a>
+    Updated 2026-05-28 15:06 UTC · <a href="/">explore the treemap</a> · <a href="/stats">view stats</a> · <a href="/data.json">raw data</a>
   </footer>
 
   <script>
