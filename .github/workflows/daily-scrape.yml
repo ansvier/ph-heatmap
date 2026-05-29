@@ -40,7 +40,8 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           PH_IMPERSONATE: ${{ vars.PH_IMPERSONATE || 'chrome120' }}
-        run: "$VENV/bin/python" run.py
+        run: |
+          "$VENV/bin/python" run.py
 
       - name: Commit and push artifacts
         run: |
