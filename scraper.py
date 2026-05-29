@@ -125,30 +125,93 @@ _PROFILE_URL_TEMPLATE = "https://www.pornhub.com/pornstar/{slug}"
 _IMPERSONATE = os.environ.get("PH_IMPERSONATE", "chrome120")
 _REQUEST_TIMEOUT = 30  # seconds
 
+# When the env-configured impersonate value gives an empty top-list, we cycle
+# through these as fallbacks. PH/Cloudflare occasionally tightens TLS-fingerprint
+# rules for one browser version while leaving others through.
+_IMPERSONATE_FALLBACKS = ("chrome120", "chrome119", "chrome116", "safari17_0", "edge101")
 
-def _fetch(url: str) -> str:
-    response = cffi_requests.get(url, impersonate=_IMPERSONATE, timeout=_REQUEST_TIMEOUT)
-    response.raise_for_status()
-    return response.text
+
+def _fetch(url: str, impersonate: str | None = None) -> tuple[str, int]:
+    """Return (body, status). Raises only on connection errors, not HTTP errors —
+    callers want to inspect 403/empty responses themselves for diagnostics."""
+    response = cffi_requests.get(url, impersonate=impersonate or _IMPERSONATE, timeout=_REQUEST_TIMEOUT)
+    return response.text, response.status_code
+
+
+def _diagnose_empty(body: str, status: int) -> str:
+    """Return a short hint about why the top-list page parsed as empty."""
+    if status != 200:
+        return f"HTTP {status}"
+    if not body:
+        return "empty body"
+    needles = [
+        ("Cloudflare challenge", "challenge-platform"),
+        ("Cloudflare interstitial", "cf-browser-verification"),
+        ("captcha", "captcha"),
+        ("blocked", "Access denied"),
+        ("rate limit", "rate limited"),
+    ]
+    low = body.lower()
+    for label, needle in needles:
+        if needle.lower() in low:
+            return f"{label} (len={len(body)})"
+    if "popularPornstars" not in body:
+        return f"missing #popularPornstars in HTML (len={len(body)}) — markup may have changed"
+    return f"#popularPornstars present but empty (len={len(body)})"
 
 
 def fetch_top_pornstars(limit: int = 50, gender: str = "female") -> list[str]:
-    """Fetch up to `limit` slugs from the top-list, paginating as needed.
+    """Fetch up to `limit` slugs from the top-list with impersonate fallback.
 
-    Each PH list page returns ~50 slugs from `ul#popularPornstars`. Pages are
-    requested with `&page=N`. We stop when we either hit the limit or get a page
-    that returns no new slugs (end of list).
+    If the first attempt returns no slugs (Cloudflare challenge, empty list,
+    parser mismatch...), we retry the page-1 fetch with each value in
+    _IMPERSONATE_FALLBACKS before giving up. Once a non-empty page-1 response
+    is found, the rest of the pagination uses that same impersonate value.
     """
     if gender not in {"female", "male"}:
         raise ValueError(f"gender must be 'female' or 'male', got {gender!r}")
 
     base_url = _TOP_LIST_URL_TEMPLATE.format(gender=gender)
+
+    # Resolve a working impersonate by probing page 1 — start with env-configured,
+    # then fall back through the list.
+    attempts = [_IMPERSONATE] + [i for i in _IMPERSONATE_FALLBACKS if i != _IMPERSONATE]
+    chosen_impersonate: str | None = None
+    first_page_slugs: list[str] = []
+    for imp in attempts:
+        body, status = _fetch(base_url, impersonate=imp)
+        candidate = parse_top_list(body, limit=limit)
+        if candidate:
+            chosen_impersonate = imp
+            first_page_slugs = candidate
+            break
+        print(
+            f"  scraper: page 1 empty for {gender} with impersonate={imp} → {_diagnose_empty(body, status)}",
+            flush=True,
+        )
+
+    if not chosen_impersonate:
+        return []  # all impersonate values failed; caller logs the WARN
+
+    if chosen_impersonate != _IMPERSONATE:
+        print(f"  scraper: fell back to impersonate={chosen_impersonate} for {gender}", flush=True)
+
     seen: set[str] = set()
     slugs: list[str] = []
-    page = 1
-    while len(slugs) < limit:
-        url = base_url if page == 1 else f"{base_url}&page={page}"
-        page_slugs = parse_top_list(_fetch(url), limit=limit)
+    for s in first_page_slugs:
+        if s not in seen:
+            seen.add(s)
+            slugs.append(s)
+            if len(slugs) >= limit:
+                return slugs
+
+    # Continue paginating with the chosen impersonate
+    page = 2
+    while len(slugs) < limit and page <= 20:
+        polite_sleep()
+        url = f"{base_url}&page={page}"
+        body, _status = _fetch(url, impersonate=chosen_impersonate)
+        page_slugs = parse_top_list(body, limit=limit)
         new_count = 0
         for s in page_slugs:
             if s in seen:
@@ -159,16 +222,14 @@ def fetch_top_pornstars(limit: int = 50, gender: str = "female") -> list[str]:
             if len(slugs) >= limit:
                 break
         if new_count == 0:
-            break  # end of list, no point requesting more pages
-        page += 1
-        if page > 20:  # safety net — shouldn't happen at sensible limits
             break
-        polite_sleep()  # between page requests
+        page += 1
     return slugs
 
 
 def fetch_profile(slug: str) -> ProfileData:
-    return parse_profile(_fetch(_PROFILE_URL_TEMPLATE.format(slug=slug)))
+    body, _status = _fetch(_PROFILE_URL_TEMPLATE.format(slug=slug))
+    return parse_profile(body)
 
 
 def polite_sleep(base: float = 1.5, jitter: float = 0.5) -> None:
