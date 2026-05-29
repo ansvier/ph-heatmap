@@ -1,10 +1,8 @@
 name: daily scrape
 
 on:
-  # schedule disabled temporarily — PH is timing out from Mac runner;
-  # see investigation in chat. Re-enable after we confirm connectivity.
-  # schedule:
-  #   - cron: "17 4 * * *"
+  schedule:
+    - cron: "17 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -37,20 +35,6 @@ jobs:
           fi
           "$VENV/bin/pip" install -q -r requirements.txt
           echo "VENV=$VENV" >> "$GITHUB_ENV"
-
-      - name: Debug runner env vs PH connectivity
-        run: |
-          echo "=== whoami / id ==="
-          whoami
-          id
-          echo "=== proxy env ==="
-          env | grep -iE 'proxy|http' || echo '  (no proxy env set)'
-          echo "=== DNS for pornhub.com ==="
-          dscacheutil -q host -a name pornhub.com || true
-          echo "=== curl test (no impersonate) ==="
-          curl -sS -o /dev/null -w "status=%{http_code} time=%{time_total}s\n" -m 15 'https://www.pornhub.com/pornstars?o=mv&gender=female' || echo "  curl FAILED"
-          echo "=== curl-cffi chrome120 test ==="
-          "$VENV/bin/python" -c "from curl_cffi import requests; r = requests.get('https://www.pornhub.com/pornstars?o=mv&gender=female', impersonate='chrome120', timeout=15); print('status:', r.status_code, 'len:', len(r.text))" 2>&1 || echo "  curl-cffi FAILED"
 
       - name: Run scraper
         env:
