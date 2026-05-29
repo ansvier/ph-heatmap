@@ -1,8 +1,10 @@
 name: daily scrape
 
 on:
-  schedule:
-    - cron: "17 4 * * *"
+  # schedule disabled temporarily — PH is timing out from Mac runner;
+  # see investigation in chat. Re-enable after we confirm connectivity.
+  # schedule:
+  #   - cron: "17 4 * * *"
   workflow_dispatch:
 
 permissions:
