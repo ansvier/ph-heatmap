@@ -509,6 +509,25 @@ def test_render_stats_page_emits_full_seo_block(tmp_path):
         f"got types={types}"
 
 
+def test_render_charts_page_emits_full_seo_block(tmp_path):
+    """Charts page: complete SEO + CollectionPage + BreadcrumbList JSON-LD,
+    canonical /charts/, og:image falls back to /og.png (no hero photo)."""
+    from heatmap import render_charts_page
+    df = _snapshot_rows()
+    out = tmp_path / "charts.html"
+    render_charts_page(df, out)
+    content = out.read_text()
+
+    assert 'rel="canonical" href="https://hotmap.cam/charts/"' in content
+    assert 'property="og:type" content="website"' in content
+    assert 'property="og:image" content="https://hotmap.cam/og.png"' in content, \
+        "charts page has no hero — must fall back to default og.png"
+
+    blocks = _extract_jsonld_blocks(content)
+    types = {b.get("@type") for b in blocks}
+    assert "WebSite" in types and "CollectionPage" in types and "BreadcrumbList" in types
+
+
 def test_render_seo_head_neutralizes_script_close_in_jsonld():
     """Strings inside JSON-LD that contain </script> must not break out of
     the surrounding <script> block. Standard mitigation: serialize </ as <\\/.
