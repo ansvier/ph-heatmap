@@ -3,3 +3,4 @@ selectolax>=0.3.21
 plotly>=5.20
 pandas>=2.2
 pytest>=8.0
+Pillow>=10.0
