@@ -463,6 +463,33 @@ def test_render_treemap_page_mode_landing_has_breadcrumbs_and_trailing_slash(tmp
     assert names == ["HotMap", "Rising Stars"], f"got names={names}"
 
 
+def test_render_performer_page_emits_full_seo_block(tmp_path):
+    """Per-performer page: complete SEO + Person + BreadcrumbList JSON-LD,
+    twitter:image points to avatar (not the default og.png)."""
+    df = _snapshot_rows()
+    out = tmp_path / "alice.html"
+    render_performer_page(df, slug="alice", output_path=out)
+    content = out.read_text()
+
+    assert 'rel="canonical" href="https://hotmap.cam/p/alice"' in content
+    assert 'property="og:type" content="profile"' in content
+    # Avatar fallback for tests: there's no real avatar for fixture 'alice',
+    # so the page should fall back to /og.png. Real production data has
+    # /avatars/<slug>.jpg.
+    assert ('property="og:image" content="https://hotmap.cam/og.png"' in content
+            or 'property="og:image" content="https://hotmap.cam/avatars/alice' in content)
+    assert 'name="twitter:image"' in content
+
+    blocks = _extract_jsonld_blocks(content)
+    types = {b.get("@type") for b in blocks}
+    assert "WebSite" in types and "Person" in types and "BreadcrumbList" in types, \
+        f"got types={types}"
+
+    bc = next(b for b in blocks if b.get("@type") == "BreadcrumbList")
+    names = [item["name"] for item in bc["itemListElement"]]
+    assert names == ["HotMap", "Charts", "Alice"], f"got names={names}"
+
+
 def test_render_seo_head_neutralizes_script_close_in_jsonld():
     """Strings inside JSON-LD that contain </script> must not break out of
     the surrounding <script> block. Standard mitigation: serialize </ as <\\/.
