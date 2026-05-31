@@ -49,6 +49,8 @@ A "Top Performer of the Day" card surfaces the strongest mover for the current c
 
 Everything runs on free tiers — GitHub Actions (public repo = unlimited minutes), Cloudflare Pages + Worker (static + edge logic), Cloudflare's automatic SSL. The only ongoing cost is the domain (~$15/year).
 
+**SEO:** Every rendered page emits a complete head block — title, meta description, canonical, Open Graph quintet, Twitter Cards triple, robots meta, and JSON-LD (`WebSite` + `BreadcrumbList` + page-specific `Dataset` / `Person` / `CollectionPage`). Default OG image is `/og.png` (1200×630); per-performer and stats pages use avatar fallbacks. Sitemap submitted to Google Search Console and Bing Webmaster Tools (Yandex skipped — secondary engines skipped). See [`docs/seo-submission-checklist.md`](docs/seo-submission-checklist.md) for the submission steps.
+
 ## Tech stack
 
 - **Python 3.13** — scraper, data, render
@@ -76,6 +78,12 @@ open public/index.html              # eyeball locally
 
 Environment variables:
 - `PH_IMPERSONATE` — `curl-cffi` browser fingerprint. Default `chrome120`. Override (`chrome119`, `chrome116`) if PH starts rejecting that profile.
+
+If HotMap branding changes (logo, tagline, color), regenerate the default Open Graph image:
+
+```bash
+./venv/bin/python scripts/build_og.py   # rewrites public/og.png (1200×630)
+```
 
 ## Project layout
 
