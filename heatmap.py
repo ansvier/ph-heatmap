@@ -24,9 +24,9 @@ _LOGO_SVG = (
 )
 
 _NAV_ITEMS = [
-    ("map",    "/",       "Map"),
-    ("stats",  "/stats",  "Stats"),
-    ("charts", "/charts", "Charts"),
+    ("map",    "/",        "Map"),
+    ("stats",  "/stats/",  "Stats"),
+    ("charts", "/charts/", "Charts"),
 ]
 
 
@@ -2022,7 +2022,7 @@ _CHARTS_PAGE_TEMPLATE = """<!doctype html>
   <p id="empty" class="empty-state" style="display:none">No performers match your search.</p>
 
   <footer>
-    Updated {last_updated} UTC · <a href="/">explore the treemap</a> · <a href="/stats">view stats</a> · <a href="/data.json">raw data</a>
+    Updated {last_updated} UTC · <a href="/">explore the treemap</a> · <a href="/stats/">view stats</a> · <a href="/data.json">raw data</a>
   </footer>
 
   <script>
@@ -2206,11 +2206,11 @@ def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) ->
 
     urls = [
         f"{_SITE_BASE_URL}/",
-        f"{_SITE_BASE_URL}/rising",
-        f"{_SITE_BASE_URL}/gems",
-        f"{_SITE_BASE_URL}/celebs",
-        f"{_SITE_BASE_URL}/stats",
-        f"{_SITE_BASE_URL}/charts",
+        f"{_SITE_BASE_URL}/rising/",
+        f"{_SITE_BASE_URL}/gems/",
+        f"{_SITE_BASE_URL}/celebs/",
+        f"{_SITE_BASE_URL}/stats/",
+        f"{_SITE_BASE_URL}/charts/",
     ] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
     sitemap_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
