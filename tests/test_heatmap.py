@@ -551,3 +551,30 @@ def test_render_seo_head_neutralizes_script_close_in_jsonld():
     # The escaped form must be present somewhere in the head (showing the
     # payload was neutralized rather than dropped).
     assert "<\\/script>" in head, "escaped </script> not present — payload may have been dropped"
+
+
+def test_sitemap_uses_trailing_slash_for_directory_urls(tmp_path):
+    """Directory-style URLs in sitemap match what CF serves (with slash)."""
+    df = _snapshot_rows()
+    write_sitemap_and_robots(df, public_dir=tmp_path)
+    text = (tmp_path / "sitemap.xml").read_text()
+
+    for path in ("/rising/", "/gems/", "/celebs/", "/stats/", "/charts/"):
+        assert f"<loc>https://hotmap.cam{path}</loc>" in text, \
+            f"sitemap missing trailing-slash entry for {path}"
+        # And the slash-less form is NOT present:
+        bare = path.rstrip("/")
+        assert f"<loc>https://hotmap.cam{bare}</loc>" not in text, \
+            f"sitemap still has slash-less form for {path}"
+    # Per-performer URLs stay slash-less.
+    assert "<loc>https://hotmap.cam/p/alice</loc>" in text
+
+
+def test_nav_items_use_canonical_trailing_slash():
+    """Internal navbar links must point to the canonical (slash) form so
+    every nav click doesn't 307-redirect through CF Pages."""
+    from heatmap import _NAV_ITEMS
+    hrefs = [href for (_, href, _) in _NAV_ITEMS]
+    for bare in ("/stats", "/charts", "/rising", "/gems", "/celebs"):
+        assert bare not in hrefs, \
+            f"_NAV_ITEMS still has bare {bare}; should be {bare}/"
