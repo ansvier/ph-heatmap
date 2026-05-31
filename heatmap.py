@@ -1464,14 +1464,7 @@ _STATS_PAGE_TEMPLATE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>HotMap Stats — {n_performers} performers tracked, {total_views_human} cumulative views</title>
-  <meta name="description" content="HotMap tracks {n_performers} Pornhub performers across {n_days} days of view-growth history. Updated daily. Today's biggest mover: {hero_name} (+{hero_pct:.2f}%, +{hero_gain_human} views).">
-  <link rel="canonical" href="https://hotmap.cam/stats">
-  <meta property="og:title" content="HotMap Stats — {n_performers} performers, {total_views_human} cumulative views">
-  <meta property="og:description" content="Today's biggest mover: {hero_name} (+{hero_pct:.2f}%, +{hero_gain_human} views). Live view-growth tracker.">
-  <meta property="og:url" content="https://hotmap.cam/stats">
-  <meta property="og:image" content="https://hotmap.cam/{hero_photo_path}">
-  <meta name="twitter:card" content="summary_large_image">
+{seo_head}
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -1696,7 +1689,7 @@ _STATS_PAGE_TEMPLATE = """<!doctype html>
     <div class="share">
       <a class="share-btn" href="https://twitter.com/intent/tweet?text={share_text}&url={share_url}" target="_blank" rel="noopener">𝕏 Share on X</a>
       <a class="share-btn" href="https://t.me/share/url?url={share_url}&text={share_text}" target="_blank" rel="noopener">📨 Telegram</a>
-      <button class="share-btn" type="button" onclick="navigator.clipboard.writeText('https://hotmap.cam/stats').then(()=>{{this.textContent='✓ Copied!';setTimeout(()=>this.textContent='🔗 Copy link',1500);}});">🔗 Copy link</button>
+      <button class="share-btn" type="button" onclick="navigator.clipboard.writeText('https://hotmap.cam/stats/').then(()=>{{this.textContent='✓ Copied!';setTimeout(()=>this.textContent='🔗 Copy link',1500);}});">🔗 Copy link</button>
     </div>
   </section>
 
@@ -1799,13 +1792,46 @@ def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str, gender: 
         f"HotMap tracks {n_performers} performers across {n_days} days. "
         f"Today's biggest mover: {hero_name} (+{hero_pct:.2f}%)."
     )
-    share_url = quote("https://hotmap.cam/stats", safe="")
+    share_url = quote("https://hotmap.cam/stats/", safe="")
+
+    total_views_human = _human_views(total_views_raw)
+    canonical_url = "https://hotmap.cam/stats/"
+    og_image_url = f"https://hotmap.cam/{hero_photo}" if hero_photo else None
+
+    collection_jsonld = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": f"HotMap Stats — {n_performers} performers, {total_views_human} cumulative views",
+        "url": canonical_url,
+        "description": (
+            f"Single-page summary of HotMap data — hero numbers, biggest movers, leaderboards. "
+            f"{n_performers} performers tracked, {total_views_human} cumulative views."
+        ),
+    }
+    breadcrumbs = [
+        ("HotMap", "https://hotmap.cam/"),
+        ("Stats", canonical_url),
+    ]
+
+    seo_head = _render_seo_head(
+        page_type="stats",
+        title=f"HotMap Stats — {n_performers} performers tracked, {total_views_human} cumulative views",
+        description=(
+            f"HotMap tracks {n_performers} Pornhub performers across {n_days} days of "
+            f"view-growth history. Updated daily. Today's biggest movers, leaderboards by "
+            f"1d/7d/30d growth."
+        ),
+        canonical_url=canonical_url,
+        og_image_url=og_image_url,
+        extra_jsonld=[collection_jsonld],
+        breadcrumbs=breadcrumbs,
+    )
 
     page = _STATS_PAGE_TEMPLATE.format(
         n_performers=n_performers,
         n_days=n_days,
         total_views_raw=total_views_raw,
-        total_views_human=_human_views(total_views_raw),
+        total_views_human=total_views_human,
         daily_gain_human=_human_views(daily_gain_total),
         avg_growth=avg_growth,
         hero_slug=hero_slug,
@@ -1813,6 +1839,7 @@ def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str, gender: 
         hero_pct=hero_pct,
         hero_gain_human=_human_views(hero_gain),
         hero_photo_path=hero_photo,
+        seo_head=seo_head,
         top_pct_rows=top_pct_rows,
         top_vol_rows=top_vol_rows,
         share_text=share_text,
