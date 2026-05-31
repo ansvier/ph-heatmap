@@ -351,7 +351,7 @@ _PAGE_TEMPLATE = """<!doctype html>
       var panels = document.querySelectorAll('.panel');
 
       var topPerfCards = document.querySelectorAll('.top-perf');
-      var MODE_PATHS = {{ rising: '/rising', gems: '/gems', celebs: '/celebs' }};
+      var MODE_PATHS = {{ rising: '/rising/', gems: '/gems/', celebs: '/celebs/' }};
 
       function syncUrl() {{
         var desired = MODE_PATHS[state.mode] || '/';
@@ -1713,7 +1713,7 @@ def _human_views(n: int) -> str:
 
 
 def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str, gender: str = "female") -> None:
-    """Render a public summary page at /stats — hero numbers + leaderboards.
+    """Render a public summary page at /stats/ — hero numbers + leaderboards.
 
     By default scoped to female performers (the main audience focus) so the
     page reads as a coherent narrative. `gender=None` to include both.
@@ -2070,7 +2070,7 @@ _CHARTS_PAGE_TEMPLATE = """<!doctype html>
 
 
 def render_charts_page(snapshots: pd.DataFrame, output_path: Path | str) -> None:
-    """Render an alphabetical performer index at /charts.
+    """Render an alphabetical performer index at /charts/.
 
     Lists every performer ever seen in the DB, grouped by first letter,
     with a search box and gender filter. Each row links to /p/<slug>.
