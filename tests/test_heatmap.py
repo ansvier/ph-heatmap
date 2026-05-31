@@ -421,6 +421,48 @@ def test_render_seo_head_always_emits_website_jsonld():
             f"WebSite JSON-LD missing for page_type={pt}"
 
 
+def test_render_treemap_page_emits_full_seo_block(tmp_path):
+    """Home page output contains the full SEO/social/JSON-LD set."""
+    df = _snapshot_rows()
+    out = tmp_path / "out.html"
+    render_treemap_page(df, out, default_mode="rising", canonical_path="/", seo_key="home")
+    content = out.read_text()
+
+    # Canonical now uses the trailing-slash form (already does for home).
+    assert 'rel="canonical" href="https://hotmap.cam/"' in content
+    # OG image must default to /og.png
+    assert 'property="og:image" content="https://hotmap.cam/og.png"' in content
+    # Twitter image must match
+    assert 'name="twitter:image" content="https://hotmap.cam/og.png"' in content
+    # og:type=website on home
+    assert 'property="og:type" content="website"' in content
+    # Robots meta
+    assert 'name="robots" content="index, follow' in content
+
+    blocks = _extract_jsonld_blocks(content)
+    types = {b.get("@type") for b in blocks}
+    assert "WebSite" in types and "Dataset" in types, f"got types={types}"
+
+
+def test_render_treemap_page_mode_landing_has_breadcrumbs_and_trailing_slash(tmp_path):
+    """Mode landings (/rising/, /gems/, /celebs/) emit BreadcrumbList JSON-LD
+    and canonical URLs include the trailing slash that CF Pages serves."""
+    df = _snapshot_rows()
+    out = tmp_path / "rising.html"
+    render_treemap_page(df, out, default_mode="rising", canonical_path="/rising/", seo_key="rising")
+    content = out.read_text()
+
+    assert 'rel="canonical" href="https://hotmap.cam/rising/"' in content
+    blocks = _extract_jsonld_blocks(content)
+    types = {b.get("@type") for b in blocks}
+    assert "BreadcrumbList" in types, f"got types={types}"
+
+    # The breadcrumb should reflect the navigation: HotMap -> Rising Stars
+    bc = next(b for b in blocks if b.get("@type") == "BreadcrumbList")
+    names = [item["name"] for item in bc["itemListElement"]]
+    assert names == ["HotMap", "Rising Stars"], f"got names={names}"
+
+
 def test_render_seo_head_neutralizes_script_close_in_jsonld():
     """Strings inside JSON-LD that contain </script> must not break out of
     the surrounding <script> block. Standard mitigation: serialize </ as <\\/.

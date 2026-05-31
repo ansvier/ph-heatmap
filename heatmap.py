@@ -79,13 +79,7 @@ _PAGE_TEMPLATE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{seo_title}</title>
-  <meta name="description" content="{seo_description}">
-  <link rel="canonical" href="https://hotmap.cam{seo_canonical_path}">
-  <meta property="og:title" content="{seo_title}">
-  <meta property="og:description" content="{seo_description}">
-  <meta property="og:url" content="https://hotmap.cam{seo_canonical_path}">
-  <meta name="twitter:card" content="summary_large_image">
+{seo_head}
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
@@ -94,20 +88,6 @@ _PAGE_TEMPLATE = """<!doctype html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="application/ld+json">{{
-    "@context": "https://schema.org",
-    "@type": "Dataset",
-    "name": "HotMap — Pornhub top-500 view growth",
-    "description": "Daily snapshot of cumulative video views for the top-500 Pornhub performers, broken down by gender, with day-over-day growth rates over 1d / 7d / 30d windows.",
-    "url": "https://hotmap.cam/",
-    "license": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "creator": {{ "@type": "Person", "name": "ansvier" }},
-    "distribution": [
-      {{ "@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://hotmap.cam/data.json" }}
-    ],
-    "keywords": ["pornstars", "view growth", "analytics", "treemap", "rankings"],
-    "isAccessibleForFree": true
-  }}</script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <style>
     :root {{
@@ -976,7 +956,7 @@ _MODE_LANDING_META = {
     },
     "home": {
         "title": "HotMap — who's growing fastest on Pornhub",
-        "description": "Live heatmap of view growth: tile size = views gained in the window, color = growth pace relative to the median.",
+        "description": "Live heatmap of view-growth momentum across the top-500 performers. Tile size = % growth in the window, color = rank within the cohort. Updated daily.",
     },
 }
 
@@ -1037,6 +1017,44 @@ def render_treemap_page(
     top_perf_card = _build_all_top_performer_cards(snapshots, default_mode=default_mode, default_gender=default_gender)
 
     meta = _MODE_LANDING_META.get(seo_key, _MODE_LANDING_META["home"])
+    canonical_url = f"https://hotmap.cam{canonical_path}"
+
+    # Mode landings get a BreadcrumbList; home doesn't (it IS the root).
+    breadcrumbs = None
+    page_type = "home"
+    if seo_key in ("rising", "gems", "celebs"):
+        page_type = "mode"
+        mode_labels = {"rising": "Rising Stars", "gems": "Hidden Gems", "celebs": "Top Celebrities"}
+        breadcrumbs = [
+            ("HotMap", "https://hotmap.cam/"),
+            (mode_labels[seo_key], canonical_url),
+        ]
+
+    dataset_jsonld = {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "name": "HotMap — Pornhub top-500 view growth",
+        "description": "Daily snapshot of cumulative video views for the top-500 Pornhub performers, broken down by gender, with day-over-day growth rates over 1d / 7d / 30d windows.",
+        "url": "https://hotmap.cam/",
+        "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "creator": {"@type": "Person", "name": "ansvier"},
+        "distribution": [
+            {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://hotmap.cam/data.json"}
+        ],
+        "keywords": ["pornstars", "view growth", "analytics", "treemap", "rankings"],
+        "isAccessibleForFree": True,
+    }
+
+    seo_head = _render_seo_head(
+        page_type=page_type,
+        title=meta["title"],
+        description=meta["description"],
+        canonical_url=canonical_url,
+        og_image_url=None,                 # fall back to /og.png
+        extra_jsonld=[dataset_jsonld],
+        breadcrumbs=breadcrumbs,
+    )
+
     page = _PAGE_TEMPLATE.format(
         panels="\n    ".join(panels_html_parts),
         last_updated=last_updated,
@@ -1046,9 +1064,7 @@ def render_treemap_page(
         redirect_url_base=_REDIRECT_URL_BASE,
         top_perf_card=top_perf_card,
         default_mode=default_mode,
-        seo_title=meta["title"],
-        seo_description=meta["description"],
-        seo_canonical_path=canonical_path,
+        seo_head=seo_head,
         mode_btn_active_rising=" active" if default_mode == "rising" else "",
         mode_btn_active_gems=" active" if default_mode == "gems" else "",
         mode_btn_active_celebs=" active" if default_mode == "celebs" else "",
