@@ -35,7 +35,7 @@ Three tiers of performers, ranked by view-growth momentum rather than raw popula
 | **Hidden Gems** | Ranks 251–500 (smaller accounts) | Discovery of niche / early performers |
 | **Celebrities** | Top 50 by total views | Tracking the established names |
 
-Each tier is sliced by **gender** (All / Female / Male) and **window** (1d / 7d / 30d). The treemap colors performers by percentile rank within the cohort — bright green = running ahead of the pack, red = falling behind. Tile size encodes absolute views gained in the window.
+Each tier is sliced by **gender** (All / Female / Male) and **window** (1d / 7d / 30d). The treemap colors performers by percentile rank within the cohort — bright green = running ahead of the pack, red = falling behind. Tile size encodes **% view growth** over the window (performers with under 1M baseline views are filtered out to keep the visual focused on meaningful movers). Hover any tile to see both the absolute and percent numbers.
 
 A "Top Performer of the Day" card surfaces the strongest mover for the current cohort. Clicking any tile opens the performer's profile (via tracked `/r/<slug>` redirect).
 

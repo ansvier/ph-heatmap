@@ -7,15 +7,19 @@ from heatmap import render_performer_page, render_stats_page, render_treemap_pag
 
 
 def _snapshot_rows():
-    """Three days, three slugs with partial coverage. All female by default."""
+    """Three days, three slugs with partial coverage. All female by default.
+
+    View counts are scaled to >=1M because _build_treemap_figure drops rows
+    whose prev_views fall under that threshold (the % metric noise filter).
+    """
     return pd.DataFrame([
-        {"snapshot_date": pd.Timestamp(date(2026, 5, 25)), "slug": "alice", "name": "Alice", "total_views": 1000, "rank": 1, "gender": "female"},
-        {"snapshot_date": pd.Timestamp(date(2026, 5, 25)), "slug": "bob",   "name": "Bob",   "total_views":  500, "rank": 2, "gender": "male"},
-        {"snapshot_date": pd.Timestamp(date(2026, 5, 26)), "slug": "alice", "name": "Alice", "total_views": 1100, "rank": 1, "gender": "female"},
-        {"snapshot_date": pd.Timestamp(date(2026, 5, 26)), "slug": "bob",   "name": "Bob",   "total_views":  600, "rank": 2, "gender": "male"},
-        {"snapshot_date": pd.Timestamp(date(2026, 5, 26)), "slug": "carol", "name": "Carol", "total_views":  200, "rank": 3, "gender": "female"},
-        {"snapshot_date": pd.Timestamp(date(2026, 5, 27)), "slug": "alice", "name": "Alice", "total_views": 1200, "rank": 1, "gender": "female"},
-        {"snapshot_date": pd.Timestamp(date(2026, 5, 27)), "slug": "carol", "name": "Carol", "total_views":  300, "rank": 2, "gender": "female"},
+        {"snapshot_date": pd.Timestamp(date(2026, 5, 25)), "slug": "alice", "name": "Alice", "total_views": 1_000_000_000, "rank": 1, "gender": "female"},
+        {"snapshot_date": pd.Timestamp(date(2026, 5, 25)), "slug": "bob",   "name": "Bob",   "total_views":   500_000_000, "rank": 2, "gender": "male"},
+        {"snapshot_date": pd.Timestamp(date(2026, 5, 26)), "slug": "alice", "name": "Alice", "total_views": 1_100_000_000, "rank": 1, "gender": "female"},
+        {"snapshot_date": pd.Timestamp(date(2026, 5, 26)), "slug": "bob",   "name": "Bob",   "total_views":   600_000_000, "rank": 2, "gender": "male"},
+        {"snapshot_date": pd.Timestamp(date(2026, 5, 26)), "slug": "carol", "name": "Carol", "total_views":   200_000_000, "rank": 3, "gender": "female"},
+        {"snapshot_date": pd.Timestamp(date(2026, 5, 27)), "slug": "alice", "name": "Alice", "total_views": 1_200_000_000, "rank": 1, "gender": "female"},
+        {"snapshot_date": pd.Timestamp(date(2026, 5, 27)), "slug": "carol", "name": "Carol", "total_views":   300_000_000, "rank": 2, "gender": "female"},
     ])
 
 
@@ -181,7 +185,7 @@ def test_window_growth_1d_matches_pct_change():
     df = _snapshot_rows()
     result = compute_window_growth(df, window_days=1)
     alice = result.loc["alice"]
-    assert alice["total_views"] == 1200
+    assert alice["total_views"] == 1_200_000_000
     assert alice["growth_pct"] == pytest.approx(100 * (1200 - 1100) / 1100)
     carol = result.loc["carol"]
     assert carol["growth_pct"] == pytest.approx(50.0)
@@ -198,10 +202,65 @@ def test_window_growth_nan_when_no_baseline():
     df = _snapshot_rows()
     result = compute_window_growth(df, window_days=30)
     assert result["growth_pct"].isna().all()
-    assert result.loc["alice", "total_views"] == 1200
+    assert result.loc["alice", "total_views"] == 1_200_000_000
 
 
 def test_window_growth_carries_display_name():
     df = _snapshot_rows()
     result = compute_window_growth(df, window_days=1)
     assert result.loc["alice", "name"] == "Alice"
+
+
+from heatmap import _build_treemap_figure
+
+
+def _window_df(rows):
+    """Build the per-slug DataFrame that _build_treemap_figure consumes.
+
+    Matches compute_window_growth's output: index=slug, cols=name, total_views,
+    prev_views, growth_pct, gender.
+    """
+    df = pd.DataFrame(rows).set_index("slug")
+    df["growth_pct"] = (df["total_views"] - df["prev_views"]) / df["prev_views"] * 100
+    return df
+
+
+def test_build_treemap_figure_size_is_percent_growth():
+    """Tile size encodes % growth, not absolute views gained.
+
+    'big' has a larger absolute delta (+5M) but smaller % (+0.25%).
+    'rising' has a smaller absolute delta (+2M) but larger % (+4%).
+    Under the new metric, 'rising' must get the larger tile value.
+    """
+    window = _window_df([
+        {"slug": "big",    "name": "Big",    "total_views": 2_005_000_000, "prev_views": 2_000_000_000, "gender": "female"},
+        {"slug": "rising", "name": "Rising", "total_views":    52_000_000, "prev_views":    50_000_000, "gender": "female"},
+    ])
+
+    fig = _build_treemap_figure(window, window_days=1)
+
+    values_by_id = dict(zip(fig.data[0].ids, fig.data[0].values))
+    assert values_by_id["rising"] > values_by_id["big"], (
+        f"Expected rising tile > big tile under % metric; "
+        f"got rising={values_by_id['rising']}, big={values_by_id['big']}"
+    )
+
+
+def test_build_treemap_figure_filters_below_1m_baseline():
+    """Performers with prev_views < 1M are excluded from the treemap.
+
+    'tiny' would have +20% growth but a 500k baseline — the filter must drop
+    it so micro-account noise doesn't dominate the visual.
+    """
+    window = _window_df([
+        {"slug": "tiny",   "name": "Tiny",   "total_views":   600_000, "prev_views":   500_000, "gender": "female"},
+        {"slug": "normal", "name": "Normal", "total_views": 1_500_000, "prev_views": 1_400_000, "gender": "female"},
+        {"slug": "big",    "name": "Big",    "total_views":   105_000_000, "prev_views":   100_000_000, "gender": "female"},
+    ])
+
+    fig = _build_treemap_figure(window, window_days=1)
+
+    ids = list(fig.data[0].ids)
+    assert "tiny" not in ids, f"Expected 'tiny' filtered out (prev_views=500k < 1M); got ids={ids}"
+    assert "normal" in ids, f"Expected 'normal' kept (prev_views=1.4M); got ids={ids}"
+    assert "big" in ids, f"Expected 'big' kept; got ids={ids}"

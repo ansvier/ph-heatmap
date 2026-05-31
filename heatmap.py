@@ -599,17 +599,26 @@ def _format_views(n: int) -> str:
 def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
     """Build one Plotly Treemap figure for a single (gender, window) view.
 
-    Tile size encodes the absolute number of views gained over the window so
-    high-volume performers and rising stars both show up in relative scale.
-    Tile color is growth-rate relative to the median of the visible set
+    Tile size encodes the % view growth over the window, so a mid-tier
+    performer who accelerated shows up large even when their raw delta is
+    smaller than a top-tier name's daily drip.
+    Tile color is percentile rank of % growth within the visible set
     (green = running ahead of the pack, red = falling behind).
-    Rows without a baseline (no row N days ago) are dropped — they wouldn't
-    have a meaningful size or color value anyway.
+    Rows without a baseline are dropped, and rows whose baseline view count
+    is below 1M are filtered out as well — they're too noisy on a % metric
+    (a 100k bump on a 200k base is +50% but visually meaningless next to
+    real movers).
     """
     rows = window.reset_index().copy()
     rows["growth_amount"] = rows["total_views"] - rows["prev_views"]
     rows = rows.dropna(subset=["growth_amount", "growth_pct"]).copy()
     rows["growth_amount"] = rows["growth_amount"].clip(lower=0)
+    # Drop micro-accounts: < 1M baseline views makes the % metric too noisy
+    # (a +100k bump on a 200k base is +50% but visually drowns out real movers).
+    rows = rows[rows["prev_views"] >= 1_000_000].copy()
+    # Size metric: % growth, clipped to ≥0 because Plotly Treemap requires
+    # non-negative `values`. total_views is monotonic so this clip is defensive.
+    rows["tile_size"] = rows["growth_pct"].clip(lower=0)
 
     # Color by percentile rank so the visible spread fills the palette even when
     # raw % growth values are tightly clustered (everyone +0.01..+0.07% etc).
@@ -636,7 +645,7 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
             labels=rows["tile_text"],
             ids=rows["slug"],
             parents=[""] * len(rows),
-            values=rows["growth_amount"],
+            values=rows["tile_size"],
             marker=dict(
                 colors=rows["color_value"],
                 colorscale="RdYlGn",
