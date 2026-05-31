@@ -1083,15 +1083,7 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{name} — view statistics, growth, ranking | HotMap</title>
-  <meta name="description" content="{name} has {views_label} cumulative video views as of {last_date}. Daily growth: {growth_label}. Ranked #{rank} on HotMap's top-500 tracker. Updated daily.">
-  <link rel="canonical" href="{site}/p/{slug}">
-  <meta property="og:type" content="profile">
-  <meta property="og:title" content="{name} — HotMap statistics">
-  <meta property="og:description" content="{name}: {views_label} cumulative views. Ranked #{rank}. Daily growth: {growth_label}.">
-  <meta property="og:url" content="{site}/p/{slug}">
-  {og_image_tag}
-  <meta name="twitter:card" content="summary">
+{seo_head}
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
@@ -1100,7 +1092,6 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="application/ld+json">{json_ld}</script>
   <style>
     :root {{
       --brand-orange: #ff9000;
@@ -1376,29 +1367,59 @@ def render_performer_page(
         growth_labels[window] = label
         growth_classes[window] = cls
 
-    # Photo and og:image
+    # Photo for the visible hero block (og:image is handled by _render_seo_head below).
     if photo_url:
         photo_tag = f'<img src="/{photo_url}" alt="{name}" loading="lazy">' if not photo_url.startswith("http") else f'<img src="{photo_url}" alt="{name}" loading="lazy">'
-        og_image_url = f"{_SITE_BASE_URL}/{photo_url}" if not photo_url.startswith("http") else photo_url
-        og_image_tag = f'<meta property="og:image" content="{og_image_url}">'
     else:
         photo_tag = '<div style="width:96px;height:96px;border-radius:50%;background:#222;flex-shrink:0"></div>'
-        og_image_tag = ""
 
-    # Schema.org Person JSON-LD
-    import json as _json
-    json_ld = _json.dumps({
+    # SEO/social head — consolidated through helper.
+    canonical_url = f"{_SITE_BASE_URL}/p/{slug}"
+    if photo_url:
+        og_image_url = (
+            photo_url if photo_url.startswith("http")
+            else f"{_SITE_BASE_URL}{photo_url if photo_url.startswith('/') else '/' + photo_url}"
+        )
+    else:
+        og_image_url = None
+
+    person_jsonld = {
         "@context": "https://schema.org",
         "@type": "Person",
         "name": name,
-        "url": f"{_SITE_BASE_URL}/p/{slug}",
+        "url": canonical_url,
+        "identifier": slug,
         "sameAs": [f"{_PROFILE_URL_BASE}{slug}"],
         "interactionStatistic": {
             "@type": "InteractionCounter",
             "interactionType": {"@type": "WatchAction"},
             "userInteractionCount": total_views,
         },
-    })
+    }
+    if photo_url:
+        person_jsonld["image"] = og_image_url
+
+    breadcrumbs = [
+        ("HotMap", "https://hotmap.cam/"),
+        ("Charts", "https://hotmap.cam/charts/"),
+        (name, canonical_url),
+    ]
+
+    seo_title = f"{name} — view statistics, growth, ranking | HotMap"
+    seo_description = (
+        f"{name} has {total_views:,} cumulative video views as of {last_date}. "
+        f"Daily growth: {growth_labels[1]}. Ranked #{rank} on HotMap's top-500 tracker. Updated daily."
+    )
+
+    seo_head = _render_seo_head(
+        page_type="performer",
+        title=seo_title,
+        description=seo_description,
+        canonical_url=canonical_url,
+        og_image_url=og_image_url,
+        extra_jsonld=[person_jsonld],
+        breadcrumbs=breadcrumbs,
+    )
 
     sparkline = _build_sparkline_html(rows)
     gender_label = {"female": "Female", "male": "Male"}.get(gender, "")
@@ -1426,10 +1447,9 @@ def render_performer_page(
         growth_class_30d=growth_classes[30],
         site=_SITE_BASE_URL,
         photo_tag=photo_tag,
-        og_image_tag=og_image_tag,
+        seo_head=seo_head,
         profile_url=f"{_REDIRECT_URL_BASE}{slug}",  # tracked outbound
         sparkline=sparkline,
-        json_ld=json_ld,
         share_url=share_url,
         share_text=share_text,
         top_nav=_top_nav(""),  # no nav item highlighted on individual performer
