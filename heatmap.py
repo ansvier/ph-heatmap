@@ -1857,13 +1857,7 @@ _CHARTS_PAGE_TEMPLATE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Performer index — HotMap charts</title>
-  <meta name="description" content="Alphabetical index of all {n} Pornhub performers tracked by HotMap. Search by name, jump by letter, click through to per-performer stats.">
-  <link rel="canonical" href="https://hotmap.cam/charts">
-  <meta property="og:title" content="HotMap Charts — A-Z performer index">
-  <meta property="og:description" content="All {n} tracked performers. Search, browse, see per-performer view-growth stats.">
-  <meta property="og:url" content="https://hotmap.cam/charts">
-  <meta name="twitter:card" content="summary_large_image">
+{seo_head}
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -2150,6 +2144,37 @@ def render_charts_page(snapshots: pd.DataFrame, output_path: Path | str) -> None
         )
     letter_sections_html = "\n".join(letter_sections_parts)
 
+    n_performers = int(latest_per_slug["slug"].nunique())
+    canonical_url = "https://hotmap.cam/charts/"
+
+    collection_jsonld = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "HotMap Charts — A-Z performer index",
+        "url": canonical_url,
+        "description": (
+            f"Alphabetical index of all {n_performers} Pornhub performers tracked by HotMap. "
+            f"Search by name, jump by letter."
+        ),
+    }
+    breadcrumbs = [
+        ("HotMap", "https://hotmap.cam/"),
+        ("Charts", canonical_url),
+    ]
+
+    seo_head = _render_seo_head(
+        page_type="charts",
+        title="Performer index — HotMap charts",
+        description=(
+            f"Alphabetical index of all {n_performers} Pornhub performers tracked by HotMap. "
+            f"Search by name, jump by letter, see per-performer view-growth stats."
+        ),
+        canonical_url=canonical_url,
+        og_image_url=None,                 # fall back to /og.png
+        extra_jsonld=[collection_jsonld],
+        breadcrumbs=breadcrumbs,
+    )
+
     page = _CHARTS_PAGE_TEMPLATE.format(
         n=len(latest_per_slug),
         alphabet_links=alphabet_links,
@@ -2157,6 +2182,7 @@ def render_charts_page(snapshots: pd.DataFrame, output_path: Path | str) -> None
         last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         top_nav=_top_nav("charts"),
         nav_css=_TOP_NAV_CSS,
+        seo_head=seo_head,
     )
     Path(output_path).write_text(page)
 
