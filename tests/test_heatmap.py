@@ -490,6 +490,25 @@ def test_render_performer_page_emits_full_seo_block(tmp_path):
     assert names == ["HotMap", "Charts", "Alice"], f"got names={names}"
 
 
+def test_render_stats_page_emits_full_seo_block(tmp_path):
+    """Stats page: complete SEO + CollectionPage + BreadcrumbList JSON-LD,
+    canonical with trailing slash, og:type=article."""
+    df = _snapshot_rows()
+    out = tmp_path / "stats.html"
+    render_stats_page(df, out)
+    content = out.read_text()
+
+    assert 'rel="canonical" href="https://hotmap.cam/stats/"' in content, \
+        "canonical must use trailing slash to match what CF serves"
+    assert 'property="og:type" content="article"' in content
+    assert 'name="twitter:image"' in content
+
+    blocks = _extract_jsonld_blocks(content)
+    types = {b.get("@type") for b in blocks}
+    assert "WebSite" in types and "CollectionPage" in types and "BreadcrumbList" in types, \
+        f"got types={types}"
+
+
 def test_render_seo_head_neutralizes_script_close_in_jsonld():
     """Strings inside JSON-LD that contain </script> must not break out of
     the surrounding <script> block. Standard mitigation: serialize </ as <\\/.
