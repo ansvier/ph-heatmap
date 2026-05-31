@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import html as _html
+import json as _json
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -594,6 +597,121 @@ def _format_views(n: int) -> str:
     if n >= 1_000:
         return f"{n / 1_000:.1f}K"
     return str(n)
+
+
+_SITE_NAME = "HotMap"
+_DEFAULT_OG_IMAGE = "https://hotmap.cam/og.png"
+_TWITTER_CARD = "summary_large_image"
+
+_OG_TYPE_BY_PAGE_TYPE = {
+    "home": "website",
+    "mode": "website",
+    "stats": "article",
+    "charts": "website",
+    "performer": "profile",
+}
+
+
+def _website_jsonld() -> dict:
+    """The WebSite block, emitted on every page. Carries identity for the
+    site as a whole — Google uses this for sitelinks and entity reconciliation."""
+    return {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": _SITE_NAME,
+        "url": "https://hotmap.cam/",
+    }
+
+
+def _breadcrumb_jsonld(items: list[tuple[str, str]]) -> dict:
+    """BreadcrumbList — items is [(name, url), ...] in display order."""
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": i + 1,
+                "name": name,
+                "item": url,
+            }
+            for i, (name, url) in enumerate(items)
+        ],
+    }
+
+
+def _render_seo_head(
+    *,
+    page_type: Literal["home", "mode", "stats", "charts", "performer"],
+    title: str,
+    description: str,
+    canonical_url: str,
+    og_image_url: str | None = None,
+    extra_jsonld: list[dict] | None = None,
+    breadcrumbs: list[tuple[str, str]] | None = None,
+) -> str:
+    """Produce the complete SEO + social + JSON-LD block for one rendered page.
+
+    All four render_* functions call this exactly once and inject the result
+    into their template's <head>. Consolidating here is the only way to keep
+    coverage consistent as new page types are added (categories, countries…).
+
+    Args:
+        page_type: one of 'home', 'mode', 'stats', 'charts', 'performer'.
+            Drives og:type via _OG_TYPE_BY_PAGE_TYPE.
+        title: <title> and og:title and twitter:title.
+        description: meta description, og:description, twitter:description.
+        canonical_url: full https://hotmap.cam/... URL that returns 200 directly
+            (no redirects). This goes into <link rel="canonical">, og:url, and
+            the @id of WebSite JSON-LD.
+        og_image_url: full URL to the social-share image. None falls back to
+            /og.png (the static default).
+        extra_jsonld: zero or more schema.org JSON-LD dicts appended as
+            additional <script> blocks (Person, Dataset, CollectionPage…).
+        breadcrumbs: zero or more (name, url) tuples in display order. If
+            non-empty, a BreadcrumbList JSON-LD block is emitted.
+
+    Returns:
+        A string of HTML to be inserted between <head> tags.
+    """
+    og_type = _OG_TYPE_BY_PAGE_TYPE[page_type]
+    image = og_image_url or _DEFAULT_OG_IMAGE
+
+    title_esc = _html.escape(title, quote=True)
+    desc_esc = _html.escape(description, quote=True)
+
+    jsonld_blocks: list[dict] = [_website_jsonld()]
+    if breadcrumbs:
+        jsonld_blocks.append(_breadcrumb_jsonld(breadcrumbs))
+    if extra_jsonld:
+        jsonld_blocks.extend(extra_jsonld)
+
+    jsonld_html = "\n".join(
+        f'  <script type="application/ld+json">'
+        f'{_json.dumps(b, ensure_ascii=False).replace("</", "<\\/")}'
+        f'</script>'
+        for b in jsonld_blocks
+    )
+
+    return (
+        f'  <title>{title_esc}</title>\n'
+        f'  <meta name="description" content="{desc_esc}">\n'
+        f'  <link rel="canonical" href="{canonical_url}">\n'
+        f'  <meta name="robots" content="index, follow, max-image-preview:large">\n'
+        f'  <meta property="og:type" content="{og_type}">\n'
+        f'  <meta property="og:title" content="{title_esc}">\n'
+        f'  <meta property="og:description" content="{desc_esc}">\n'
+        f'  <meta property="og:url" content="{canonical_url}">\n'
+        f'  <meta property="og:image" content="{image}">\n'
+        f'  <meta property="og:image:width" content="1200">\n'
+        f'  <meta property="og:image:height" content="630">\n'
+        f'  <meta property="og:site_name" content="{_SITE_NAME}">\n'
+        f'  <meta name="twitter:card" content="{_TWITTER_CARD}">\n'
+        f'  <meta name="twitter:title" content="{title_esc}">\n'
+        f'  <meta name="twitter:description" content="{desc_esc}">\n'
+        f'  <meta name="twitter:image" content="{image}">\n'
+        f'{jsonld_html}\n'
+    )
 
 
 def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:

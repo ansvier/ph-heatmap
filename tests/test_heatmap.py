@@ -1,9 +1,17 @@
+import json
+import re
 from datetime import date
 
 import pandas as pd
 import pytest
 
-from heatmap import render_performer_page, render_stats_page, render_treemap_page, write_sitemap_and_robots
+from heatmap import (
+    _render_seo_head,
+    render_performer_page,
+    render_stats_page,
+    render_treemap_page,
+    write_sitemap_and_robots,
+)
 
 
 def _snapshot_rows():
@@ -71,8 +79,6 @@ def test_render_treemap_page_raises_on_empty(tmp_path):
             tmp_path / "out.html",
         )
 
-
-import json
 
 from heatmap import dump_json
 
@@ -264,3 +270,177 @@ def test_build_treemap_figure_filters_below_1m_baseline():
     assert "tiny" not in ids, f"Expected 'tiny' filtered out (prev_views=500k < 1M); got ids={ids}"
     assert "normal" in ids, f"Expected 'normal' kept (prev_views=1.4M); got ids={ids}"
     assert "big" in ids, f"Expected 'big' kept; got ids={ids}"
+
+
+def _extract_jsonld_blocks(html: str) -> list[dict]:
+    """Parse all <script type="application/ld+json"> blocks from rendered HTML."""
+    pattern = re.compile(
+        r'<script[^>]+type=["\']application/ld\+json["\']>(.*?)</script>',
+        re.DOTALL,
+    )
+    out = []
+    for raw in pattern.findall(html):
+        out.append(json.loads(raw.strip()))
+    return out
+
+
+def test_render_seo_head_home_emits_all_required_tags():
+    """Home page gets the full SEO/social/JSON-LD block."""
+    head = _render_seo_head(
+        page_type="home",
+        title="HotMap — who's growing fastest on Pornhub",
+        description="Live heatmap of view growth across the top-500 performers.",
+        canonical_url="https://hotmap.cam/",
+    )
+
+    # Core meta. Apostrophe may render as literal, &#39;, or &#x27; — all valid HTML.
+    assert ("<title>HotMap — who&#39;s growing fastest on Pornhub</title>" in head
+            or "<title>HotMap — who&#x27;s growing fastest on Pornhub</title>" in head
+            or "<title>HotMap — who's growing fastest on Pornhub</title>" in head)
+    assert 'name="description"' in head
+    assert 'rel="canonical"' in head and 'href="https://hotmap.cam/"' in head
+    assert 'name="robots"' in head and 'index, follow' in head
+
+    # OG quintet
+    assert 'property="og:type" content="website"' in head
+    assert 'property="og:title"' in head
+    assert 'property="og:description"' in head
+    assert 'property="og:url" content="https://hotmap.cam/"' in head
+    assert 'property="og:image" content="https://hotmap.cam/og.png"' in head, \
+        "home should fall back to /og.png when no og_image_url provided"
+
+    # Twitter triple
+    assert 'name="twitter:card" content="summary_large_image"' in head
+    assert 'name="twitter:title"' in head
+    assert 'name="twitter:image" content="https://hotmap.cam/og.png"' in head
+
+    # JSON-LD: WebSite always, plus no extras for bare home call
+    blocks = _extract_jsonld_blocks(head)
+    types = {b.get("@type") for b in blocks}
+    assert "WebSite" in types, f"expected WebSite JSON-LD; got types={types}"
+
+
+def test_render_seo_head_uses_explicit_og_image_when_given():
+    """When og_image_url is explicit (e.g. an avatar), helper uses it."""
+    head = _render_seo_head(
+        page_type="performer",
+        title="Lana Rhoades — HotMap",
+        description="Lana Rhoades stats.",
+        canonical_url="https://hotmap.cam/p/lana-rhoades",
+        og_image_url="https://hotmap.cam/avatars/lana-rhoades.jpg",
+    )
+    assert 'property="og:image" content="https://hotmap.cam/avatars/lana-rhoades.jpg"' in head
+    assert 'name="twitter:image" content="https://hotmap.cam/avatars/lana-rhoades.jpg"' in head
+    assert 'property="og:image" content="https://hotmap.cam/og.png"' not in head
+
+
+def test_render_seo_head_og_type_per_page_type():
+    """og:type matches the page_type matrix in the spec."""
+    expected = {
+        "home": "website",
+        "mode": "website",
+        "stats": "article",
+        "charts": "website",
+        "performer": "profile",
+    }
+    for page_type, og_type in expected.items():
+        head = _render_seo_head(
+            page_type=page_type,
+            title="T",
+            description="D",
+            canonical_url="https://hotmap.cam/x",
+        )
+        assert f'property="og:type" content="{og_type}"' in head, \
+            f"page_type={page_type}: expected og:type={og_type}"
+
+
+def test_render_seo_head_emits_breadcrumbs_when_given():
+    """BreadcrumbList JSON-LD is emitted when breadcrumbs param is non-empty."""
+    head = _render_seo_head(
+        page_type="performer",
+        title="Lana Rhoades — HotMap",
+        description="Lana Rhoades stats.",
+        canonical_url="https://hotmap.cam/p/lana-rhoades",
+        breadcrumbs=[
+            ("HotMap", "https://hotmap.cam/"),
+            ("Charts", "https://hotmap.cam/charts/"),
+            ("Lana Rhoades", "https://hotmap.cam/p/lana-rhoades"),
+        ],
+    )
+    blocks = _extract_jsonld_blocks(head)
+    bc = next((b for b in blocks if b.get("@type") == "BreadcrumbList"), None)
+    assert bc is not None, "expected BreadcrumbList JSON-LD"
+    items = bc["itemListElement"]
+    assert len(items) == 3
+    assert items[0]["position"] == 1
+    assert items[0]["name"] == "HotMap"
+    assert items[0]["item"] == "https://hotmap.cam/"
+    assert items[2]["name"] == "Lana Rhoades"
+
+
+def test_render_seo_head_emits_extra_jsonld():
+    """extra_jsonld list is appended verbatim as additional <script> blocks."""
+    person_ld = {"@context": "https://schema.org", "@type": "Person", "name": "Lana Rhoades"}
+    head = _render_seo_head(
+        page_type="performer",
+        title="Lana Rhoades — HotMap",
+        description="…",
+        canonical_url="https://hotmap.cam/p/lana-rhoades",
+        extra_jsonld=[person_ld],
+    )
+    blocks = _extract_jsonld_blocks(head)
+    types = {b.get("@type") for b in blocks}
+    assert "WebSite" in types  # always
+    assert "Person" in types   # from extra
+
+
+def test_render_seo_head_jsonld_escapes_safely():
+    """Strings inside JSON-LD must survive json.loads, including apostrophes."""
+    head = _render_seo_head(
+        page_type="home",
+        title="HotMap — who's growing fastest",
+        description="Tile size = % growth; color = rank.",
+        canonical_url="https://hotmap.cam/",
+    )
+    # Must not throw
+    blocks = _extract_jsonld_blocks(head)
+    assert all(isinstance(b, dict) for b in blocks)
+
+
+def test_render_seo_head_always_emits_website_jsonld():
+    """WebSite block is an invariant — every page type, every input shape."""
+    for pt in ("home", "mode", "stats", "charts", "performer"):
+        head = _render_seo_head(
+            page_type=pt,
+            title="T",
+            description="D",
+            canonical_url="https://hotmap.cam/x",
+        )
+        blocks = _extract_jsonld_blocks(head)
+        assert any(b.get("@type") == "WebSite" for b in blocks), \
+            f"WebSite JSON-LD missing for page_type={pt}"
+
+
+def test_render_seo_head_neutralizes_script_close_in_jsonld():
+    """Strings inside JSON-LD that contain </script> must not break out of
+    the surrounding <script> block. Standard mitigation: serialize </ as <\\/.
+    """
+    head = _render_seo_head(
+        page_type="performer",
+        title="Safe title",
+        description="Safe desc",
+        canonical_url="https://hotmap.cam/p/x",
+        extra_jsonld=[{
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": "Evil </script><script>alert(1)</script>",
+        }],
+    )
+    # The literal </script> from the payload must not appear; only the two
+    # legitimate closing tags (one per emitted script block: WebSite + Person)
+    # plus zero extras from the BreadcrumbList (we didn't pass breadcrumbs).
+    assert head.count("</script>") == 2, \
+        f"expected exactly 2 </script> (WebSite + Person); got {head.count('</script>')}"
+    # The escaped form must be present somewhere in the head (showing the
+    # payload was neutralized rather than dropped).
+    assert "<\\/script>" in head, "escaped </script> not present — payload may have been dropped"
