@@ -158,7 +158,7 @@ def main() -> int:
             snapshots_df,
             mode_dir / "index.html",
             default_mode=mode,
-            canonical_path=f"/{mode}",
+            canonical_path=f"/{mode}/",
             seo_key=mode,
         )
         print(f"wrote /{mode}/index.html", flush=True)
