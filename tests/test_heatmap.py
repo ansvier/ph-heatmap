@@ -669,3 +669,60 @@ def test_compute_window_growth_attaches_acceleration_for_1d():
     # 7d window: no acceleration column
     out_7d = compute_window_growth(df, window_days=7)
     assert "acceleration" not in out_7d.columns
+
+
+from heatmap import _build_top_performer_card
+
+
+def _multiday_card_fixture():
+    """8 days of history, multiple female slugs with different growth/accel signatures."""
+    return pd.DataFrame([
+        # 'stable_high' grows +0.5%/day every day → high growth_pct, ~0 acceleration
+        # 'spiker' grows +0.1%/day for 7 days, then +1.0% on day 8 → lower growth_pct
+        #          but acceleration ≈ +0.9 pp
+        # Both have >100M views so the cohort filter doesn't eliminate them.
+        *[{
+            "snapshot_date": pd.Timestamp("2026-05-25") + pd.Timedelta(days=i),
+            "slug": "stable_high", "name": "Stable High",
+            "total_views": int(200_000_000 * (1.005 ** i)),
+            "rank": 1, "gender": "female",
+        } for i in range(8)],
+        *[{
+            "snapshot_date": pd.Timestamp("2026-05-25") + pd.Timedelta(days=i),
+            "slug": "spiker", "name": "Spiker",
+            "total_views": int(150_000_000 * ((1.001 ** min(i, 7)) * (1.010 if i == 7 else 1.0))),
+            "rank": 2, "gender": "female",
+        } for i in range(8)],
+    ])
+
+
+def test_top_performer_card_picks_by_acceleration():
+    """Card prefers the spiker over the steadier high-grower when acceleration data exists."""
+    df = _multiday_card_fixture()
+    # Mode 'celebs' → no rank-band filter, just top-50 by views. Both slugs included.
+    html = _build_top_performer_card(
+        df, gender_key="female", gender_filter="female", mode="celebs", is_default=True
+    )
+    # Spiker has higher acceleration, so the card should feature Spiker, not Stable High.
+    assert "Spiker" in html, f"expected Spiker in card; got: {html[:400]}"
+    assert "Stable High" not in html
+
+
+def test_top_performer_card_falls_back_to_growth_pct_without_history():
+    """With only 2 days of data (no acceleration possible), card falls back to growth_pct."""
+    df = pd.DataFrame([
+        {"snapshot_date": pd.Timestamp("2026-05-30"), "slug": "slow",
+         "name": "Slow", "total_views": 200_000_000, "rank": 1, "gender": "female"},
+        {"snapshot_date": pd.Timestamp("2026-05-30"), "slug": "fast",
+         "name": "Fast", "total_views": 150_000_000, "rank": 2, "gender": "female"},
+        {"snapshot_date": pd.Timestamp("2026-05-31"), "slug": "slow",
+         "name": "Slow", "total_views": 200_100_000, "rank": 1, "gender": "female"},
+        {"snapshot_date": pd.Timestamp("2026-05-31"), "slug": "fast",
+         "name": "Fast", "total_views": 151_500_000, "rank": 2, "gender": "female"},
+    ])
+    html = _build_top_performer_card(
+        df, gender_key="female", gender_filter="female", mode="celebs", is_default=True
+    )
+    # Fast grew 1%, Slow grew 0.05% — fallback picks Fast.
+    assert "Fast" in html, f"expected Fast in card; got: {html[:400]}"
+    assert "Slow" not in html

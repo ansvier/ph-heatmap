@@ -938,7 +938,18 @@ def _build_top_performer_card(
     if qualified.empty:
         return ""
 
-    top = qualified.sort_values("growth_pct", ascending=False).iloc[0]
+    # Selection: prefer highest acceleration (today vs 7d baseline) so the card
+    # surfaces a different performer most days. Falls back to highest % growth
+    # when acceleration can't be computed for anyone (early tracking days, thin
+    # fixtures, etc).
+    if "acceleration" in qualified.columns and qualified["acceleration"].notna().any():
+        candidates = qualified.dropna(subset=["acceleration"])
+        top = candidates.sort_values("acceleration", ascending=False).iloc[0]
+        use_acceleration = True
+    else:
+        top = qualified.sort_values("growth_pct", ascending=False).iloc[0]
+        use_acceleration = False
+
     slug = top.name
     name = top["name"]
     pct = float(top["growth_pct"])
