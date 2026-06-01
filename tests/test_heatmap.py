@@ -621,6 +621,39 @@ def test_compute_acceleration_nan_for_thin_history():
     assert pd.isna(accel["newcomer"])
 
 
+def test_compute_acceleration_uses_full_baseline_window_when_available():
+    """Acceleration averages the full baseline_days when enough history exists.
+    Off-by-one regression guard: the oldest prior must be included in the mean."""
+    # 9 days. First daily growth = +10%, next 6 = +1%, today = +5%.
+    # With baseline_days=7: trailing includes all 7 priors → mean = (10 + 1*6)/7 = 16/7 ≈ 2.2857
+    # → acceleration = 5 - 2.2857 ≈ 2.714
+    # If off-by-one excluded the oldest +10% growth, mean = 1.0, acceleration = 4.0. Wrong.
+    df = _make_history({
+        "veteran": [
+            1_000.0,        # day 0
+            1_100.0,        # day 1: +10% growth (the "old" prior we must include)
+            1_111.0,        # day 2: +1%
+            1_122.11,       # day 3: +1%
+            1_133.33,       # day 4: +1%
+            1_144.66,       # day 5: +1%
+            1_156.11,       # day 6: +1%
+            1_167.67,       # day 7: +1% — 7 priors total
+            1_226.05,       # day 8: +5% today
+        ],
+    })
+    accel = _compute_acceleration(df)
+    assert accel["veteran"] == pytest.approx(2.714, abs=0.01), \
+        f"expected full 7-day baseline included (mean=2.29); got accel={accel['veteran']}"
+
+
+def test_compute_acceleration_returns_value_at_min_priors_boundary():
+    """Slugs with exactly min_priors=3 prior daily growths get a non-NaN value."""
+    # 5 snapshots = 4 daily growths. >=3, so acceleration computed.
+    df = _make_history({"borderline": [100.0, 101.0, 102.01, 103.03, 104.06]})
+    accel = _compute_acceleration(df)
+    assert pd.notna(accel["borderline"]), "with 4 priors (>=3), acceleration should not be NaN"
+
+
 def test_compute_window_growth_attaches_acceleration_for_1d():
     """When window_days=1, output has an `acceleration` column populated for
     slugs with enough history; 7d/30d windows do NOT get the column."""
