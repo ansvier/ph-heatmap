@@ -609,7 +609,7 @@ def _compute_acceleration(
 
     todays = daily_growth.iloc[:, -1]
     # Prior `baseline_days` growth columns (excluding today)
-    trailing = daily_growth.iloc[:, -(baseline_days + 1):-1]
+    trailing = daily_growth.iloc[:, :-1].iloc[:, -baseline_days:]
     trailing_mean = trailing.mean(axis=1)
     trailing_count = trailing.count(axis=1)
 
