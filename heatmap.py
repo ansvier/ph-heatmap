@@ -565,6 +565,13 @@ def compute_window_growth(
 
     out = today[today_cols].join(baseline, how="left")
     out["growth_pct"] = (out["total_views"] - out["prev_views"]) / out["prev_views"] * 100
+
+    # For 1d window only: attach the acceleration column used by the
+    # "Spike of the Day" card selection logic. 7d / 30d windows are not
+    # surfaced through that card, so the column is omitted there.
+    if window_days == 1:
+        out["acceleration"] = _compute_acceleration(snapshots, gender=None)
+
     return out
 
 

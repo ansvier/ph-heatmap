@@ -619,3 +619,20 @@ def test_compute_acceleration_nan_for_thin_history():
     df = _make_history({"newcomer": [100.0, 101.0, 102.0]})
     accel = _compute_acceleration(df)
     assert pd.isna(accel["newcomer"])
+
+
+def test_compute_window_growth_attaches_acceleration_for_1d():
+    """When window_days=1, output has an `acceleration` column populated for
+    slugs with enough history; 7d/30d windows do NOT get the column."""
+    df = _make_history({
+        "veteran": [1_000.0, 1_010.0, 1_020.0, 1_030.0, 1_040.0, 1_050.0, 1_060.0, 1_070.0],
+    })
+
+    # 1d window: acceleration column present
+    out_1d = compute_window_growth(df, window_days=1)
+    assert "acceleration" in out_1d.columns
+    assert pd.notna(out_1d.loc["veteran", "acceleration"])
+
+    # 7d window: no acceleration column
+    out_7d = compute_window_growth(df, window_days=7)
+    assert "acceleration" not in out_7d.columns
