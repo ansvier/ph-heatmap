@@ -784,9 +784,18 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
         metric_label = "Growth"
         use_acceleration = False
 
-    # Size: clip to ≥0 because Plotly Treemap requires non-negative `values`.
-    # For acceleration this means decelerating performers get a tiny tile.
-    rows["tile_size"] = metric_series.clip(lower=0)
+    # Size: Plotly Treemap requires non-negative `values`. For % growth this
+    # is fine (growth is monotonic ≥0). For acceleration values may be negative
+    # (deceleration), so shift the whole series to non-negative while preserving
+    # relative ordering — give the smallest performer ~5% of the largest's tile
+    # so even decelerators stay visible. Without this the treemap collapses to
+    # a single tile when most accelerations are ≤0.
+    if use_acceleration:
+        shifted = metric_series - metric_series.min()
+        baseline = (shifted.max() or 1.0) * 0.05
+        rows["tile_size"] = shifted + baseline
+    else:
+        rows["tile_size"] = metric_series.clip(lower=0)
 
     # Color by percentile rank so the visible spread fills the palette even when
     # raw values are tightly clustered. `rank(pct=True)` returns [0..1]; we
