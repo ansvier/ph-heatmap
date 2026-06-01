@@ -767,41 +767,32 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
     # (a +100k bump on a 200k base is +50% but visually drowns out real movers).
     rows = rows[rows["prev_views"] >= 1_000_000].copy()
 
-    # Pick the metric driving tile size + color:
-    #   - 1d view: `acceleration` (today's daily growth - mean of prior 7) — answers
-    #     "who spiked vs their own baseline today" rather than "who has the highest
-    #     stable rate" (which is statically the same handful of performers).
-    #   - 7d / 30d views: % growth over the window (no acceleration available there).
-    # Falls back to growth_pct when acceleration can't be computed for anyone yet
-    # (early days of tracking history, fewer than the trailing-window threshold).
+    # Two-dimensional encoding to avoid the size-vs-label-number mismatch:
+    #   - SIZE = % growth (always). The tile face shows "+X.XX%" growth; tile size
+    #     must match that natural reading. Largest tile = highest % growth.
+    #   - COLOR = momentum/acceleration when available (today vs 7d baseline),
+    #     so a green tile means "she spiked today vs her usual pace" even when
+    #     her % growth is mid-range. Falls back to growth_pct rank for 7d/30d
+    #     windows or when there isn't enough history for acceleration yet.
+    rows["tile_size"] = rows["growth_pct"].clip(lower=0)
+
     if "acceleration" in rows.columns and rows["acceleration"].notna().any():
+        # Use only rows with both growth_pct and acceleration so the color
+        # legend reflects today's true momentum signal.
         rows = rows.dropna(subset=["acceleration"]).copy()
-        metric_series = rows["acceleration"]
+        color_metric = rows["acceleration"]
         metric_label = "Momentum"
         use_acceleration = True
     else:
-        metric_series = rows["growth_pct"]
+        color_metric = rows["growth_pct"]
         metric_label = "Growth"
         use_acceleration = False
-
-    # Size: Plotly Treemap requires non-negative `values`. For % growth this
-    # is fine (growth is monotonic ≥0). For acceleration values may be negative
-    # (deceleration), so shift the whole series to non-negative while preserving
-    # relative ordering — give the smallest performer ~5% of the largest's tile
-    # so even decelerators stay visible. Without this the treemap collapses to
-    # a single tile when most accelerations are ≤0.
-    if use_acceleration:
-        shifted = metric_series - metric_series.min()
-        baseline = (shifted.max() or 1.0) * 0.05
-        rows["tile_size"] = shifted + baseline
-    else:
-        rows["tile_size"] = metric_series.clip(lower=0)
 
     # Color by percentile rank so the visible spread fills the palette even when
     # raw values are tightly clustered. `rank(pct=True)` returns [0..1]; we
     # re-center to [-0.5..+0.5] so the diverging scale's mid maps to the median.
     if len(rows) > 1:
-        rows["color_value"] = metric_series.rank(method="average", pct=True) - 0.5
+        rows["color_value"] = color_metric.rank(method="average", pct=True) - 0.5
     else:
         rows["color_value"] = 0.0
 
