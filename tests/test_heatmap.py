@@ -726,3 +726,31 @@ def test_top_performer_card_falls_back_to_growth_pct_without_history():
     # Fast grew 1%, Slow grew 0.05% — fallback picks Fast.
     assert "Fast" in html, f"expected Fast in card; got: {html[:400]}"
     assert "Slow" not in html
+
+
+def test_card_renders_today_usual_contrast_when_acceleration_available():
+    """When acceleration drove selection, the card shows Today / Usual / caption."""
+    df = _multiday_card_fixture()
+    html = _build_top_performer_card(
+        df, gender_key="female", gender_filter="female", mode="celebs", is_default=True
+    )
+    assert "Today:" in html, "expected Today: row in contrast block"
+    assert "Usual:" in html, "expected Usual: row in contrast block"
+    # One of the auto-captions must appear:
+    captions = ("Sharp turnaround", "Trending up", "Steady pace", "Slower than usual", "Cooling off")
+    assert any(c in html for c in captions), f"expected one of {captions} in card; html: {html[:600]}"
+
+
+def test_card_renders_legacy_single_line_on_fallback():
+    """When fallback was used, card renders the old `+X.XX% · +N views (24h)` line, no contrast."""
+    df = pd.DataFrame([
+        {"snapshot_date": pd.Timestamp("2026-05-30"), "slug": "fast",
+         "name": "Fast", "total_views": 150_000_000, "rank": 2, "gender": "female"},
+        {"snapshot_date": pd.Timestamp("2026-05-31"), "slug": "fast",
+         "name": "Fast", "total_views": 151_500_000, "rank": 1, "gender": "female"},
+    ])
+    html = _build_top_performer_card(
+        df, gender_key="female", gender_filter="female", mode="celebs", is_default=True
+    )
+    assert "Today:" not in html, "fallback render should not show Today: row"
+    assert "views (24h)" in html, "fallback render should keep legacy '+N views (24h)' format"

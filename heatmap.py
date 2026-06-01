@@ -175,6 +175,22 @@ _PAGE_TEMPLATE = """<!doctype html>
       font-weight: 500;
     }}
     .top-perf-stat strong {{ color: #6cd36a; font-weight: 700; }}
+    .top-perf-stat-row {{
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+    }}
+    .top-perf-stat-row strong {{ color: var(--fg); font-weight: 700; font-variant-numeric: tabular-nums; }}
+    .top-perf-caption {{
+      display: block;
+      color: #6cd36a;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+    }}
     .logo {{
       display: block;
       width: 360px;
@@ -907,6 +923,26 @@ def _apply_mode_filter(window_df: pd.DataFrame, mode: str) -> pd.DataFrame:
 _TOP_PERF_MIN_VIEWS = 100_000_000  # filter out micro-accounts with noisy % growth
 
 
+# Spike of the Day caption thresholds — calibrated from the first week of
+# acceleration data (range observed: -0.10 pp to +1.06 pp across all tiers).
+# pp = "percentage points" (acceleration is a difference of two percentages).
+_CAPTION_THRESHOLDS = (
+    (0.05, "↑ Sharp turnaround"),
+    (0.01, "↑ Trending up"),
+    (-0.01, "→ Steady pace"),
+    (-0.05, "↓ Slower than usual"),
+    (float("-inf"), "↓ Cooling off"),
+)
+
+
+def _caption_for_acceleration(accel_pp: float) -> str:
+    """Map an acceleration value (percentage points) to a one-line caption."""
+    for threshold, caption in _CAPTION_THRESHOLDS:
+        if accel_pp >= threshold:
+            return caption
+    return _CAPTION_THRESHOLDS[-1][1]  # unreachable; -inf catches all
+
+
 def _build_top_performer_card(
     snapshots: pd.DataFrame,
     gender_key: str,
@@ -976,13 +1012,25 @@ def _build_top_performer_card(
     label = _TOP_PERF_LABELS.get(mode, {}).get(gender_key, "Top performer of the day")
     active = " active" if is_default else ""
 
+    if use_acceleration:
+        accel = float(top["acceleration"])
+        usual_pct = pct - accel  # by definition of acceleration
+        caption = _caption_for_acceleration(accel)
+        stat_html = (
+            f'<span class="top-perf-stat-row">Today: <strong>{pct:+.3f}%</strong></span>'
+            f'<span class="top-perf-stat-row">Usual: <strong>{usual_pct:+.3f}%</strong></span>'
+            f'<span class="top-perf-caption">{caption}</span>'
+        )
+    else:
+        stat_html = f'<span class="top-perf-stat"><strong>+{pct:.2f}%</strong> · +{gain:,} views (24h)</span>'
+
     return (
         f'<a class="top-perf{active}" data-mode="{mode}" data-gender="{gender_key}" href="{profile_url}" target="_blank" rel="noopener">'
         f'{img_tag}'
         f'<div class="top-perf-text">'
         f'<span class="top-perf-label">{label}</span>'
         f'<span class="top-perf-name">{name}</span>'
-        f'<span class="top-perf-stat"><strong>+{pct:.2f}%</strong> · +{gain:,} views (24h)</span>'
+        f'{stat_html}'
         f'</div>'
         f'</a>'
     )
