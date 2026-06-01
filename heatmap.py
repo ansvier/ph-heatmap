@@ -565,7 +565,59 @@ def compute_window_growth(
 
     out = today[today_cols].join(baseline, how="left")
     out["growth_pct"] = (out["total_views"] - out["prev_views"]) / out["prev_views"] * 100
+
+    # For 1d window: also attach an `acceleration` column = today's daily growth
+    # minus the mean of the prior 7 daily growths. This is what surfaces as the
+    # tile-size + color metric for 1d — % growth alone is dominated by performers
+    # whose fanbase produces a stable high daily rate (Yasmina Khan would always
+    # win), so the treemap was visually static day-over-day.
+    if window_days == 1:
+        out["acceleration"] = _compute_acceleration(snapshots, gender=None)
     return out
+
+
+def _compute_acceleration(
+    snapshots: pd.DataFrame,
+    gender: str | None = None,
+    baseline_days: int = 7,
+    min_priors: int = 3,
+) -> pd.Series:
+    """Per-slug acceleration: today's daily growth-% minus mean(prior N daily growth-%s).
+
+    A performer who naturally drifts upward by +0.25%/day has acceleration ≈ 0
+    — that's their baseline. Acceleration > 0 means "today was faster than usual"
+    (something hyped them up). Acceleration < 0 means "slowing vs baseline."
+
+    Returns a Series indexed by slug with NaN for slugs that have fewer than
+    `min_priors` historical daily growths (not enough data for a stable baseline).
+    `snapshots` should be the pre-gender-filtered DataFrame from the caller.
+    """
+    snapshots = snapshots.copy()
+    snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
+    if gender is not None and "gender" in snapshots.columns:
+        snapshots = snapshots[snapshots["gender"] == gender]
+
+    if snapshots.empty:
+        return pd.Series(dtype=float, name="acceleration")
+
+    # slug × date matrix of total_views, sorted oldest → newest
+    pivot = snapshots.pivot_table(index="slug", columns="snapshot_date", values="total_views")
+    pivot = pivot.sort_index(axis=1)
+    if pivot.shape[1] < 2:
+        return pd.Series(dtype=float, name="acceleration")
+
+    # Daily % growth (pct_change between consecutive days). First column = NaN.
+    daily_growth = pivot.pct_change(axis=1) * 100
+
+    todays = daily_growth.iloc[:, -1]
+    # Prior `baseline_days` growth columns (excluding today)
+    trailing = daily_growth.iloc[:, -(baseline_days + 1):-1]
+    trailing_mean = trailing.mean(axis=1)
+    trailing_count = trailing.count(axis=1)
+
+    accel = (todays - trailing_mean).where(trailing_count >= min_priors)
+    accel.name = "acceleration"
+    return accel
 
 
 def _format_views(n: int) -> str:
@@ -714,16 +766,33 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
     # Drop micro-accounts: < 1M baseline views makes the % metric too noisy
     # (a +100k bump on a 200k base is +50% but visually drowns out real movers).
     rows = rows[rows["prev_views"] >= 1_000_000].copy()
-    # Size metric: % growth, clipped to ≥0 because Plotly Treemap requires
-    # non-negative `values`. total_views is monotonic so this clip is defensive.
-    rows["tile_size"] = rows["growth_pct"].clip(lower=0)
+
+    # Pick the metric driving tile size + color:
+    #   - 1d view: `acceleration` (today's daily growth - mean of prior 7) — answers
+    #     "who spiked vs their own baseline today" rather than "who has the highest
+    #     stable rate" (which is statically the same handful of performers).
+    #   - 7d / 30d views: % growth over the window (no acceleration available there).
+    # Falls back to growth_pct when acceleration can't be computed for anyone yet
+    # (early days of tracking history, fewer than the trailing-window threshold).
+    if "acceleration" in rows.columns and rows["acceleration"].notna().any():
+        rows = rows.dropna(subset=["acceleration"]).copy()
+        metric_series = rows["acceleration"]
+        metric_label = "Momentum"
+        use_acceleration = True
+    else:
+        metric_series = rows["growth_pct"]
+        metric_label = "Growth"
+        use_acceleration = False
+
+    # Size: clip to ≥0 because Plotly Treemap requires non-negative `values`.
+    # For acceleration this means decelerating performers get a tiny tile.
+    rows["tile_size"] = metric_series.clip(lower=0)
 
     # Color by percentile rank so the visible spread fills the palette even when
-    # raw % growth values are tightly clustered (everyone +0.01..+0.07% etc).
-    # `rank(pct=True)` returns [0..1]; we re-center to [-0.5..+0.5] so the diverging
-    # scale's mid maps to the median performer.
+    # raw values are tightly clustered. `rank(pct=True)` returns [0..1]; we
+    # re-center to [-0.5..+0.5] so the diverging scale's mid maps to the median.
     if len(rows) > 1:
-        rows["color_value"] = rows["growth_pct"].rank(method="average", pct=True) - 0.5
+        rows["color_value"] = metric_series.rank(method="average", pct=True) - 0.5
     else:
         rows["color_value"] = 0.0
 
@@ -752,21 +821,26 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
                 cmax=0.5,
                 showscale=True,
                 colorbar=dict(
-                    title=f"Rank ({window_days}d)",
+                    title=f"{metric_label} ({window_days}d)",
                     tickvals=[-0.5, -0.25, 0, 0.25, 0.5],
                     ticktext=["bottom", "low", "median", "high", "top"],
                     thickness=14,
                     outlinewidth=0,
                 ),
             ),
-            customdata=rows[["name", "total_views", "growth_pct", "slug", "growth_amount"]].values,
+            customdata=(
+                rows[["name", "total_views", "growth_pct", "slug", "growth_amount", "acceleration"]].values
+                if use_acceleration
+                else rows[["name", "total_views", "growth_pct", "slug", "growth_amount"]].values
+            ),
             hovertemplate=(
                 "<b>%{customdata[0]}</b><br>"
                 "Total views: %{customdata[1]:,}<br>"
                 "Gained (" + str(window_days) + "d): +%{customdata[4]:,.0f} views<br>"
                 "Growth: %{customdata[2]:+.3f}%<br>"
-                "<i>click to open profile</i>"
-                "<extra></extra>"
+                + ("Momentum vs 7d avg: %{customdata[5]:+.3f} pp<br>" if use_acceleration else "")
+                + "<i>click to open profile</i>"
+                + "<extra></extra>"
             ),
             textposition="middle center",
             textfont=dict(
@@ -848,8 +922,10 @@ def _apply_mode_filter(window_df: pd.DataFrame, mode: str) -> pd.DataFrame:
             & (df["total_views"] < _GEMS_VIEW_CEILING)
         ]
 
-    cohort = cohort.dropna(subset=["growth_pct"])
-    cohort = cohort.sort_values("growth_pct", ascending=False).head(_TREEMAP_MAX_TILES)
+    # Sort by acceleration when available (1d window), else by raw % growth.
+    sort_col = "acceleration" if "acceleration" in cohort.columns else "growth_pct"
+    cohort = cohort.dropna(subset=[sort_col])
+    cohort = cohort.sort_values(sort_col, ascending=False).head(_TREEMAP_MAX_TILES)
     return cohort.drop(columns="_rank")
 
 
@@ -887,7 +963,12 @@ def _build_top_performer_card(
     if qualified.empty:
         return ""
 
-    top = qualified.sort_values("growth_pct", ascending=False).iloc[0]
+    # Pick the "of the day" performer by acceleration (today's growth vs their
+    # 7d baseline) when available — otherwise the card is dominated by the same
+    # stable-rate performers every day. Falls back to raw % growth if there
+    # isn't enough history yet to compute acceleration.
+    sort_col = "acceleration" if "acceleration" in qualified.columns and qualified["acceleration"].notna().any() else "growth_pct"
+    top = qualified.dropna(subset=[sort_col]).sort_values(sort_col, ascending=False).iloc[0]
     slug = top.name
     name = top["name"]
     pct = float(top["growth_pct"])
