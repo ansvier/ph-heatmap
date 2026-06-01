@@ -578,3 +578,44 @@ def test_nav_items_use_canonical_trailing_slash():
     for bare in ("/stats", "/charts", "/rising", "/gems", "/celebs"):
         assert bare not in hrefs, \
             f"_NAV_ITEMS still has bare {bare}; should be {bare}/"
+
+
+from heatmap import _compute_acceleration
+
+
+def _make_history(slug_views: dict[str, list[float]], start_date: str = "2026-05-25") -> pd.DataFrame:
+    """Build a snapshots DataFrame from {slug: [view_day0, view_day1, ...]}.
+
+    Each list element is a daily total_views snapshot. All slugs same gender (female).
+    """
+    rows = []
+    for slug, views in slug_views.items():
+        for i, v in enumerate(views):
+            d = pd.Timestamp(start_date) + pd.Timedelta(days=i)
+            rows.append({
+                "snapshot_date": d, "slug": slug, "name": slug.title(),
+                "total_views": v, "rank": 1, "gender": "female",
+            })
+    return pd.DataFrame(rows)
+
+
+def test_compute_acceleration_returns_today_vs_7d_avg():
+    """Acceleration = today's daily growth % minus mean of prior 7 daily growths."""
+    # 8 days. Daily growths: +1% each day for 7 days, then +5% on day 8.
+    # Daily growth days 1..7: each = 1.0 (in pct). Mean of prior 7 = 1.0.
+    # Today (day 8) growth = 5.0. Acceleration = 5.0 - 1.0 = 4.0.
+    df = _make_history({
+        "spiker": [
+            1_000.0, 1_010.0, 1_020.10, 1_030.30, 1_040.60, 1_051.01, 1_061.52, 1_114.59
+        ],
+    })
+    accel = _compute_acceleration(df)
+    assert accel["spiker"] == pytest.approx(4.0, abs=0.01)
+
+
+def test_compute_acceleration_nan_for_thin_history():
+    """Slugs with fewer than 3 prior daily growths get NaN."""
+    # Only 3 snapshots = 2 daily growths. min_priors=3 → NaN.
+    df = _make_history({"newcomer": [100.0, 101.0, 102.0]})
+    accel = _compute_acceleration(df)
+    assert pd.isna(accel["newcomer"])

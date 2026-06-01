@@ -568,6 +568,49 @@ def compute_window_growth(
     return out
 
 
+def _compute_acceleration(
+    snapshots: pd.DataFrame,
+    gender: str | None = None,
+    baseline_days: int = 7,
+    min_priors: int = 3,
+) -> pd.Series:
+    """Per-slug acceleration: today's daily growth-% minus mean(prior N daily growth-%s).
+
+    A performer who naturally drifts upward by +0.25%/day has acceleration ≈ 0
+    — that's their baseline. Acceleration > 0 means "today was faster than usual"
+    (something hyped them up). Acceleration < 0 means "slowing vs baseline."
+
+    Returns a Series indexed by slug with NaN for slugs that have fewer than
+    `min_priors` historical daily growths (not enough data for a stable baseline).
+    """
+    snapshots = snapshots.copy()
+    snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"])
+    if gender is not None and "gender" in snapshots.columns:
+        snapshots = snapshots[snapshots["gender"] == gender]
+
+    if snapshots.empty:
+        return pd.Series(dtype=float, name="acceleration")
+
+    # slug × date matrix of total_views, sorted oldest → newest
+    pivot = snapshots.pivot_table(index="slug", columns="snapshot_date", values="total_views")
+    pivot = pivot.sort_index(axis=1)
+    if pivot.shape[1] < 2:
+        return pd.Series(dtype=float, name="acceleration")
+
+    # Daily % growth (pct_change between consecutive days). First column = NaN.
+    daily_growth = pivot.pct_change(axis=1) * 100
+
+    todays = daily_growth.iloc[:, -1]
+    # Prior `baseline_days` growth columns (excluding today)
+    trailing = daily_growth.iloc[:, -(baseline_days + 1):-1]
+    trailing_mean = trailing.mean(axis=1)
+    trailing_count = trailing.count(axis=1)
+
+    accel = (todays - trailing_mean).where(trailing_count >= min_priors)
+    accel.name = "acceleration"
+    return accel
+
+
 def _format_views(n: int) -> str:
     """Compact: 464_114_451 -> '464M', 1_234_567 -> '1.2M', 950 -> '950'."""
     if n >= 1_000_000_000:
