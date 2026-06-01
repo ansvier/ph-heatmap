@@ -675,25 +675,35 @@ from heatmap import _build_top_performer_card
 
 
 def _multiday_card_fixture():
-    """8 days of history, multiple female slugs with different growth/accel signatures."""
-    return pd.DataFrame([
-        # 'stable_high' grows +0.5%/day every day → high growth_pct, ~0 acceleration
-        # 'spiker' grows +0.1%/day for 7 days, then +1.0% on day 8 → lower growth_pct
-        #          but acceleration ≈ +0.9 pp
-        # Both have >100M views so the cohort filter doesn't eliminate them.
-        *[{
+    """8 days of history. stable_high has HIGHER today's growth_pct (0.5%),
+    spiker has LOWER today's growth_pct (0.3%) but HIGHER acceleration
+    (~+0.25 pp vs stable's ~0). Picking by growth_pct → stable_high.
+    Picking by acceleration → spiker. The card test asserts spiker is picked,
+    so only the acceleration-based selection makes the test pass.
+    """
+    rows = []
+    # stable_high: +0.5%/day every day for 8 days → growth_pct ≈ 0.5%, accel ≈ 0
+    for i in range(8):
+        rows.append({
             "snapshot_date": pd.Timestamp("2026-05-25") + pd.Timedelta(days=i),
             "slug": "stable_high", "name": "Stable High",
             "total_views": int(200_000_000 * (1.005 ** i)),
             "rank": 1, "gender": "female",
-        } for i in range(8)],
-        *[{
+        })
+    # spiker: +0.05%/day for 7 days, then +0.3% on day 8.
+    # 7d-avg of priors = 0.05%; today = 0.3%; acceleration = +0.25 pp.
+    spiker_views = [150_000_000]
+    for _ in range(6):
+        spiker_views.append(int(spiker_views[-1] * 1.0005))  # +0.05% each
+    spiker_views.append(int(spiker_views[-1] * 1.003))  # +0.3% today
+    for i, v in enumerate(spiker_views):
+        rows.append({
             "snapshot_date": pd.Timestamp("2026-05-25") + pd.Timedelta(days=i),
             "slug": "spiker", "name": "Spiker",
-            "total_views": int(150_000_000 * ((1.001 ** min(i, 7)) * (1.010 if i == 7 else 1.0))),
+            "total_views": v,
             "rank": 2, "gender": "female",
-        } for i in range(8)],
-    ])
+        })
+    return pd.DataFrame(rows)
 
 
 def test_top_performer_card_picks_by_acceleration():
