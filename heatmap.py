@@ -2344,6 +2344,23 @@ _CATEGORIES_PAGE_TEMPLATE = """<!doctype html>
 """
 
 
+# Categories that always dominate the catalog because they're meta/quality tags
+# (HD Porn, Verified Amateurs, etc.) rather than actual content genres. We scrape
+# and store them daily — they may be useful for future comparisons — but exclude
+# them from the treemap so it reflects real genre distribution. IDs are PH's own,
+# verified stable across multiple bootstraps.
+_NON_GENRE_CATEGORY_IDS = frozenset({
+    3,    # Amateur
+    30,   # Pornstar
+    38,   # HD Porn
+    105,  # 60FPS
+    115,  # Exclusive
+    138,  # Verified Amateurs
+    139,  # Verified Models
+    482,  # Verified Couples
+})
+
+
 def render_categories_treemap(
     category_snapshots: pd.DataFrame,
     output_path: Path | str,
@@ -2356,12 +2373,20 @@ def render_categories_treemap(
                  neutral color and delta label '—'.
     Tile label = '<name>\\n<count compact>\\n+<delta> today' (or '—' when no baseline).
 
+    Filters out _NON_GENRE_CATEGORY_IDS — meta-tags like HD Porn, Verified
+    Amateurs, etc. that dominate by ubiquity rather than reflect genre signal.
+
     Raises ValueError on empty input — caller (run.py) treats as 'skip render this day'.
     """
     if category_snapshots.empty:
         raise ValueError("No category snapshots provided")
 
-    df = category_snapshots.copy()
+    df = category_snapshots[
+        ~category_snapshots["category_id"].isin(_NON_GENRE_CATEGORY_IDS)
+    ].copy()
+    if df.empty:
+        raise ValueError("No genre categories remain after filtering meta-tags")
+
     df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
     latest_date = df["snapshot_date"].max()
     today = df[df["snapshot_date"] == latest_date].set_index("category_id")
