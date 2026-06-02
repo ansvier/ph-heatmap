@@ -1363,7 +1363,7 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
       <p class="meta">{gender_label} performer · tracked by HotMap</p>
     </div>
   </div>
-
+  {country_html}
   <div class="stats">
     <div class="stat">
       <p class="label">Cumulative views</p>
@@ -1444,6 +1444,8 @@ def render_performer_page(
     snapshots: pd.DataFrame,
     slug: str,
     output_path: Path | str,
+    *,
+    qualifying_countries: set[str] | None = None,
 ) -> None:
     """Render a per-performer landing page at `output_path`.
 
@@ -1546,6 +1548,32 @@ def render_performer_page(
     share_url = quote(share_url_raw, safe="")
     share_text = quote(share_text_raw, safe="")
 
+    # Country cross-link block — only when performer has a non-null country
+    # AND that country is in the qualifying set (i.e., a /country/<slug>/ page
+    # actually exists).
+    country_html = ""
+    if qualifying_countries:
+        # Look up this performer's most recent country (snapshot date desc).
+        my_rows = snapshots[snapshots["slug"] == slug]
+        if not my_rows.empty and "country" in my_rows.columns:
+            sorted_rows = my_rows.sort_values("snapshot_date", ascending=False)
+            country = sorted_rows.iloc[0]["country"]
+            if country and not pd.isna(country) and country in qualifying_countries:
+                country_slug = _country_slug(country)
+                # Inline CSS so the class only appears when the block is emitted.
+                country_html = (
+                    '<style>'
+                    '.performer-country { margin: 16px 0; }'
+                    '.performer-country h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 8px; }'
+                    '.performer-country a { display: inline-block; background: var(--card-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 10px; font-size: 13px; color: var(--fg); text-decoration: none; }'
+                    '.performer-country a:hover { color: var(--brand-orange); }'
+                    '</style>'
+                    '<section class="performer-country">'
+                    '<h3>From</h3>'
+                    f'<a href="/country/{country_slug}/">{_html.escape(country)}</a>'
+                    '</section>'
+                )
+
     page = _PERFORMER_PAGE_TEMPLATE.format(
         name=name,
         slug=slug,
@@ -1569,6 +1597,7 @@ def render_performer_page(
         share_text=share_text,
         top_nav=_top_nav(""),  # no nav item highlighted on individual performer
         nav_css=_TOP_NAV_CSS,
+        country_html=country_html,
     )
 
     Path(output_path).write_text(page)

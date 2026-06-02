@@ -1060,3 +1060,36 @@ def test_render_countries_index_lists_qualifying_countries(tmp_path):
     blocks = _extract_jsonld_blocks(content)
     types = {b.get("@type") for b in blocks}
     assert "CollectionPage" in types and "BreadcrumbList" in types
+
+
+def test_performer_page_emits_country_cross_link(tmp_path):
+    """When performer has a country AND it's in the qualifying set, /p/<slug> shows a 'From' block."""
+    df = _snapshot_rows().copy()
+    # Inject country into Alice's snapshots
+    df.loc[df["slug"] == "alice", "country"] = "Russia"
+    out = tmp_path / "alice.html"
+    render_performer_page(df, slug="alice", output_path=out, qualifying_countries={"Russia"})
+    content = out.read_text()
+    assert 'class="performer-country"' in content
+    assert '<a href="/country/russia/">Russia</a>' in content
+
+
+def test_performer_page_omits_country_block_when_not_qualifying(tmp_path):
+    """Performer has a country, but country not in qualifying set → no block."""
+    df = _snapshot_rows().copy()
+    df.loc[df["slug"] == "alice", "country"] = "Estonia"
+    out = tmp_path / "alice.html"
+    render_performer_page(df, slug="alice", output_path=out, qualifying_countries={"Russia"})
+    content = out.read_text()
+    assert "performer-country" not in content
+    assert "/country/estonia/" not in content
+
+
+def test_performer_page_omits_country_block_when_country_is_none(tmp_path):
+    """Performer with no country → no block even if qualifying_countries is provided."""
+    df = _snapshot_rows().copy()
+    df["country"] = None  # Force None
+    out = tmp_path / "alice.html"
+    render_performer_page(df, slug="alice", output_path=out, qualifying_countries={"Russia"})
+    content = out.read_text()
+    assert "performer-country" not in content
