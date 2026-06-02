@@ -17,6 +17,7 @@ class Snapshot:
     rank: int
     gender: str  # 'female' | 'male'
     photo_url: str | None = None
+    country: str | None = None
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS snapshots (
     rank          INTEGER NOT NULL,
     gender        TEXT NOT NULL DEFAULT 'female',
     photo_url     TEXT,
+    country       TEXT,
     PRIMARY KEY (snapshot_date, slug, gender)
 );
 """
@@ -73,6 +75,13 @@ def init_db(path: Path | str) -> sqlite3.Connection:
     if "photo_url" not in cols:
         conn.execute("ALTER TABLE snapshots ADD COLUMN photo_url TEXT")
         conn.commit()
+        cols.add("photo_url")
+
+    # Migration 1c: country column.
+    if "country" not in cols:
+        conn.execute("ALTER TABLE snapshots ADD COLUMN country TEXT")
+        conn.commit()
+        cols.add("country")
 
     # Migration 2: if the primary key doesn't include `gender`, rebuild the table.
     # Legacy PK was (snapshot_date, slug); new PK is (snapshot_date, slug, gender)
@@ -88,10 +97,11 @@ def init_db(path: Path | str) -> sqlite3.Connection:
                 rank          INTEGER NOT NULL,
                 gender        TEXT NOT NULL DEFAULT 'female',
                 photo_url     TEXT,
+                country       TEXT,
                 PRIMARY KEY (snapshot_date, slug, gender)
             );
-            INSERT OR IGNORE INTO snapshots_new (snapshot_date, slug, name, total_views, rank, gender, photo_url)
-            SELECT snapshot_date, slug, name, total_views, rank, gender, photo_url FROM snapshots;
+            INSERT OR IGNORE INTO snapshots_new (snapshot_date, slug, name, total_views, rank, gender, photo_url, country)
+            SELECT snapshot_date, slug, name, total_views, rank, gender, photo_url, country FROM snapshots;
             DROP TABLE snapshots;
             ALTER TABLE snapshots_new RENAME TO snapshots;
         """)
@@ -106,10 +116,11 @@ def init_db(path: Path | str) -> sqlite3.Connection:
 def insert_snapshot(conn: sqlite3.Connection, rows: list[Snapshot]) -> None:
     conn.executemany(
         "INSERT OR REPLACE INTO snapshots "
-        "(snapshot_date, slug, name, total_views, rank, gender, photo_url) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "(snapshot_date, slug, name, total_views, rank, gender, photo_url, country) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         [
-            (r.snapshot_date.isoformat(), r.slug, r.name, r.total_views, r.rank, r.gender, r.photo_url)
+            (r.snapshot_date.isoformat(), r.slug, r.name, r.total_views, r.rank,
+             r.gender, r.photo_url, r.country)
             for r in rows
         ],
     )
@@ -118,7 +129,7 @@ def insert_snapshot(conn: sqlite3.Connection, rows: list[Snapshot]) -> None:
 
 def load_all_snapshots(conn: sqlite3.Connection) -> pd.DataFrame:
     df = pd.read_sql_query(
-        "SELECT snapshot_date, slug, name, total_views, rank, gender, photo_url FROM snapshots",
+        "SELECT snapshot_date, slug, name, total_views, rank, gender, photo_url, country FROM snapshots",
         conn,
     )
     df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
