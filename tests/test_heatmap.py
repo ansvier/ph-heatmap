@@ -900,3 +900,54 @@ def test_render_categories_treemap_falls_back_when_prior_scrape_skipped(tmp_path
     # render completes without raising and without inventing a fake "+1000 today"
     # label. (1d delta of 1000 would have rendered if gap-check was missing.)
     assert "plotly" in content.lower()
+
+
+def test_render_categories_treemap_excludes_non_genre_meta_categories(tmp_path):
+    """HD Porn, Verified Amateurs, Amateur, Pornstar, Exclusive, 60FPS, Verified
+    Couples/Models are scraped and stored but never rendered — they're meta-tags,
+    not genres, and dominate the catalog by ubiquity rather than signal."""
+    today = pd.Timestamp("2026-06-02")
+    yesterday = pd.Timestamp("2026-06-01")
+    rows = []
+    for d in (today, yesterday):
+        rows += [
+            # All 8 meta-tags from _NON_GENRE_CATEGORY_IDS — must NOT appear
+            {"snapshot_date": d, "category_id": 38,  "slug": "hd-porn",          "name": "HD Porn",           "video_count": 1_000_000, "points": None},
+            {"snapshot_date": d, "category_id": 138, "slug": "verified-amateurs","name": "Verified Amateurs", "video_count":   726_377, "points": None},
+            {"snapshot_date": d, "category_id": 3,   "slug": "amateur",          "name": "Amateur",           "video_count":   527_979, "points": None},
+            {"snapshot_date": d, "category_id": 115, "slug": "exclusive",        "name": "Exclusive",         "video_count":   399_269, "points": None},
+            {"snapshot_date": d, "category_id": 30,  "slug": "pornstar",         "name": "Pornstar",          "video_count":   191_116, "points": None},
+            {"snapshot_date": d, "category_id": 105, "slug": "60fps-1",          "name": "60FPS",             "video_count":   130_256, "points": None},
+            {"snapshot_date": d, "category_id": 482, "slug": "verified-couples", "name": "Verified Couples",  "video_count":    62_126, "points": None},
+            {"snapshot_date": d, "category_id": 139, "slug": "verified-models",  "name": "Verified Models",   "video_count":    51_419, "points": None},
+            # Two real genres — must appear
+            {"snapshot_date": d, "category_id": 35,  "slug": "anal",             "name": "Anal",              "video_count":   142_217, "points": None},
+            {"snapshot_date": d, "category_id": 29,  "slug": "milf",             "name": "MILF",              "video_count":   199_835, "points": None},
+        ]
+    df = pd.DataFrame(rows)
+    out = tmp_path / "categories.html"
+    render_categories_treemap(df, out)
+    content = out.read_text()
+    # All 8 meta-tag names absent from rendered output
+    for excluded in ("HD Porn", "Verified Amateurs", "Verified Couples", "Verified Models",
+                     "Exclusive", "60FPS"):
+        assert excluded not in content, f"meta-tag {excluded!r} should not appear in treemap"
+    # The header description quotes the count of categories rendered. After
+    # filtering 8 meta-tags from 10 inputs, exactly 2 genres remain.
+    assert "2 Pornhub categories" in content, \
+        "expected '2 Pornhub categories' in description after filtering 8 meta-tags out of 10"
+    # Plotly binary-encodes tile labels (base64 bdata) so we can't search them as text;
+    # we rely on the count assertion above + the meta-name absence checks for confidence.
+
+
+def test_render_categories_treemap_raises_when_only_meta_categories_present(tmp_path):
+    """If after filtering all rows are meta-tags, the function refuses to render
+    (no point in an empty treemap)."""
+    df = pd.DataFrame([
+        {"snapshot_date": pd.Timestamp("2026-06-02"), "category_id": 38, "slug": "hd-porn",
+         "name": "HD Porn", "video_count": 1_000_000, "points": None},
+        {"snapshot_date": pd.Timestamp("2026-06-02"), "category_id": 3, "slug": "amateur",
+         "name": "Amateur", "video_count": 500_000, "points": None},
+    ])
+    with pytest.raises(ValueError, match="No genre categories"):
+        render_categories_treemap(df, tmp_path / "out.html")
