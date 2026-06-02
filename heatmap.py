@@ -2673,6 +2673,105 @@ def render_country_page(
     ), encoding="utf-8")
 
 
+_COUNTRIES_INDEX_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+{seo_head}
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {{ --brand-orange: #ff9000; --bg: #0a0a0a; --fg: #f5f5f5; --muted: #9a9a9a; --rule: #1f1f1f; }}
+    * {{ box-sizing: border-box; }}
+    html, body {{ font-family: 'Inter', sans-serif; }}
+    body {{ max-width: 1200px; margin: 0 auto; padding: 32px 16px 56px; color: var(--fg); background: var(--bg); line-height: 1.5; }}
+{nav_css}
+    h1 {{ font-size: 28px; font-weight: 800; margin: 0 0 8px; }}
+    .subtitle {{ color: var(--muted); margin: 0 0 24px; }}
+    .cat-list {{ list-style: none; padding: 0; columns: 3; column-gap: 32px; }}
+    .cat-list li {{ padding: 4px 0; break-inside: avoid; }}
+    .cat-list a {{ color: var(--fg); text-decoration: none; font-weight: 600; }}
+    .cat-list a:hover {{ color: var(--brand-orange); }}
+    .cat-count {{ color: var(--muted); font-size: 13px; font-weight: 400; }}
+    @media (max-width: 720px) {{ .cat-list {{ columns: 2; }} }}
+    @media (max-width: 480px) {{ .cat-list {{ columns: 1; }} }}
+    footer {{ margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }}
+    footer a {{ color: var(--muted); text-decoration: underline; }}
+  </style>
+</head>
+<body>
+{top_nav}
+<h1>All countries</h1>
+<p class="subtitle">{n_countries} countries with 5 or more tracked performers · Updated {last_updated} UTC</p>
+<ul class="cat-list">
+{rows_html}
+</ul>
+<footer>
+  <p>HotMap is an independent project. <a href="/">Back to homepage</a>.</p>
+</footer>
+</body>
+</html>
+"""
+
+
+def render_countries_index(
+    snapshots: pd.DataFrame,
+    output_path: Path | str,
+) -> None:
+    """Render /countries/index.html — alphabetical list of qualifying countries."""
+    df = snapshots[snapshots["country"].notna()].copy()
+    df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
+    latest_date = df["snapshot_date"].max()
+    today = df[df["snapshot_date"] == latest_date]
+
+    counts = today.groupby("country")["slug"].nunique().reset_index(name="n")
+    qualifying = counts[counts["n"] >= _COUNTRY_MIN_PERFORMERS].sort_values("country")
+
+    canonical_url = "https://hotmap.cam/countries/"
+    title = "All Countries — HotMap"
+    description = f"Alphabetical index of all {len(qualifying)} countries with ≥5 tracked performers on HotMap."
+    collection_jsonld = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": title,
+        "url": canonical_url,
+        "description": description,
+    }
+    breadcrumbs = [
+        ("HotMap", "https://hotmap.cam/"),
+        ("Countries", canonical_url),
+    ]
+    seo_head = _render_seo_head(
+        page_type="country",
+        title=title,
+        description=description,
+        canonical_url=canonical_url,
+        og_image_url=None,
+        extra_jsonld=[collection_jsonld],
+        breadcrumbs=breadcrumbs,
+    )
+
+    rows_html = "\n".join(
+        f'<li><a href="/country/{_country_slug(row.country)}/">{_html.escape(row.country)}</a> '
+        f'<span class="cat-count">({int(row.n)} performers)</span></li>'
+        for row in qualifying.itertuples(index=False)
+    )
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(_COUNTRIES_INDEX_TEMPLATE.format(
+        seo_head=seo_head,
+        nav_css=_TOP_NAV_CSS,
+        top_nav=_top_nav("countries"),
+        n_countries=len(qualifying),
+        rows_html=rows_html,
+        last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+    ), encoding="utf-8")
+
+
 def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) -> None:
     """Write sitemap.xml (home + per-performer pages) and robots.txt."""
     public = Path(public_dir)

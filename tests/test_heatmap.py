@@ -8,6 +8,7 @@ import pytest
 from heatmap import (
     _render_seo_head,
     render_categories_treemap,
+    render_countries_index,
     render_country_page,
     render_performer_page,
     render_stats_page,
@@ -1015,3 +1016,47 @@ def test_render_country_page_raises_when_no_performers(tmp_path):
 def test_country_min_performers_constant_is_5():
     from heatmap import _COUNTRY_MIN_PERFORMERS
     assert _COUNTRY_MIN_PERFORMERS == 5
+
+
+def test_render_countries_index_lists_qualifying_countries(tmp_path):
+    """Countries with >= _COUNTRY_MIN_PERFORMERS get listed; others omitted."""
+    rows = []
+    # Russia: 6 performers (qualifying)
+    for i in range(6):
+        rows.append({
+            "snapshot_date": pd.Timestamp("2026-06-02"), "slug": f"ru{i}", "name": f"RU{i}",
+            "total_views": 100_000_000, "rank": 1, "gender": "female", "country": "Russia",
+        })
+    # Italy: 5 performers (just-qualifying)
+    for i in range(5):
+        rows.append({
+            "snapshot_date": pd.Timestamp("2026-06-02"), "slug": f"it{i}", "name": f"IT{i}",
+            "total_views": 80_000_000, "rank": 1, "gender": "female", "country": "Italy",
+        })
+    # Estonia: 2 performers (below threshold — must be excluded)
+    for i in range(2):
+        rows.append({
+            "snapshot_date": pd.Timestamp("2026-06-02"), "slug": f"ee{i}", "name": f"EE{i}",
+            "total_views": 50_000_000, "rank": 1, "gender": "female", "country": "Estonia",
+        })
+    df = pd.DataFrame(rows)
+    out = tmp_path / "index.html"
+    render_countries_index(df, out)
+    content = out.read_text()
+
+    # Qualifying countries present
+    assert '<a href="/country/russia/"' in content
+    assert "Russia" in content
+    assert '<a href="/country/italy/"' in content
+    assert "Italy" in content
+    # Counts visible
+    assert "6" in content
+    assert "5" in content
+    # Below-threshold absent
+    assert "Estonia" not in content
+    assert "/country/estonia/" not in content
+    # SEO + breadcrumbs
+    assert 'rel="canonical" href="https://hotmap.cam/countries/"' in content
+    blocks = _extract_jsonld_blocks(content)
+    types = {b.get("@type") for b in blocks}
+    assert "CollectionPage" in types and "BreadcrumbList" in types
