@@ -16,6 +16,7 @@ class ProfileData:
     name: str
     total_views: int
     photo_url: str | None = None
+    country: str | None = None
 
 
 _SLUG_RE = re.compile(r"^/pornstar/([^/?#]+)")
@@ -58,7 +59,8 @@ def parse_profile(html: str) -> ProfileData:
 
     total_views = _extract_video_views(tree)
     photo_url = _extract_photo_url(tree)
-    return ProfileData(name=name, total_views=total_views, photo_url=photo_url)
+    country = extract_country(html)
+    return ProfileData(name=name, total_views=total_views, photo_url=photo_url, country=country)
 
 
 def _extract_photo_url(tree: HTMLParser) -> str | None:
@@ -170,6 +172,105 @@ _REQUEST_TIMEOUT = 30  # seconds
 # through these as fallbacks. PH/Cloudflare occasionally tightens TLS-fingerprint
 # rules for one browser version while leaving others through.
 _IMPERSONATE_FALLBACKS = ("chrome120", "chrome119", "chrome116", "safari17_0", "edge101")
+
+
+# Background (PH nationality field) → canonical country name. Used as a fallback
+# when Birth Place is missing. Entries cover the nationalities observed across
+# sample profiles; unmapped values resolve to None (performer just won't be
+# attributed to any country).
+_NATIONALITY_TO_COUNTRY = {
+    "American": "United States",
+    "British": "United Kingdom",
+    "Russian": "Russia",
+    "Italian": "Italy",
+    "French": "France",
+    "German": "Germany",
+    "Spanish": "Spain",
+    "Brazilian": "Brazil",
+    "Mexican": "Mexico",
+    "Japanese": "Japan",
+    "Korean": "South Korea",
+    "Chinese": "China",
+    "Australian": "Australia",
+    "Canadian": "Canada",
+    "Czech": "Czech Republic",
+    "Polish": "Poland",
+    "Ukrainian": "Ukraine",
+    "Hungarian": "Hungary",
+    "Romanian": "Romania",
+    "Argentine": "Argentina",
+    "Argentinian": "Argentina",
+    "Colombian": "Colombia",
+    "Dutch": "Netherlands",
+    "Swedish": "Sweden",
+    "Norwegian": "Norway",
+    "Finnish": "Finland",
+    "Danish": "Denmark",
+    "Turkish": "Turkey",
+    "Greek": "Greece",
+    "Portuguese": "Portugal",
+    "Indian": "India",
+    "Filipino": "Philippines",
+    "Thai": "Thailand",
+    "Vietnamese": "Vietnam",
+    "Indonesian": "Indonesia",
+    "Bulgarian": "Bulgaria",
+    "Serbian": "Serbia",
+    "Croatian": "Croatia",
+    "Slovakian": "Slovakia",
+    "Slovenian": "Slovenia",
+}
+
+# Birth Place country variants → canonical name.
+_COUNTRY_ALIASES = {
+    "United States of America": "United States",
+    "USA": "United States",
+    "U.S.A.": "United States",
+    "U.S.": "United States",
+    "UK": "United Kingdom",
+    "U.K.": "United Kingdom",
+    "Great Britain": "United Kingdom",
+    "England": "United Kingdom",
+    "Scotland": "United Kingdom",
+}
+
+
+def _canonicalize_country(name: str) -> str:
+    """Map common Birth Place variants ('USA', 'England', etc.) to canonical names.
+    Unknown names pass through unchanged."""
+    name = name.strip()
+    return _COUNTRY_ALIASES.get(name, name)
+
+
+def extract_country(html: str) -> str | None:
+    """Extract performer country from a PH profile page.
+
+    Strategy:
+      1. Birth Place infoPiece → take last comma-segment → canonicalize.
+      2. Background infoPiece → map nationality via _NATIONALITY_TO_COUNTRY.
+      3. Return None if neither produces a value.
+    """
+    tree = HTMLParser(html)
+    birth_place = None
+    background = None
+    for piece in tree.css(".infoPiece"):
+        text = piece.text(strip=True)
+        if text.startswith("Birth Place:"):
+            birth_place = text[len("Birth Place:"):].strip()
+        elif text.startswith("Background:"):
+            background = text[len("Background:"):].strip()
+
+    if birth_place:
+        country = birth_place.split(",")[-1].strip()
+        if country:
+            return _canonicalize_country(country)
+
+    if background:
+        mapped = _NATIONALITY_TO_COUNTRY.get(background)
+        if mapped:
+            return mapped
+
+    return None
 
 
 def _fetch(url: str, impersonate: str | None = None) -> tuple[str, int]:
