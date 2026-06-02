@@ -4,8 +4,22 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import pandas as pd
+
 from db import CategorySnapshot, Snapshot, init_db, insert_category_snapshot, insert_snapshot, load_all_category_snapshots, load_all_snapshots
-from heatmap import dump_json, render_categories_treemap, render_charts_page, render_performer_page, render_stats_page, render_treemap_page, write_sitemap_and_robots
+from heatmap import (
+    _COUNTRY_MIN_PERFORMERS,
+    _country_slug,
+    dump_json,
+    render_categories_treemap,
+    render_charts_page,
+    render_countries_index,
+    render_country_page,
+    render_performer_page,
+    render_stats_page,
+    render_treemap_page,
+    write_sitemap_and_robots,
+)
 from scraper import fetch_category_catalog, fetch_profile, fetch_top_pornstars, polite_sleep
 from curl_cffi import requests as cffi_requests
 import os
@@ -171,6 +185,23 @@ def main() -> int:
     render_treemap_page(snapshots_df, HTML_PATH, default_mode="rising", canonical_path="/", seo_key="home")
     print(f"wrote {HTML_PATH}", flush=True)
 
+    # Countries qualifying for /country/<slug>/ pages — computed early so the
+    # performer-page loop can gate cross-links to existing pages.
+    if "country" in snapshots_df.columns:
+        latest_date_for_country = pd.to_datetime(snapshots_df["snapshot_date"]).max()
+        today_with_country = snapshots_df[
+            (pd.to_datetime(snapshots_df["snapshot_date"]) == latest_date_for_country)
+            & snapshots_df["country"].notna()
+        ]
+        country_counts = today_with_country.groupby("country")["slug"].nunique()
+        qualifying_countries: set[str] = set(country_counts[country_counts >= _COUNTRY_MIN_PERFORMERS].index)
+    else:
+        qualifying_countries = set()
+    if qualifying_countries:
+        print(f"qualifying countries: {len(qualifying_countries)}: {sorted(qualifying_countries)}", flush=True)
+    else:
+        print("no qualifying countries (need country backfill or >=5 performers per country)", flush=True)
+
     # Per-mode landing pages — shareable URLs that open directly on the mode.
     for mode in ("rising", "gems", "celebs"):
         mode_dir = PUBLIC_DIR / mode
@@ -194,7 +225,8 @@ def main() -> int:
     written = 0
     for slug in all_slugs:
         try:
-            render_performer_page(snapshots_df, slug=slug, output_path=PERFORMER_DIR / f"{slug}.html")
+            render_performer_page(snapshots_df, slug=slug, output_path=PERFORMER_DIR / f"{slug}.html",
+                                  qualifying_countries=qualifying_countries)
             written += 1
         except Exception as exc:
             print(f"  WARN: performer page failed for {slug}: {exc}", file=sys.stderr)
@@ -224,6 +256,28 @@ def main() -> int:
             print(f"  WARN: render_categories_treemap skipped: {exc}", file=sys.stderr)
     else:
         print("no category snapshots in db yet — skipping /categories/ render", flush=True)
+
+    # /country/<slug>/ + /countries/ — per-country landing pages and index.
+    if qualifying_countries:
+        countries_root = PUBLIC_DIR / "country"
+        countries_root.mkdir(parents=True, exist_ok=True)
+        n_country_pages = 0
+        for country_name in sorted(qualifying_countries):
+            slug = _country_slug(country_name)
+            country_dir = countries_root / slug
+            country_dir.mkdir(exist_ok=True)
+            try:
+                render_country_page(snapshots_df, country_name, country_dir / "index.html")
+                n_country_pages += 1
+            except ValueError as exc:
+                print(f"  WARN: render_country_page skipped for {country_name}: {exc}", file=sys.stderr)
+        print(f"wrote {n_country_pages} country pages under {countries_root}", flush=True)
+
+        (PUBLIC_DIR / "countries").mkdir(exist_ok=True)
+        render_countries_index(snapshots_df, PUBLIC_DIR / "countries" / "index.html")
+        print(f"wrote /countries/index.html", flush=True)
+    else:
+        print("no qualifying countries — skipping /countries/ renders", flush=True)
 
     write_sitemap_and_robots(snapshots_df, public_dir=PUBLIC_DIR)
     print("wrote sitemap.xml + robots.txt", flush=True)
