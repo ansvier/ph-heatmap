@@ -132,3 +132,79 @@ def test_parse_category_catalog_skips_partial_blocks():
     result = parse_category_catalog(html)
     ids = {r["id"] for r in result}
     assert ids == {1, 3}, f"expected only well-formed entries (1, 3), got {ids}"
+
+
+from scraper import extract_country, _canonicalize_country
+
+
+def test_extract_country_from_birth_place_with_full_address():
+    """Birth Place like 'Chicago, Illinois, United States of America' → 'United States'."""
+    html = '<html><body><div class="infoPiece">Birth Place:Chicago, Illinois, United States of America</div></body></html>'
+    assert extract_country(html) == "United States"
+
+
+def test_extract_country_from_birth_place_country_only():
+    """Birth Place 'Russia' → 'Russia' (no comma split needed)."""
+    html = '<html><body><div class="infoPiece">Birth Place:Russia</div></body></html>'
+    assert extract_country(html) == "Russia"
+
+
+def test_extract_country_falls_back_to_background_nationality():
+    """When Birth Place missing but Background is a known nationality → mapped country."""
+    html = '<html><body><div class="infoPiece">Background:Italian</div></body></html>'
+    assert extract_country(html) == "Italy"
+
+
+def test_extract_country_birth_place_wins_over_background():
+    """If both present, Birth Place takes priority."""
+    html = (
+        '<html><body>'
+        '<div class="infoPiece">Birth Place:Russia</div>'
+        '<div class="infoPiece">Background:American</div>'
+        '</body></html>'
+    )
+    assert extract_country(html) == "Russia"
+
+
+def test_extract_country_returns_none_when_both_absent():
+    """No Birth Place, no Background → None."""
+    html = '<html><body><div class="infoPiece">Career Status:Active</div></body></html>'
+    assert extract_country(html) is None
+
+
+def test_extract_country_returns_none_when_background_unmapped():
+    """Background present but nationality not in our dict → None (not raw value)."""
+    html = '<html><body><div class="infoPiece">Background:Martian</div></body></html>'
+    assert extract_country(html) is None
+
+
+def test_canonicalize_country_collapses_usa_variants():
+    assert _canonicalize_country("United States of America") == "United States"
+    assert _canonicalize_country("USA") == "United States"
+    assert _canonicalize_country("U.S.A.") == "United States"
+
+
+def test_canonicalize_country_collapses_uk_variants():
+    assert _canonicalize_country("United Kingdom") == "United Kingdom"
+    assert _canonicalize_country("UK") == "United Kingdom"
+    assert _canonicalize_country("Great Britain") == "United Kingdom"
+    assert _canonicalize_country("England") == "United Kingdom"
+
+
+def test_canonicalize_country_passes_through_unknown():
+    assert _canonicalize_country("Russia") == "Russia"
+    assert _canonicalize_country("Belarus") == "Belarus"
+
+
+def test_parse_profile_includes_country():
+    """parse_profile now returns ProfileData with the country field populated."""
+    from scraper import parse_profile
+    html = (
+        '<html><body>'
+        '<h1>Test Performer</h1>'
+        '<span class="videoViews" data-title="Video views: 1,234,567"></span>'
+        '<div class="infoPiece">Birth Place:Russia</div>'
+        '</body></html>'
+    )
+    result = parse_profile(html)
+    assert result.country == "Russia"
