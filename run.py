@@ -118,6 +118,7 @@ def _scrape_gender(today: date, gender: str) -> list[Snapshot]:
             rank=rank,
             gender=gender,
             photo_url=local_photo,
+            country=profile.country,
         ))
         polite_sleep()
 
