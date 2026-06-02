@@ -186,6 +186,13 @@ export default {
    */
   async scheduled(event, env, ctx) {
     console.log(`scheduled: cron=${event.cron} time=${new Date(event.scheduledTime).toISOString()}`);
-    ctx.waitUntil(triggerScrape(env));
+    // Two cron entries in wrangler.jsonc:
+    //   "17 4 * * *" → fires the daily-scrape workflow_dispatch
+    //   "35 4 * * *" → watchdog: cancels + re-triggers if the 04:17 fire is still queued
+    if (event.cron === "35 4 * * *") {
+      ctx.waitUntil(watchdog(env));
+    } else {
+      ctx.waitUntil(triggerScrape(env));
+    }
   },
 };
