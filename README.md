@@ -43,6 +43,12 @@ A "Top Performer of the Day" card surfaces the strongest mover for the current c
 
 Daily snapshot of all ~189 PH categories (from `/categories`) into a treemap at `/categories/`. Tile size encodes total `video_count`; tile color encodes today's growth percentile within the category set. Single GET per day, ~5 seconds. After the first day of accumulated history, the page tells which categories are adding videos fastest. No per-category landing pages yet (deferred); this is one summary view of the catalog.
 
+### Countries
+
+Each performer's birth country (or nationality as fallback) is parsed from their Pornhub profile during the daily scrape. Countries with at least 5 tracked performers get their own landing page at `/country/<slug>/` — a single treemap showing top performers from that country, ranked the same way as the homepage (tile size = % growth, color = today's acceleration vs 7d baseline). An alphabetical index at `/countries/` lists every qualifying country with a count. Each `/p/<slug>` page shows the performer's country as a "From" cross-link.
+
+Coverage depends on how completely each performer fills out their profile. Sample: ~85% of profiles expose either Birth Place or Background (nationality), with combined fallback. The one-off `scripts/backfill_countries.py` populates country for all existing tracked slugs; daily-scrape going forward extracts it as part of the existing profile fetch.
+
 ## How it works
 
 1. **Daily cron** (`17 4 * * *` UTC) — GitHub Actions runs [`run.py`](run.py).
