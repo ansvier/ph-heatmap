@@ -26,6 +26,11 @@
     <changefreq>daily</changefreq>
   </url>
   <url>
+    <loc>https://hotmap.cam/categories/</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
     <loc>https://hotmap.cam/charts/</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>daily</changefreq>

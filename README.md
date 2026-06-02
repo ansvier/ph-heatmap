@@ -39,6 +39,10 @@ Each tier is sliced by **gender** (All / Female / Male) and **window** (1d / 7d 
 
 A "Top Performer of the Day" card surfaces the strongest mover for the current cohort. Clicking any tile opens the performer's profile (via tracked `/r/<slug>` redirect).
 
+### Trending Categories
+
+Daily snapshot of all ~189 PH categories (from `/categories`) into a treemap at `/categories/`. Tile size encodes total `video_count`; tile color encodes today's growth percentile within the category set. Single GET per day, ~5 seconds. After the first day of accumulated history, the page tells which categories are adding videos fastest. No per-category landing pages yet (deferred); this is one summary view of the catalog.
+
 ## How it works
 
 1. **Daily cron** (`17 4 * * *` UTC) — GitHub Actions runs [`run.py`](run.py).

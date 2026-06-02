@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json as _json
 import os
 import random
 import re
@@ -120,6 +121,46 @@ def _extract_video_views(tree: HTMLParser) -> int:
     raise ValueError("Could not find 'Video Views' on profile page")
 
 
+# Matches a JSON object literal containing "id", "slug", "video_count", and "status" keys.
+# Uses [^{}] to disallow nested braces — category objects in PH's HTML are flat.
+_CATEGORY_BLOCK_RE = re.compile(
+    r'\{[^{}]*?"id"\s*:\s*\d+[^{}]*?"slug"\s*:\s*"[^"]+"[^{}]*?"video_count"\s*:\s*\d+[^{}]*?\}'
+)
+
+
+def parse_category_catalog(html: str) -> list[dict]:
+    """Extract the embedded category catalog from PH's /categories page HTML.
+
+    Returns [{id, slug, name, video_count, points}, ...] with:
+      - status == "active" entries only (filters soft-deleted)
+      - deduped by id (PH duplicates entries in cross-category panels)
+      - points may be None when the field is absent in the source JSON
+    """
+    out: list[dict] = []
+    seen_ids: set[int] = set()
+    for match in _CATEGORY_BLOCK_RE.finditer(html):
+        block = match.group(0)
+        try:
+            obj = _json.loads(block)
+            if obj.get("status") != "active":
+                continue
+            cid = obj["id"]
+            if cid in seen_ids:
+                continue
+            out.append({
+                "id": cid,
+                "slug": obj["slug"],
+                "name": obj["name"],
+                "video_count": obj["video_count"],
+                "points": obj.get("points"),
+            })
+            seen_ids.add(cid)
+        except (_json.JSONDecodeError, KeyError):
+            # Skip malformed or partial blocks — PH HTML drift shouldn't brick the run.
+            continue
+    return out
+
+
 _TOP_LIST_URL_TEMPLATE = "https://www.pornhub.com/pornstars?o=mv&gender={gender}"
 _PROFILE_URL_TEMPLATE = "https://www.pornhub.com/pornstar/{slug}"
 _IMPERSONATE = os.environ.get("PH_IMPERSONATE", "chrome120")
@@ -230,6 +271,20 @@ def fetch_top_pornstars(limit: int = 50, gender: str = "female") -> list[str]:
 def fetch_profile(slug: str) -> ProfileData:
     body, _status = _fetch(_PROFILE_URL_TEMPLATE.format(slug=slug))
     return parse_profile(body)
+
+
+_CATEGORIES_CATALOG_URL = "https://www.pornhub.com/categories"
+
+
+def fetch_category_catalog() -> list[dict]:
+    """Fetch PH's /categories page once and parse the embedded catalog.
+
+    Returns [{id, slug, name, video_count, points}, ...] for all active
+    categories. ~5 seconds per call. Exceptions from _fetch propagate;
+    callers (run.py) wrap in try/except.
+    """
+    body, _status = _fetch(_CATEGORIES_CATALOG_URL)
+    return parse_category_catalog(body)
 
 
 def polite_sleep(base: float = 1.5, jitter: float = 0.5) -> None:
