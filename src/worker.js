@@ -175,6 +175,18 @@ export default {
       return new Response("queued\n", { status: 202 });
     }
 
+    // Manual watchdog test — runs the watchdog logic on demand. Same Bearer
+    // gate as /_cron/trigger. Useful to verify the watchdog code path after
+    // a deploy without waiting for the 04:35 UTC cron.
+    if (url.pathname === "/_watchdog/test") {
+      const auth = request.headers.get("authorization") || "";
+      if (!env.GITHUB_TOKEN || auth !== `Bearer ${env.GITHUB_TOKEN}`) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      ctx.waitUntil(watchdog(env));
+      return new Response("watchdog queued\n", { status: 202 });
+    }
+
     // Everything else → static assets from public/
     return env.ASSETS.fetch(request);
   },
