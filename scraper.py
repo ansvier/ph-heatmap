@@ -59,7 +59,7 @@ def parse_profile(html: str) -> ProfileData:
 
     total_views = _extract_video_views(tree)
     photo_url = _extract_photo_url(tree)
-    country = extract_country(html)
+    country = _extract_country_from_tree(tree)
     return ProfileData(name=name, total_views=total_views, photo_url=photo_url, country=country)
 
 
@@ -242,15 +242,14 @@ def _canonicalize_country(name: str) -> str:
     return _COUNTRY_ALIASES.get(name, name)
 
 
-def extract_country(html: str) -> str | None:
-    """Extract performer country from a PH profile page.
+def _extract_country_from_tree(tree: HTMLParser) -> str | None:
+    """Tree-based country extractor — used by parse_profile (which already has a tree).
 
     Strategy:
       1. Birth Place infoPiece → take last comma-segment → canonicalize.
       2. Background infoPiece → map nationality via _NATIONALITY_TO_COUNTRY.
       3. Return None if neither produces a value.
     """
-    tree = HTMLParser(html)
     birth_place = None
     background = None
     for piece in tree.css(".infoPiece"):
@@ -271,6 +270,11 @@ def extract_country(html: str) -> str | None:
             return mapped
 
     return None
+
+
+def extract_country(html: str) -> str | None:
+    """HTML-based country extractor — public API used by the backfill script."""
+    return _extract_country_from_tree(HTMLParser(html))
 
 
 def _fetch(url: str, impersonate: str | None = None) -> tuple[str, int]:

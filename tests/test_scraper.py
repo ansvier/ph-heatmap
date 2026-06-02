@@ -1,6 +1,14 @@
+from pathlib import Path
+
 import pytest
 
-from scraper import parse_profile, parse_top_list
+from scraper import (
+    _canonicalize_country,
+    extract_country,
+    parse_category_catalog,
+    parse_profile,
+    parse_top_list,
+)
 
 
 def test_parse_top_list_returns_unique_slugs_in_order(top_list_html):
@@ -56,10 +64,6 @@ def test_parse_profile_raises_when_views_missing():
     html = "<html><body><h1>No Stats Person</h1></body></html>"
     with pytest.raises(ValueError, match="Video Views"):
         parse_profile(html)
-
-
-from pathlib import Path
-from scraper import parse_category_catalog
 
 
 def _read_categories_fixture() -> str:
@@ -134,19 +138,14 @@ def test_parse_category_catalog_skips_partial_blocks():
     assert ids == {1, 3}, f"expected only well-formed entries (1, 3), got {ids}"
 
 
-from scraper import extract_country, _canonicalize_country
-
-
-def test_extract_country_from_birth_place_with_full_address():
-    """Birth Place like 'Chicago, Illinois, United States of America' → 'United States'."""
-    html = '<html><body><div class="infoPiece">Birth Place:Chicago, Illinois, United States of America</div></body></html>'
-    assert extract_country(html) == "United States"
-
-
-def test_extract_country_from_birth_place_country_only():
-    """Birth Place 'Russia' → 'Russia' (no comma split needed)."""
-    html = '<html><body><div class="infoPiece">Birth Place:Russia</div></body></html>'
-    assert extract_country(html) == "Russia"
+@pytest.mark.parametrize("birth_place, expected", [
+    ("Chicago, Illinois, United States of America", "United States"),
+    ("Russia", "Russia"),
+])
+def test_extract_country_from_birth_place(birth_place, expected):
+    """Birth Place — full address takes last segment; bare country passes through."""
+    html = f'<html><body><div class="infoPiece">Birth Place:{birth_place}</div></body></html>'
+    assert extract_country(html) == expected
 
 
 def test_extract_country_falls_back_to_background_nationality():
@@ -178,27 +177,35 @@ def test_extract_country_returns_none_when_background_unmapped():
     assert extract_country(html) is None
 
 
-def test_canonicalize_country_collapses_usa_variants():
-    assert _canonicalize_country("United States of America") == "United States"
-    assert _canonicalize_country("USA") == "United States"
-    assert _canonicalize_country("U.S.A.") == "United States"
+@pytest.mark.parametrize("input_, expected", [
+    ("United States of America", "United States"),
+    ("USA", "United States"),
+    ("U.S.A.", "United States"),
+])
+def test_canonicalize_country_collapses_usa_variants(input_, expected):
+    assert _canonicalize_country(input_) == expected
 
 
-def test_canonicalize_country_collapses_uk_variants():
-    assert _canonicalize_country("United Kingdom") == "United Kingdom"
-    assert _canonicalize_country("UK") == "United Kingdom"
-    assert _canonicalize_country("Great Britain") == "United Kingdom"
-    assert _canonicalize_country("England") == "United Kingdom"
+@pytest.mark.parametrize("input_, expected", [
+    ("United Kingdom", "United Kingdom"),
+    ("UK", "United Kingdom"),
+    ("Great Britain", "United Kingdom"),
+    ("England", "United Kingdom"),
+])
+def test_canonicalize_country_collapses_uk_variants(input_, expected):
+    assert _canonicalize_country(input_) == expected
 
 
-def test_canonicalize_country_passes_through_unknown():
-    assert _canonicalize_country("Russia") == "Russia"
-    assert _canonicalize_country("Belarus") == "Belarus"
+@pytest.mark.parametrize("input_, expected", [
+    ("Russia", "Russia"),
+    ("Belarus", "Belarus"),
+])
+def test_canonicalize_country_passes_through_unknown(input_, expected):
+    assert _canonicalize_country(input_) == expected
 
 
 def test_parse_profile_includes_country():
     """parse_profile now returns ProfileData with the country field populated."""
-    from scraper import parse_profile
     html = (
         '<html><body>'
         '<h1>Test Performer</h1>'
