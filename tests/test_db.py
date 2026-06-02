@@ -132,3 +132,35 @@ def test_insert_category_snapshot_replaces_on_conflict(tmp_path):
     df = load_all_category_snapshots(conn)
     assert len(df) == 1
     assert int(df.iloc[0]["video_count"]) == 999
+
+
+def test_init_db_adds_country_column_migration(tmp_path):
+    """init_db creates snapshots with a country column (TEXT, nullable)."""
+    db_path = tmp_path / "test.db"
+    conn = init_db(db_path)
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(snapshots)")}
+    assert "country" in cols, f"expected 'country' in columns; got {cols}"
+
+
+def test_insert_and_load_snapshot_with_country(tmp_path):
+    """Snapshot.country round-trips through the DB."""
+    from datetime import date
+    conn = init_db(tmp_path / "test.db")
+    insert_snapshot(conn, [
+        Snapshot(
+            snapshot_date=date(2026, 6, 2), slug="lana-rhoades", name="Lana Rhoades",
+            total_views=2_080_000_000, rank=2, gender="female",
+            photo_url=None, country="United States",
+        ),
+        Snapshot(
+            snapshot_date=date(2026, 6, 2), slug="eva-elfie", name="Eva Elfie",
+            total_views=1_100_000_000, rank=8, gender="female",
+            photo_url=None, country=None,  # missing country path
+        ),
+    ])
+    df = load_all_snapshots(conn)
+    assert len(df) == 2
+    lana = df[df["slug"] == "lana-rhoades"].iloc[0]
+    assert lana["country"] == "United States"
+    eva = df[df["slug"] == "eva-elfie"].iloc[0]
+    assert pd.isna(eva["country"])
