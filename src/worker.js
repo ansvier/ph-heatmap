@@ -56,6 +56,85 @@ async function triggerScrape(env) {
   }
 }
 
+async function cancelRun(env, runId) {
+  if (!env.GITHUB_TOKEN) {
+    console.error("watchdog: GITHUB_TOKEN secret is not set — cannot cancel run");
+    return false;
+  }
+  const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/runs/${runId}/cancel`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "hotmap-cf-cron",
+    },
+  });
+  // GH returns 202 on accepted cancel, 409 if already terminal (treat as success).
+  if (res.status === 202 || res.status === 409) {
+    console.log(`watchdog: cancelled run ${runId} (status=${res.status})`);
+    return true;
+  }
+  const text = await res.text();
+  console.error(`watchdog: cancel failed runId=${runId} status=${res.status} body=${text.slice(0, 200)}`);
+  return false;
+}
+
+async function watchdog(env) {
+  if (!env.GITHUB_TOKEN) {
+    console.error("watchdog: GITHUB_TOKEN secret is not set");
+    return;
+  }
+  const STALL_THRESHOLD_MIN = 15;
+  const listUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/${GH_WORKFLOW}/runs?per_page=1`;
+  let latest;
+  try {
+    const res = await fetch(listUrl, {
+      headers: {
+        Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "hotmap-cf-cron",
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`watchdog: list-runs failed status=${res.status} body=${text.slice(0, 200)}`);
+      return;
+    }
+    const data = await res.json();
+    latest = data.workflow_runs && data.workflow_runs[0];
+  } catch (err) {
+    console.error(`watchdog: list-runs threw: ${err.message}`);
+    return;
+  }
+  if (!latest) {
+    console.log("watchdog: no runs found for daily-scrape.yml — nothing to check");
+    return;
+  }
+
+  const createdAt = new Date(latest.created_at);
+  const ageMin = (Date.now() - createdAt.getTime()) / 60000;
+
+  if (latest.status === "queued" && ageMin > STALL_THRESHOLD_MIN) {
+    console.log(`watchdog: run ${latest.id} stuck in queued for ${ageMin.toFixed(1)} min — cancelling + re-triggering`);
+    const cancelled = await cancelRun(env, latest.id);
+    if (!cancelled) {
+      console.error("watchdog: skipping re-trigger because cancel failed");
+      return;
+    }
+    // Give GH a moment to mark the run as cancelled before dispatching a new one.
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await triggerScrape(env);
+    console.log(`watchdog: triggered fresh workflow_dispatch after cancelling run ${latest.id}`);
+  } else {
+    console.log(
+      `watchdog: run ${latest.id} status=${latest.status} age=${ageMin.toFixed(1)}min — no action`
+    );
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
