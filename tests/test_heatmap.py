@@ -8,6 +8,7 @@ import pytest
 from heatmap import (
     _render_seo_head,
     render_categories_treemap,
+    render_country_page,
     render_performer_page,
     render_stats_page,
     render_treemap_page,
@@ -962,3 +963,55 @@ def test_render_categories_treemap_raises_when_only_meta_categories_present(tmp_
     ])
     with pytest.raises(ValueError, match="No genre categories"):
         render_categories_treemap(df, tmp_path / "out.html")
+
+
+def _country_snapshots_fixture() -> pd.DataFrame:
+    """Three days of history; 3 performers with country='Russia', 1 with 'Italy'."""
+    rows = []
+    for d in (date(2026, 5, 26), date(2026, 5, 27), date(2026, 5, 28)):
+        # Russia: 3 performers
+        for slug, base_views in [("ru1", 100_000_000), ("ru2", 80_000_000), ("ru3", 60_000_000)]:
+            rows.append({
+                "snapshot_date": pd.Timestamp(d), "slug": slug, "name": slug.upper(),
+                "total_views": base_views + (d.toordinal() - date(2026, 5, 26).toordinal()) * 10_000,
+                "rank": 1, "gender": "female", "country": "Russia",
+            })
+        # Italy: 1 performer
+        rows.append({
+            "snapshot_date": pd.Timestamp(d), "slug": "it1", "name": "IT1",
+            "total_views": 50_000_000 + (d.toordinal() - date(2026, 5, 26).toordinal()) * 5_000,
+            "rank": 4, "gender": "female", "country": "Italy",
+        })
+    return pd.DataFrame(rows)
+
+
+def test_render_country_page_writes_html(tmp_path):
+    """render_country_page emits a single-treemap page filtered to one country."""
+    df = _country_snapshots_fixture()
+    out = tmp_path / "russia.html"
+    render_country_page(df, "Russia", out)
+    assert out.exists()
+    content = out.read_text()
+
+    assert "<html" in content.lower()
+    assert "Russia" in content
+    assert "Top Russian" in content or "Top Russia" in content  # title pattern
+    assert 'rel="canonical" href="https://hotmap.cam/country/russia/"' in content
+    assert 'property="og:type" content="website"' in content
+    # Plotly bundle embedded
+    assert "plotly" in content.lower()
+    # JSON-LD
+    blocks = _extract_jsonld_blocks(content)
+    types = {b.get("@type") for b in blocks}
+    assert "CollectionPage" in types and "BreadcrumbList" in types
+
+
+def test_render_country_page_raises_when_no_performers(tmp_path):
+    df = _country_snapshots_fixture()
+    with pytest.raises(ValueError, match="No performers for country"):
+        render_country_page(df, "Nonexistentland", tmp_path / "out.html")
+
+
+def test_country_min_performers_constant_is_5():
+    from heatmap import _COUNTRY_MIN_PERFORMERS
+    assert _COUNTRY_MIN_PERFORMERS == 5

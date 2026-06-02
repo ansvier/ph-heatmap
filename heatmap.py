@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html as _html
 import json as _json
+import re as _re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -953,6 +954,7 @@ def _build_top_performer_card(
     mode: str,
     *,
     is_default: bool,
+    label_override: str | None = None,
 ) -> str:
     """Return the HTML for one Top Performer card (overall / female / male).
 
@@ -1012,7 +1014,7 @@ def _build_top_performer_card(
         f'<img src="{img_src}" alt="{name}" loading="lazy" referrerpolicy="no-referrer">'
         if photo_url else '<div style="width:56px;height:56px;border-radius:50%;background:#222;flex-shrink:0"></div>'
     )
-    label = _TOP_PERF_LABELS.get(mode, {}).get(gender_key, "Top performer of the day")
+    label = label_override or _TOP_PERF_LABELS.get(mode, {}).get(gender_key, "Top performer of the day")
     active = " active" if is_default else ""
 
     if use_acceleration:
@@ -2527,6 +2529,145 @@ def render_categories_treemap(
         nav_css=_TOP_NAV_CSS,
         top_nav=_top_nav("categories"),
         n_categories=n_categories,
+        treemap=treemap_html,
+        last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+    ), encoding="utf-8")
+
+
+_COUNTRY_MIN_PERFORMERS = 5  # countries below this don't get a /country/<slug>/ page
+
+
+def _country_slug(country_name: str) -> str:
+    """URL slug for a country name: lowercase, ASCII-ish, hyphens for whitespace.
+
+    'Russia' → 'russia', 'United States' → 'united-states', "Cote d'Ivoire" → 'cote-divoire'.
+    """
+    s = country_name.strip().lower()
+    s = _re.sub(r"[^\w\s-]", "", s, flags=_re.UNICODE)
+    s = _re.sub(r"[\s_]+", "-", s)
+    return s.strip("-")
+
+
+_COUNTRY_PAGE_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+{seo_head}
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {{
+      --brand-orange: #ff9000;
+      --bg: #0a0a0a;
+      --fg: #f5f5f5;
+      --muted: #9a9a9a;
+      --rule: #1f1f1f;
+    }}
+    * {{ box-sizing: border-box; }}
+    html, body {{ font-family: 'Inter', sans-serif; }}
+    body {{ max-width: 1200px; margin: 0 auto; padding: 32px 16px 56px; color: var(--fg); background: var(--bg); line-height: 1.5; }}
+{nav_css}
+    h1 {{ font-size: 28px; font-weight: 800; margin: 0 0 8px; }}
+    .subtitle {{ color: var(--muted); margin: 0 0 24px; }}
+    .empty-state {{ padding: 80px 0; text-align: center; color: var(--muted); }}
+    footer {{ margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }}
+    footer a {{ color: var(--muted); text-decoration: underline; }}
+  </style>
+</head>
+<body>
+{top_nav}
+<h1>Top {country_name} performers</h1>
+<p class="subtitle">{n_performers} performers tracked · Updated {last_updated} UTC</p>
+{top_perf_card}
+{treemap}
+<footer>
+  <p>HotMap is an independent project. <a href="/">Back to homepage</a>.</p>
+</footer>
+</body>
+</html>
+"""
+
+
+def render_country_page(
+    snapshots: pd.DataFrame,
+    country_name: str,
+    output_path: Path | str,
+) -> None:
+    """Render /country/<slug>/index.html — top performers from one country.
+
+    Tile size = % growth (same metric as homepage), color = acceleration percentile.
+    Spike of the Day card surfaces the biggest-momentum performer in the country.
+    Raises ValueError when no performers match the country (caller in run.py
+    should treat as 'skip render').
+    """
+    in_country = snapshots[snapshots["country"] == country_name].copy()
+    if in_country.empty:
+        raise ValueError(f"No performers for country {country_name!r}")
+
+    in_country["snapshot_date"] = pd.to_datetime(in_country["snapshot_date"])
+    latest_date = in_country["snapshot_date"].max()
+    n_performers = int(in_country[in_country["snapshot_date"] == latest_date]["slug"].nunique())
+
+    slug = _country_slug(country_name)
+    canonical_url = f"https://hotmap.cam/country/{slug}/"
+    title = f"Top {country_name} Performers — HotMap"
+    description = (
+        f"Top {country_name} pornstars ranked by view-growth momentum. "
+        f"{n_performers} performers tracked. Daily heatmap, updated automatically."
+    )
+    collection_jsonld = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": title,
+        "url": canonical_url,
+        "description": description,
+    }
+    breadcrumbs = [
+        ("HotMap", "https://hotmap.cam/"),
+        ("Countries", "https://hotmap.cam/countries/"),
+        (country_name, canonical_url),
+    ]
+    seo_head = _render_seo_head(
+        page_type="country",
+        title=title,
+        description=description,
+        canonical_url=canonical_url,
+        og_image_url=None,
+        extra_jsonld=[collection_jsonld],
+        breadcrumbs=breadcrumbs,
+    )
+
+    # Build treemap from this country's window-growth cohort.
+    window = compute_window_growth(in_country, window_days=1)
+    cohort = window.dropna(subset=["growth_pct"]).sort_values("total_views", ascending=False).head(50)
+
+    has_visible_tiles = not cohort.empty and (cohort["prev_views"] >= 1_000_000).any()
+    if not has_visible_tiles:
+        treemap_html = '<div class="empty-state">Not enough history yet — check back tomorrow.</div>'
+    else:
+        treemap_html = _build_treemap_figure(cohort, window_days=1).to_html(include_plotlyjs="cdn", full_html=False)
+
+    top_perf_card = _build_top_performer_card(
+        in_country, gender_key="all", gender_filter=None, mode="celebs", is_default=True,
+        label_override=f"Top from {country_name}",
+    )
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(_COUNTRY_PAGE_TEMPLATE.format(
+        seo_head=seo_head,
+        nav_css=_TOP_NAV_CSS,
+        top_nav=_top_nav("countries"),
+        country_name=_html.escape(country_name),
+        n_performers=n_performers,
+        top_perf_card=top_perf_card,
         treemap=treemap_html,
         last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
     ), encoding="utf-8")
