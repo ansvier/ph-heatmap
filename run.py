@@ -4,9 +4,9 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from db import Snapshot, init_db, insert_snapshot, load_all_snapshots
-from heatmap import dump_json, render_charts_page, render_performer_page, render_stats_page, render_treemap_page, write_sitemap_and_robots
-from scraper import fetch_profile, fetch_top_pornstars, polite_sleep
+from db import CategorySnapshot, Snapshot, init_db, insert_category_snapshot, insert_snapshot, load_all_category_snapshots, load_all_snapshots
+from heatmap import dump_json, render_categories_treemap, render_charts_page, render_performer_page, render_stats_page, render_treemap_page, write_sitemap_and_robots
+from scraper import fetch_category_catalog, fetch_profile, fetch_top_pornstars, polite_sleep
 from curl_cffi import requests as cffi_requests
 import os
 import time
@@ -128,6 +128,14 @@ def main() -> int:
     today = date.today()
     print(f"[{today}] starting snapshot run", flush=True)
 
+    # ---- Categories snapshot (cheap, 1 GET) ----
+    try:
+        catalog = fetch_category_catalog()
+        print(f"fetched {len(catalog)} categories", flush=True)
+    except Exception as exc:
+        print(f"  WARN: fetch_category_catalog failed: {exc}", file=sys.stderr)
+        catalog = []
+
     all_rows: list[Snapshot] = []
     for gender in GENDERS:
         all_rows.extend(_scrape_gender(today, gender))
@@ -140,6 +148,18 @@ def main() -> int:
     conn = init_db(DB_PATH)
     insert_snapshot(conn, all_rows)
     print(f"stored {len(all_rows)} rows total", flush=True)
+
+    # Persist category snapshot from the fetch above.
+    if catalog:
+        category_rows = [
+            CategorySnapshot(
+                snapshot_date=today, category_id=c["id"], slug=c["slug"],
+                name=c["name"], video_count=c["video_count"], points=c.get("points"),
+            )
+            for c in catalog
+        ]
+        insert_category_snapshot(conn, category_rows)
+        print(f"stored {len(category_rows)} category rows", flush=True)
 
     # Backfill any avatars the main scrape missed (transient PH errors etc).
     filled = _backfill_missing_avatars(conn, today.isoformat())
@@ -190,6 +210,19 @@ def main() -> int:
     charts_dir.mkdir(exist_ok=True)
     render_charts_page(snapshots_df, charts_dir / "index.html")
     print(f"wrote /charts/index.html", flush=True)
+
+    # /categories/ — daily treemap of PH category video-counts
+    category_snapshots = load_all_category_snapshots(conn)
+    if not category_snapshots.empty:
+        categories_dir = PUBLIC_DIR / "categories"
+        categories_dir.mkdir(exist_ok=True)
+        try:
+            render_categories_treemap(category_snapshots, categories_dir / "index.html")
+            print(f"wrote /categories/index.html", flush=True)
+        except ValueError as exc:
+            print(f"  WARN: render_categories_treemap skipped: {exc}", file=sys.stderr)
+    else:
+        print("no category snapshots in db yet — skipping /categories/ render", flush=True)
 
     write_sitemap_and_robots(snapshots_df, public_dir=PUBLIC_DIR)
     print("wrote sitemap.xml + robots.txt", flush=True)

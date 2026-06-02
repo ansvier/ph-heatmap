@@ -19,6 +19,16 @@ class Snapshot:
     photo_url: str | None = None
 
 
+@dataclass(frozen=True)
+class CategorySnapshot:
+    snapshot_date: date
+    category_id: int
+    slug: str
+    name: str
+    video_count: int
+    points: int | None = None
+
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS snapshots (
     snapshot_date TEXT NOT NULL,
@@ -30,6 +40,21 @@ CREATE TABLE IF NOT EXISTS snapshots (
     photo_url     TEXT,
     PRIMARY KEY (snapshot_date, slug, gender)
 );
+"""
+
+
+_CATEGORY_SNAPSHOTS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS category_snapshots (
+    snapshot_date  TEXT    NOT NULL,
+    category_id    INTEGER NOT NULL,
+    slug           TEXT    NOT NULL,
+    name           TEXT    NOT NULL,
+    video_count    INTEGER NOT NULL,
+    points         INTEGER,
+    PRIMARY KEY (snapshot_date, category_id)
+);
+CREATE INDEX IF NOT EXISTS idx_cs_date     ON category_snapshots(snapshot_date);
+CREATE INDEX IF NOT EXISTS idx_cs_category ON category_snapshots(category_id);
 """
 
 
@@ -72,6 +97,9 @@ def init_db(path: Path | str) -> sqlite3.Connection:
         """)
         conn.commit()
 
+    conn.executescript(_CATEGORY_SNAPSHOTS_SCHEMA)
+    conn.commit()
+
     return conn
 
 
@@ -94,4 +122,30 @@ def load_all_snapshots(conn: sqlite3.Connection) -> pd.DataFrame:
         conn,
     )
     df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
+    return df
+
+
+def insert_category_snapshot(conn: sqlite3.Connection, rows: list[CategorySnapshot]) -> None:
+    """Upsert category snapshot rows. PK is (snapshot_date, category_id)."""
+    conn.executemany(
+        "INSERT OR REPLACE INTO category_snapshots "
+        "(snapshot_date, category_id, slug, name, video_count, points) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        [
+            (r.snapshot_date.isoformat(), r.category_id, r.slug, r.name, r.video_count, r.points)
+            for r in rows
+        ],
+    )
+    conn.commit()
+
+
+def load_all_category_snapshots(conn: sqlite3.Connection) -> pd.DataFrame:
+    """Load the full category_snapshots table as a DataFrame."""
+    df = pd.read_sql_query(
+        "SELECT snapshot_date, category_id, slug, name, video_count, points "
+        "FROM category_snapshots",
+        conn,
+    )
+    if not df.empty:
+        df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
     return df

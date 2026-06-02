@@ -3,6 +3,7 @@ from datetime import date
 import pandas as pd
 
 from db import Snapshot, init_db, insert_snapshot, load_all_snapshots
+from db import insert_category_snapshot, load_all_category_snapshots, CategorySnapshot
 
 
 def _make(slug, name="X", total_views=100, rank=1, gender="female", snapshot_date=date(2026, 5, 27)):
@@ -79,3 +80,55 @@ def test_migration_adds_gender_to_legacy_db(tmp_path):
     df = load_all_snapshots(conn)
     assert len(df) == 1
     assert df["gender"].iloc[0] == "female"
+
+
+def test_init_db_creates_category_snapshots_table(tmp_path):
+    """init_db creates category_snapshots with the expected schema."""
+    db_path = tmp_path / "test.db"
+    conn = init_db(db_path)
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(category_snapshots)")}
+    assert cols == {"snapshot_date", "category_id", "slug", "name", "video_count", "points"}, \
+        f"got cols={cols}"
+    pk = [row[1] for row in conn.execute("PRAGMA table_info(category_snapshots)") if row[5] > 0]
+    assert set(pk) == {"snapshot_date", "category_id"}, f"got pk cols={pk}"
+
+
+def test_insert_and_load_category_snapshots_round_trip(tmp_path):
+    """insert_category_snapshot + load_all_category_snapshots round-trips correctly."""
+    from datetime import date
+    conn = init_db(tmp_path / "test.db")
+    today = date(2026, 6, 1)
+    rows = [
+        CategorySnapshot(snapshot_date=today, category_id=37, slug="18-25", name="18-25",
+                         video_count=289620, points=65005),
+        CategorySnapshot(snapshot_date=today, category_id=29, slug="milf", name="MILF",
+                         video_count=199835, points=12500),
+        CategorySnapshot(snapshot_date=today, category_id=1, slug="anal", name="Anal",
+                         video_count=142217, points=None),  # points may be missing
+    ]
+    insert_category_snapshot(conn, rows)
+    df = load_all_category_snapshots(conn)
+    assert len(df) == 3
+    assert set(df["category_id"]) == {37, 29, 1}
+    milf_row = df[df["category_id"] == 29].iloc[0]
+    assert milf_row["name"] == "MILF"
+    assert int(milf_row["video_count"]) == 199835
+    # Anal had points=None
+    anal_row = df[df["category_id"] == 1].iloc[0]
+    assert pd.isna(anal_row["points"])
+
+
+def test_insert_category_snapshot_replaces_on_conflict(tmp_path):
+    """Inserting the same (date, id) overwrites — upsert semantics."""
+    from datetime import date
+    conn = init_db(tmp_path / "test.db")
+    today = date(2026, 6, 1)
+    v1 = CategorySnapshot(snapshot_date=today, category_id=37, slug="18-25", name="18-25",
+                          video_count=100, points=10)
+    v2 = CategorySnapshot(snapshot_date=today, category_id=37, slug="18-25", name="18-25",
+                          video_count=999, points=99)
+    insert_category_snapshot(conn, [v1])
+    insert_category_snapshot(conn, [v2])
+    df = load_all_category_snapshots(conn)
+    assert len(df) == 1
+    assert int(df.iloc[0]["video_count"]) == 999

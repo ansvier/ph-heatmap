@@ -56,3 +56,79 @@ def test_parse_profile_raises_when_views_missing():
     html = "<html><body><h1>No Stats Person</h1></body></html>"
     with pytest.raises(ValueError, match="Video Views"):
         parse_profile(html)
+
+
+from pathlib import Path
+from scraper import parse_category_catalog
+
+
+def _read_categories_fixture() -> str:
+    return (Path(__file__).parent / "fixtures" / "categories_catalog.html").read_text()
+
+
+def test_parse_category_catalog_extracts_required_fields():
+    """parse_category_catalog returns the 3 active categories with all required fields."""
+    html = _read_categories_fixture()
+    result = parse_category_catalog(html)
+    # 3 active distinct categories (37, 29, 1); duplicate 37 dedup'd; inactive 999 filtered
+    assert len(result) == 3, f"expected 3 active categories, got {len(result)}: {result}"
+    by_id = {r["id"]: r for r in result}
+    assert by_id[37]["slug"] == "18-25"
+    assert by_id[37]["name"] == "18-25"
+    assert by_id[37]["video_count"] == 289620
+    assert by_id[37]["points"] == 65005
+    assert by_id[29]["slug"] == "milf"
+    assert by_id[29]["video_count"] == 199835
+    # Anal had no `points` field — None
+    assert by_id[1]["points"] is None
+
+
+def test_parse_category_catalog_filters_inactive():
+    """status != 'active' rows are dropped."""
+    html = _read_categories_fixture()
+    result = parse_category_catalog(html)
+    ids = {r["id"] for r in result}
+    assert 999 not in ids, "deprecated category should be filtered"
+
+
+def test_parse_category_catalog_dedupes_by_id():
+    """Same id appearing multiple times produces only one output row."""
+    html = _read_categories_fixture()
+    result = parse_category_catalog(html)
+    ids = [r["id"] for r in result]
+    assert len(ids) == len(set(ids)), f"duplicates found: {ids}"
+
+
+def test_parse_category_catalog_empty_when_no_blocks():
+    """HTML with no category JSON returns empty list."""
+    assert parse_category_catalog("<html><body><h1>nothing</h1></body></html>") == []
+
+
+def test_fetch_category_catalog_hits_categories_url(monkeypatch):
+    """fetch_category_catalog calls /categories once and returns parsed entries."""
+    captured = {}
+
+    def fake_fetch(url, impersonate=None):
+        captured["url"] = url
+        return (_read_categories_fixture(), 200)
+
+    import scraper
+    monkeypatch.setattr(scraper, "_fetch", fake_fetch)
+
+    result = scraper.fetch_category_catalog()
+    assert captured["url"] == "https://www.pornhub.com/categories"
+    assert len(result) == 3
+    assert {r["id"] for r in result} == {37, 29, 1}
+
+
+def test_parse_category_catalog_skips_partial_blocks():
+    """A JSON block missing 'name' (or any required field) is skipped, not raised on."""
+    # Block 1: well-formed. Block 2: missing 'name'. Block 3: well-formed.
+    html = """
+    <script>{"id":1,"name":"Anal","slug":"anal","status":"active","video_count":100,"points":50}</script>
+    <script>{"id":2,"slug":"badblock","status":"active","video_count":200,"points":75}</script>
+    <script>{"id":3,"name":"MILF","slug":"milf","status":"active","video_count":300,"points":150}</script>
+    """
+    result = parse_category_catalog(html)
+    ids = {r["id"] for r in result}
+    assert ids == {1, 3}, f"expected only well-formed entries (1, 3), got {ids}"

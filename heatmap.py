@@ -24,9 +24,10 @@ _LOGO_SVG = (
 )
 
 _NAV_ITEMS = [
-    ("map",    "/",        "Map"),
-    ("stats",  "/stats/",  "Stats"),
-    ("charts", "/charts/", "Charts"),
+    ("map",        "/",            "Map"),
+    ("stats",      "/stats/",      "Stats"),
+    ("categories", "/categories/", "Categories"),
+    ("charts",     "/charts/",     "Charts"),
 ]
 
 
@@ -655,6 +656,7 @@ _OG_TYPE_BY_PAGE_TYPE = {
     "stats": "article",
     "charts": "website",
     "performer": "profile",
+    "category": "website",
 }
 
 
@@ -688,7 +690,7 @@ def _breadcrumb_jsonld(items: list[tuple[str, str]]) -> dict:
 
 def _render_seo_head(
     *,
-    page_type: Literal["home", "mode", "stats", "charts", "performer"],
+    page_type: Literal["home", "mode", "stats", "charts", "performer", "category"],
     title: str,
     description: str,
     canonical_url: str,
@@ -2297,6 +2299,213 @@ def render_charts_page(snapshots: pd.DataFrame, output_path: Path | str) -> None
     Path(output_path).write_text(page)
 
 
+_CATEGORIES_PAGE_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+{seo_head}
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {{
+      --brand-orange: #ff9000;
+      --bg: #0a0a0a;
+      --fg: #f5f5f5;
+      --muted: #9a9a9a;
+      --rule: #1f1f1f;
+    }}
+    * {{ box-sizing: border-box; }}
+    html, body {{ font-family: 'Inter', sans-serif; }}
+    body {{ max-width: 1200px; margin: 0 auto; padding: 32px 16px 56px; color: var(--fg); background: var(--bg); line-height: 1.5; }}
+{nav_css}
+    h1 {{ font-size: 28px; font-weight: 800; margin: 0 0 8px; }}
+    .subtitle {{ color: var(--muted); margin: 0 0 24px; }}
+    footer {{ margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }}
+    footer a {{ color: var(--muted); text-decoration: underline; }}
+  </style>
+</head>
+<body>
+  {top_nav}
+<h1>Trending categories on Pornhub</h1>
+<p class="subtitle">{n_categories} categories tracked · Updated {last_updated} UTC</p>
+{treemap}
+<footer>
+  <p>HotMap is an independent project. Category data scraped from publicly visible Pornhub HTML. <a href="/">Back to homepage</a>.</p>
+</footer>
+</body>
+</html>
+"""
+
+
+def render_categories_treemap(
+    category_snapshots: pd.DataFrame,
+    output_path: Path | str,
+) -> None:
+    """Render /categories/index.html — treemap of PH category video counts.
+
+    Tile size  = video_count (latest snapshot)
+    Tile color = percentile rank of 1-day delta (today − yesterday). When no
+                 yesterday snapshot exists for a category, that tile gets a
+                 neutral color and delta label '—'.
+    Tile label = '<name>\\n<count compact>\\n+<delta> today' (or '—' when no baseline).
+
+    Raises ValueError on empty input — caller (run.py) treats as 'skip render this day'.
+    """
+    if category_snapshots.empty:
+        raise ValueError("No category snapshots provided")
+
+    df = category_snapshots.copy()
+    df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
+    latest_date = df["snapshot_date"].max()
+    today = df[df["snapshot_date"] == latest_date].set_index("category_id")
+
+    # Baseline = exactly 1 day prior. If yesterday's scrape was missed (gap > 1),
+    # the displayed "today" delta would be a lie — fall back to no-baseline state
+    # (neutral color, "—" label) instead of silently inflating deltas.
+    prior_dates = df[df["snapshot_date"] < latest_date]["snapshot_date"]
+    if not prior_dates.empty:
+        baseline_date = prior_dates.max()
+        gap_days = (latest_date - baseline_date).days
+        if gap_days == 1:
+            baseline = (
+                df[df["snapshot_date"] == baseline_date]
+                .set_index("category_id")["video_count"]
+                .rename("prev_count")
+            )
+            today = today.join(baseline, how="left")
+        else:
+            # Gap > 1 (missed scrape) — refuse to compute a misleading "today" delta.
+            today["prev_count"] = pd.NA
+    else:
+        today["prev_count"] = pd.NA
+
+    today["delta"] = today["video_count"] - today["prev_count"]
+    today["has_delta"] = today["delta"].notna()
+
+    # Color metric: percentile rank of delta within categories that have one.
+    # Categories without a delta get color_value=0 (neutral mid-scale).
+    if today["has_delta"].any() and today["has_delta"].sum() > 1:
+        ranked = today.loc[today["has_delta"], "delta"].rank(method="average", pct=True) - 0.5
+        today["color_value"] = 0.0
+        today.loc[today["has_delta"], "color_value"] = ranked
+    else:
+        today["color_value"] = 0.0
+
+    # Build display labels
+    def _compact(n):
+        if n >= 1_000_000:
+            return f"{n / 1_000_000:.1f}M"
+        if n >= 1_000:
+            return f"{n / 1_000:.0f}K"
+        return str(int(n))
+
+    def _delta_label(row):
+        if not row["has_delta"]:
+            return "—"
+        d = int(row["delta"])
+        return f"+{d:,}" if d >= 0 else f"{d:,}"
+
+    today["count_label"] = today["video_count"].apply(_compact)
+    today["delta_label"] = today.apply(_delta_label, axis=1)
+    today["tile_text"] = (
+        "<b>" + today["name"] + "</b>"
+        + "<br><span style='font-size:11px;color:rgba(0,0,0,0.55)'>"
+        + today["count_label"] + "</span>"
+        + "<br><span style='font-size:13px;font-weight:600'>"
+        + today["delta_label"] + " today</span>"
+    )
+
+    rows = today.reset_index()
+
+    figure = go.Figure(
+        go.Treemap(
+            labels=rows["tile_text"],
+            ids=rows["category_id"].astype(str),
+            parents=[""] * len(rows),
+            values=rows["video_count"],
+            marker=dict(
+                colors=rows["color_value"],
+                colorscale="RdYlGn",
+                cmid=0,
+                cmin=-0.5,
+                cmax=0.5,
+                showscale=True,
+                colorbar=dict(
+                    title="Growth (1d)",
+                    tickvals=[-0.5, -0.25, 0, 0.25, 0.5],
+                    ticktext=["bottom", "low", "median", "high", "top"],
+                    thickness=14,
+                    outlinewidth=0,
+                ),
+            ),
+            customdata=rows[["name", "video_count", "delta", "slug"]].values,
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                "Total videos: %{customdata[1]:,}<br>"
+                "Delta (1d): %{customdata[2]:+,.0f}<br>"
+                "<extra></extra>"
+            ),
+            textposition="middle center",
+            textfont=dict(family="Inter, sans-serif", size=12, color="#000"),
+            tiling=dict(packing="squarify", pad=0),
+        )
+    )
+    figure.update_layout(
+        paper_bgcolor="#0a0a0a",
+        plot_bgcolor="#0a0a0a",
+        margin=dict(l=0, r=130, t=0, b=0),
+        height=700,
+        font=dict(family="Inter, sans-serif", color="#f5f5f5"),
+    )
+    treemap_html = figure.to_html(include_plotlyjs="cdn", full_html=False)
+
+    n_categories = len(rows)
+    canonical_url = "https://hotmap.cam/categories/"
+    title = "Trending Pornhub Categories — Daily Growth Heatmap | HotMap"
+    description = (
+        f"{n_categories} Pornhub categories ranked by daily video-count growth. "
+        f"Real numbers, updated automatically."
+    )
+    collection_jsonld = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": title,
+        "url": canonical_url,
+        "description": description,
+    }
+    breadcrumbs = [
+        ("HotMap", "https://hotmap.cam/"),
+        ("Categories", canonical_url),
+    ]
+    seo_head = _render_seo_head(
+        page_type="category",
+        title=title,
+        description=description,
+        canonical_url=canonical_url,
+        og_image_url=None,
+        extra_jsonld=[collection_jsonld],
+        breadcrumbs=breadcrumbs,
+    )
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(_CATEGORIES_PAGE_TEMPLATE.format(
+        seo_head=seo_head,
+        nav_css=_TOP_NAV_CSS,
+        top_nav=_top_nav("categories"),
+        n_categories=n_categories,
+        treemap=treemap_html,
+        last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+    ), encoding="utf-8")
+
+
 def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) -> None:
     """Write sitemap.xml (home + per-performer pages) and robots.txt."""
     public = Path(public_dir)
@@ -2320,6 +2529,7 @@ def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) ->
         f"{_SITE_BASE_URL}/gems/",
         f"{_SITE_BASE_URL}/celebs/",
         f"{_SITE_BASE_URL}/stats/",
+        f"{_SITE_BASE_URL}/categories/",
         f"{_SITE_BASE_URL}/charts/",
     ] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
     sitemap_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
