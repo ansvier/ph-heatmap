@@ -28,6 +28,7 @@ _NAV_ITEMS = [
     ("map",        "/",            "Map"),
     ("stats",      "/stats/",      "Stats"),
     ("categories", "/categories/", "Categories"),
+    ("countries",  "/countries/",  "Countries"),
     ("charts",     "/charts/",     "Charts"),
 ]
 
@@ -2818,6 +2819,20 @@ def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) ->
         slugs = sorted(snapshots["slug"].unique().tolist())
         last_mod = latest_date.strftime("%Y-%m-%d")
 
+    # Per-country landing pages — only for countries with >= _COUNTRY_MIN_PERFORMERS
+    # in the latest snapshot (matches the threshold render_countries_index uses).
+    country_urls: list[str] = []
+    if not snapshots.empty and "country" in snapshots.columns:
+        today_with_country = snapshots[
+            (snapshots["snapshot_date"] == latest_date) & snapshots["country"].notna()
+        ]
+        counts = today_with_country.groupby("country")["slug"].nunique()
+        qualifying = counts[counts >= _COUNTRY_MIN_PERFORMERS].index
+        country_urls = [
+            f"{_SITE_BASE_URL}/country/{_country_slug(c)}/"
+            for c in sorted(qualifying)
+        ]
+
     urls = [
         f"{_SITE_BASE_URL}/",
         f"{_SITE_BASE_URL}/rising/",
@@ -2825,8 +2840,9 @@ def write_sitemap_and_robots(snapshots: pd.DataFrame, public_dir: Path | str) ->
         f"{_SITE_BASE_URL}/celebs/",
         f"{_SITE_BASE_URL}/stats/",
         f"{_SITE_BASE_URL}/categories/",
+        f"{_SITE_BASE_URL}/countries/",
         f"{_SITE_BASE_URL}/charts/",
-    ] + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
+    ] + country_urls + [f"{_SITE_BASE_URL}/p/{s}" for s in slugs]
     sitemap_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:

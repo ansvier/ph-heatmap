@@ -187,6 +187,35 @@ def test_write_sitemap_and_robots(tmp_path):
     assert "Sitemap: https://hotmap.cam/sitemap.xml" in robots
 
 
+def test_nav_items_includes_countries():
+    from heatmap import _NAV_ITEMS
+    hrefs = [item[1] for item in _NAV_ITEMS]
+    assert "/countries/" in hrefs, f"got hrefs={hrefs}"
+
+
+def test_sitemap_includes_countries_page(tmp_path):
+    """Sitemap emits /countries/ and per-country URLs for qualifying countries."""
+    rows = []
+    # Russia: 6 performers (qualifying)
+    for i in range(6):
+        rows.append({
+            "snapshot_date": pd.Timestamp("2026-06-02"), "slug": f"ru{i}", "name": f"RU{i}",
+            "total_views": 100_000_000, "rank": 1, "gender": "female", "country": "Russia",
+        })
+    # Italy: 2 performers (below threshold)
+    for i in range(2):
+        rows.append({
+            "snapshot_date": pd.Timestamp("2026-06-02"), "slug": f"it{i}", "name": f"IT{i}",
+            "total_views": 80_000_000, "rank": 1, "gender": "female", "country": "Italy",
+        })
+    df = pd.DataFrame(rows)
+    write_sitemap_and_robots(df, public_dir=tmp_path)
+    text = (tmp_path / "sitemap.xml").read_text()
+    assert "<loc>https://hotmap.cam/countries/</loc>" in text
+    assert "<loc>https://hotmap.cam/country/russia/</loc>" in text
+    assert "/country/italy/" not in text  # below threshold
+
+
 from heatmap import compute_window_growth
 
 
