@@ -111,6 +111,20 @@ If HotMap branding changes (logo, tagline, color), regenerate the default Open G
 - **`Could not find 'Video Views'`:** PH changed profile markup. Inspect a profile in browser, update `_extract_video_views` in `scraper.py`.
 - **Avatars missing on a tile:** PH layouts differ; `_extract_photo_url` falls back through `#getAvatar` and `.topProfileHeader img`. The next daily run auto-backfills NULL `photo_url` rows.
 - **Workflow didn't fire on schedule:** GH cron can be delayed during peak hours. We use `:17` minute to avoid the busy round-hour slot. Manual trigger via Actions tab if needed.
+- **Self-hosted runner left a job stuck in `queued`:** CF Worker has a watchdog cron at 04:35 UTC that auto-recovers. See "Cron watchdog" below.
+
+### Cron watchdog
+
+GitHub Actions self-hosted runners occasionally leave a queued job without picking it up (observed: one job sat queued 1h57m before manual intervention). A second CF Worker cron fires at 04:35 UTC and checks the latest `daily-scrape.yml` run via the GitHub API: if status is `queued` and age > 15 minutes, the watchdog cancels the stuck run and triggers a fresh `workflow_dispatch`. Both cron entries live in `wrangler.jsonc:triggers.crons`.
+
+To smoke-test without waiting for the cron:
+
+```bash
+curl -X POST https://hotmap.cam/_watchdog/test \
+  -H "Authorization: Bearer $GITHUB_TOKEN"
+```
+
+The endpoint requires the same Bearer-token gate as `/_cron/trigger`. Tail logs with `npx wrangler tail src/worker.js` to confirm the watchdog ran.
 
 ## Data
 
