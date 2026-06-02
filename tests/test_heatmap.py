@@ -778,6 +778,17 @@ def test_render_seo_head_supports_category_page_type():
     assert 'property="og:type" content="website"' in head
 
 
+def test_render_seo_head_supports_country_page_type():
+    """page_type='country' maps to og:type='website' and emits without error."""
+    head = _render_seo_head(
+        page_type="country",
+        title="Top Russian Performers — HotMap",
+        description="…",
+        canonical_url="https://hotmap.cam/country/russia/",
+    )
+    assert 'property="og:type" content="website"' in head
+
+
 def _category_snapshots_fixture(with_baseline: bool = True) -> pd.DataFrame:
     """Two-day fixture: 3 categories today, baseline yesterday for delta math.
 

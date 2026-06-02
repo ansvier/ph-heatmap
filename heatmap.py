@@ -657,6 +657,7 @@ _OG_TYPE_BY_PAGE_TYPE = {
     "charts": "website",
     "performer": "profile",
     "category": "website",
+    "country": "website",
 }
 
 
@@ -690,7 +691,7 @@ def _breadcrumb_jsonld(items: list[tuple[str, str]]) -> dict:
 
 def _render_seo_head(
     *,
-    page_type: Literal["home", "mode", "stats", "charts", "performer", "category"],
+    page_type: Literal["home", "mode", "stats", "charts", "performer", "category", "country"],
     title: str,
     description: str,
     canonical_url: str,
