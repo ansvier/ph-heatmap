@@ -877,10 +877,31 @@ def test_render_categories_treemap_writes_html(tmp_path):
     assert "CollectionPage" in types and "BreadcrumbList" in types, f"got types={types}"
 
     # Outbound click handler wired (Categories v1.1) — plotly_treemapclick →
-    # /rc/<slug> via CF Worker. Hover hint also present.
+    # window.open(PH URL). Without url_by_id, customdata falls back to a generic
+    # search URL. Plotly JSON-encodes slashes in customdata as /, so we
+    # check for the host substring (slash-free).
     assert "plotly_treemapclick" in content
-    assert "/rc/" in content
+    assert "pornhub.com" in content                    # host always present
+    assert "search?search=" in content                 # fallback URL shape
     assert "click to open category" in content
+
+
+def test_render_categories_treemap_uses_url_by_id_when_provided(tmp_path):
+    """url_by_id maps category_id → PH outbound URL. customdata embeds it.
+
+    Plotly serializes customdata strings with JSON unicode-escaped slashes
+    (\\u002f), so we assert on slash-free substrings of the URL path.
+    """
+    df = _category_snapshots_fixture(with_baseline=True)
+    # Fixture has category_id=29 (MILF). Inject the PH-shaped URL for it.
+    url_by_id = {29: "/video/incategories/lesbian/milf"}
+    out = tmp_path / "categories.html"
+    render_categories_treemap(df, out, url_by_id=url_by_id)
+    content = out.read_text()
+    # Provided URL appears (slashes are / after JSON-encoding)
+    assert "incategories" in content and "lesbian" in content and "milf" in content
+    # Categories without an entry fall back to search URL shape
+    assert "search?search=" in content
 
 
 def test_render_categories_treemap_no_baseline(tmp_path):
@@ -1143,7 +1164,8 @@ def test_render_countries_index_counts_females_only_and_renders_flag(tmp_path):
 
     assert "(4 actresses)" in content
     assert "(6 actresses)" not in content
-    assert "flagcdn.com/w40/ru.svg" in content
+    # Russia flag emoji (regional indicators R + U)
+    assert "\U0001F1F7\U0001F1FA" in content
     assert 'class="cat-flag"' in content
 
 

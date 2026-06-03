@@ -2370,8 +2370,11 @@ _CATEGORIES_PAGE_TEMPLATE = """<!doctype html>
 <p class="subtitle">{n_categories} categories tracked · Updated {last_updated} UTC</p>
 {treemap}
 <script>
-  // Click any tile → outbound bounce through /rc/<slug> (CF Worker → PH
-  // category page). Same wire shape as /r/<slug> for performers.
+  // Click any tile → open PH category landing page in a new tab. customdata[3]
+  // is the fully-qualified PH URL provided by the catalog JSON (heterogeneous:
+  // /video/incategories/<parent>/<slug>, /video/search?search=<slug>, ?c=NN —
+  // PH decides per-category). No worker click-tracking here yet; categories
+  // are a navigation aid, the tracked outbound layer is /r/<slug> for performers.
   (function () {{
     function attach() {{
       document.querySelectorAll('.plotly-graph-div').forEach(function (div) {{
@@ -2379,8 +2382,8 @@ _CATEGORIES_PAGE_TEMPLATE = """<!doctype html>
         div._hotmapBound = true;
         div.on('plotly_treemapclick', function (evt) {{
           if (!evt || !evt.points || !evt.points.length) return;
-          var slug = evt.points[0].customdata && evt.points[0].customdata[3];
-          if (slug) window.open('/rc/' + slug, '_blank', 'noopener');
+          var url = evt.points[0].customdata && evt.points[0].customdata[3];
+          if (url) window.open(url, '_blank', 'noopener');
           return false;
         }});
       }});
@@ -2512,6 +2515,18 @@ def render_categories_treemap(
     )
 
     rows = today.reset_index()
+    # PH-side outbound URL per category. PH's catalog is heterogeneous: some
+    # categories live at /video/incategories/<parent>/<slug>, others at
+    # /video/search?search=<slug>. We embed the PH-provided URL directly so the
+    # click handler can window.open() without per-category guesswork. Fallback
+    # to a generic search URL when url_by_id is missing or doesn't have this id.
+    def _outbound_url(row) -> str:
+        if url_by_id is not None:
+            url = url_by_id.get(int(row["category_id"]))
+            if url:
+                return f"https://www.pornhub.com{url}" if url.startswith("/") else url
+        return f"https://www.pornhub.com/video/search?search={row['slug']}"
+    rows["outbound_url"] = rows.apply(_outbound_url, axis=1)
 
     figure = go.Figure(
         go.Treemap(
@@ -2534,7 +2549,7 @@ def render_categories_treemap(
                     outlinewidth=0,
                 ),
             ),
-            customdata=rows[["name", "video_count", "delta", "category_id"]].values,
+            customdata=rows[["name", "video_count", "delta", "outbound_url"]].values,
             hovertemplate=(
                 "<b>%{customdata[0]}</b><br>"
                 "Total videos: %{customdata[1]:,}<br>"
@@ -2658,14 +2673,19 @@ _COUNTRY_ISO2 = {
 
 
 def _country_flag_html(country_name: str) -> str:
-    """Return an <img> tag for the country's flag (flagcdn.com SVG), or empty string."""
+    """Return a Unicode regional-indicator flag emoji for the country, or empty string.
+
+    Uses inline emoji rather than a third-party flag CDN: <img src=flagcdn.com>
+    failed behind ad blockers and strict CSPs, leaving broken-image icons. Emoji
+    is rendered by the OS font (Apple Color Emoji, Segoe UI Emoji, Noto Color
+    Emoji); older Windows falls back to two-letter glyphs but never to a broken
+    icon.
+    """
     iso2 = _COUNTRY_ISO2.get(country_name)
     if not iso2:
         return ""
-    return (
-        f'<img class="cat-flag" src="https://flagcdn.com/w40/{iso2}.svg" '
-        f'width="20" height="15" alt="" loading="lazy">'
-    )
+    flag = "".join(chr(0x1F1E6 + ord(c.upper()) - ord("A")) for c in iso2)
+    return f'<span class="cat-flag" aria-hidden="true">{flag}</span>'
 
 
 def _country_slug(country_name: str) -> str:
@@ -2903,7 +2923,7 @@ _COUNTRIES_INDEX_TEMPLATE = """<!doctype html>
     .cat-list a {{ color: var(--fg); text-decoration: none; font-weight: 600; }}
     .cat-list a:hover {{ color: var(--brand-orange); }}
     .cat-count {{ color: var(--muted); font-size: 13px; font-weight: 400; }}
-    .cat-flag {{ flex: 0 0 auto; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); vertical-align: middle; }}
+    .cat-flag {{ flex: 0 0 auto; font-size: 18px; line-height: 1; }}
     @media (max-width: 720px) {{ .cat-list {{ columns: 2; }} }}
     @media (max-width: 480px) {{ .cat-list {{ columns: 1; }} }}
     footer {{ margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }}
