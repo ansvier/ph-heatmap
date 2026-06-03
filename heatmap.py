@@ -338,7 +338,7 @@ _SHARE_CARD_JS = """
     var filterEl = card.querySelector('.share-card-filter');
     if (pageType === 'main' && typeof state !== 'undefined') {
       modeLabelEl.textContent = MODE_LABELS[state.mode] || 'HOTMAP';
-      var windowText = state.window + ' day' + (state.window > 1 ? 's' : '');
+      var windowText = state.window + ' day' + (state.window !== 1 ? 's' : '');
       filterEl.textContent = (GENDER_LABELS[state.gender] || '') + ' · ' + windowText;
     } else if (pageType === 'country') {
       modeLabelEl.textContent = (contextLabel || 'COUNTRY').toUpperCase();
