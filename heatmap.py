@@ -2526,7 +2526,7 @@ def render_categories_treemap(
                     outlinewidth=0,
                 ),
             ),
-            customdata=rows[["name", "video_count", "delta", "slug"]].values,
+            customdata=rows[["name", "video_count", "delta", "category_id"]].values,
             hovertemplate=(
                 "<b>%{customdata[0]}</b><br>"
                 "Total videos: %{customdata[1]:,}<br>"
@@ -2730,7 +2730,9 @@ def render_country_page(
     Raises ValueError when no performers match the country (caller in run.py
     should treat as 'skip render').
     """
-    in_country = snapshots[snapshots["country"] == country_name].copy()
+    in_country = snapshots[
+        (snapshots["country"] == country_name) & (snapshots["gender"] == "female")
+    ].copy()
     if in_country.empty:
         raise ValueError(f"No performers for country {country_name!r}")
 
