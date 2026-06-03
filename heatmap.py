@@ -3092,6 +3092,7 @@ _COUNTRY_PAGE_TEMPLATE = """<!doctype html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <style>
     :root {{
       --brand-orange: #ff9000;
@@ -3154,12 +3155,14 @@ _COUNTRY_PAGE_TEMPLATE = """<!doctype html>
 
     footer {{ margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }}
     footer a {{ color: var(--muted); text-decoration: underline; }}
+{share_card_css}
   </style>
 </head>
-<body>
+<body data-page-type="country" data-context-label="{country_name}" data-updated-at="{last_updated}" data-tracked-count="{n_performers}" data-tracked-label="performers tracked">
 {top_nav}
 <h1>Top performers from {country_name}</h1>
 <p class="subtitle">{n_performers} performers tracked · Updated {last_updated} UTC</p>
+<button type="button" class="save-image-btn" id="save-image-btn"><span aria-hidden="true">⤓</span> Save image (PNG)</button>
 {top_perf_card}
 {treemap}
 <script>
@@ -3189,6 +3192,23 @@ _COUNTRY_PAGE_TEMPLATE = """<!doctype html>
 <footer>
   <p>HotMap is an independent project. <a href="/">Back to homepage</a>.</p>
 </footer>
+{share_card_html}
+<script>
+{share_card_js}
+  // Wire the Save Image button to saveShareCardImage.
+  (function () {{
+    var btn = document.getElementById('save-image-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {{
+      var slug = '{country_slug}';
+      var stamp = new Date().toISOString().slice(0, 10);
+      var filename = 'hotmap-country-' + slug + '-' + stamp + '.png';
+      btn.disabled = true;
+      Promise.resolve().then(function () {{ saveShareCardImage(filename); }})
+        .finally(function () {{ setTimeout(function () {{ btn.disabled = false; }}, 1500); }});
+    }});
+  }})();
+</script>
 </body>
 </html>
 """
@@ -3276,6 +3296,10 @@ def render_country_page(
         top_perf_card=top_perf_card,
         treemap=treemap_html,
         last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+        share_card_css=_SHARE_CARD_CSS,
+        share_card_html=_SHARE_CARD_HTML,
+        share_card_js=_SHARE_CARD_JS,
+        country_slug=slug,
     ), encoding="utf-8")
 
 
