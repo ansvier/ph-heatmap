@@ -876,6 +876,12 @@ def test_render_categories_treemap_writes_html(tmp_path):
     types = {b.get("@type") for b in blocks}
     assert "CollectionPage" in types and "BreadcrumbList" in types, f"got types={types}"
 
+    # Outbound click handler wired (Categories v1.1) — plotly_treemapclick →
+    # /rc/<slug> via CF Worker. Hover hint also present.
+    assert "plotly_treemapclick" in content
+    assert "/rc/" in content
+    assert "click to open category" in content
+
 
 def test_render_categories_treemap_no_baseline(tmp_path):
     """First deploy state — only today's snapshot, no baseline. Page still renders,

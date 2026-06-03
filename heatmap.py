@@ -2369,6 +2369,29 @@ _CATEGORIES_PAGE_TEMPLATE = """<!doctype html>
 <h1>Trending categories on Pornhub</h1>
 <p class="subtitle">{n_categories} categories tracked · Updated {last_updated} UTC</p>
 {treemap}
+<script>
+  // Click any tile → outbound bounce through /rc/<slug> (CF Worker → PH
+  // category page). Same wire shape as /r/<slug> for performers.
+  (function () {{
+    function attach() {{
+      document.querySelectorAll('.plotly-graph-div').forEach(function (div) {{
+        if (div._hotmapBound) return;
+        div._hotmapBound = true;
+        div.on('plotly_treemapclick', function (evt) {{
+          if (!evt || !evt.points || !evt.points.length) return;
+          var slug = evt.points[0].customdata && evt.points[0].customdata[3];
+          if (slug) window.open('/rc/' + slug, '_blank', 'noopener');
+          return false;
+        }});
+      }});
+    }}
+    var n = 0;
+    var iv = setInterval(function () {{
+      attach();
+      if (++n > 20) clearInterval(iv);
+    }}, 250);
+  }})();
+</script>
 <footer>
   <p>HotMap is an independent project. Category data scraped from publicly visible Pornhub HTML. <a href="/">Back to homepage</a>.</p>
 </footer>
@@ -2508,6 +2531,7 @@ def render_categories_treemap(
                 "<b>%{customdata[0]}</b><br>"
                 "Total videos: %{customdata[1]:,}<br>"
                 "Delta (1d): %{customdata[2]:+,.0f}<br>"
+                "<i>click to open category</i>"
                 "<extra></extra>"
             ),
             textposition="middle center",

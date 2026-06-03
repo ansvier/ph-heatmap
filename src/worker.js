@@ -25,6 +25,7 @@
  */
 
 const PH_PROFILE_BASE = "https://www.pornhub.com/pornstar/";
+const PH_CATEGORY_BASE = "https://www.pornhub.com/categories/";
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,80}$/;
 
 const GH_OWNER = "ansvier";
@@ -139,18 +140,23 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // /r/<slug> → outbound profile redirect
-    if (url.pathname.startsWith("/r/")) {
-      const rest = url.pathname.slice(3).replace(/\/+$/, "");
+    // /r/<slug>  → outbound profile redirect
+    // /rc/<slug> → outbound category redirect (Categories v1.1 — click tracking +
+    //              future affiliate slot, same wire shape as /r/ for symmetry)
+    if (url.pathname.startsWith("/r/") || url.pathname.startsWith("/rc/")) {
+      const isCategory = url.pathname.startsWith("/rc/");
+      const prefixLen = isCategory ? 4 : 3;
+      const rest = url.pathname.slice(prefixLen).replace(/\/+$/, "");
       if (!SLUG_RE.test(rest)) {
         return new Response("Invalid slug", { status: 400 });
       }
-      const target = PH_PROFILE_BASE + rest;
+      const target = (isCategory ? PH_CATEGORY_BASE : PH_PROFILE_BASE) + rest;
 
       // Lightweight click log (visible in CF Workers tail).
       const referer = request.headers.get("referer") || "-";
       const ua = (request.headers.get("user-agent") || "-").slice(0, 80);
-      console.log(`click slug=${rest} ref=${referer} ua=${ua}`);
+      const kind = isCategory ? "category" : "profile";
+      console.log(`click kind=${kind} slug=${rest} ref=${referer} ua=${ua}`);
 
       return new Response(null, {
         status: 302,
