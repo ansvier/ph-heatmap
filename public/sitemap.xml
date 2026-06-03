@@ -31,7 +31,77 @@
     <changefreq>daily</changefreq>
   </url>
   <url>
+    <loc>https://hotmap.cam/countries/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
     <loc>https://hotmap.cam/charts/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/canada/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/colombia/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/czech-republic/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/france/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/germany/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/hungary/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/italy/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/russia/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/spain/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/ukraine/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/united-kingdom/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/united-states/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/venezuela/</loc>
     <lastmod>2026-06-03</lastmod>
     <changefreq>daily</changefreq>
   </url>
