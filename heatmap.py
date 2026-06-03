@@ -91,8 +91,8 @@ _SHARE_CARD_CSS = """
       position: fixed;
       top: -99999px;
       left: 0;
-      width: 1200px;
-      height: 630px;
+      width: 1080px;
+      height: 1080px;
       background-color: #0a0a0a;
       background-size: cover;
       background-position: center;
@@ -113,27 +113,28 @@ _SHARE_CARD_CSS = """
       height: 100%;
       display: flex;
       flex-direction: column;
-      padding: 0 24px;
+      padding: 0 32px;
       box-sizing: border-box;
     }
     .share-card-brand-strip {
-      flex: 0 0 56px;
+      flex: 0 0 80px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .share-card-brand-strip svg {
-      height: 40px;
+      height: 52px;
     }
     /* Context strip: page label + filter on the left, compact top-mover badge
-       on the right. Keeps the treemap as the dominant visual below. */
+       on the right. Treemap is the dominant visual below in the square 1080
+       canvas. */
     .share-card-context-strip {
-      flex: 0 0 64px;
+      flex: 0 0 96px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 24px;
-      padding-bottom: 10px;
+      padding-bottom: 12px;
     }
     .share-card-context-left {
       display: flex;
@@ -142,7 +143,7 @@ _SHARE_CARD_CSS = """
       min-width: 0;
     }
     .share-card-mode-label {
-      font-size: 26px;
+      font-size: 36px;
       font-weight: 800;
       letter-spacing: 0.5px;
       text-transform: uppercase;
@@ -150,7 +151,7 @@ _SHARE_CARD_CSS = """
       white-space: nowrap;
     }
     .share-card-filter {
-      font-size: 15px;
+      font-size: 17px;
       color: #9a9a9a;
       font-weight: 500;
       white-space: nowrap;
@@ -168,8 +169,8 @@ _SHARE_CARD_CSS = """
       max-width: 60%;
     }
     .share-card-photo {
-      width: 40px;
-      height: 40px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       flex-shrink: 0;
       background: #222;
@@ -179,7 +180,7 @@ _SHARE_CARD_CSS = """
       justify-content: center;
       color: #fff;
       font-weight: 800;
-      font-size: 16px;
+      font-size: 22px;
     }
     .share-card-photo img {
       width: 100%;
@@ -190,20 +191,20 @@ _SHARE_CARD_CSS = """
     .share-card-mover-text {
       display: flex;
       align-items: baseline;
-      gap: 10px;
+      gap: 12px;
       min-width: 0;
     }
     .share-card-top-name {
-      font-size: 15px;
+      font-size: 18px;
       font-weight: 700;
       color: #fff;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 200px;
+      max-width: 240px;
     }
     .share-card-top-growth {
-      font-size: 22px;
+      font-size: 28px;
       font-weight: 800;
       color: #6cd36a;
       line-height: 1;
@@ -212,24 +213,24 @@ _SHARE_CARD_CSS = """
     .share-card-treemap-area {
       flex: 1 1 auto;
       background: rgba(0,0,0,0.5);
-      border-radius: 10px;
-      padding: 8px;
+      border-radius: 14px;
+      padding: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
     .share-card-treemap-slot {
       width: 100%;
       height: 100%;
     }
     .share-card-footer {
-      flex: 0 0 32px;
+      flex: 0 0 44px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 11px;
+      font-size: 13px;
       color: #9a9a9a;
     }
     /* Save Image button used on country + categories pages (the main page
