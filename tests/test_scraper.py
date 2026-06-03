@@ -148,10 +148,17 @@ def test_extract_country_from_birth_place(birth_place, expected):
     assert extract_country(html) == expected
 
 
-def test_extract_country_falls_back_to_background_nationality():
+@pytest.mark.parametrize("nationality, expected", [
+    ("Italian", "Italy"),
+    ("English", "United Kingdom"),
+    ("Irish", "Ireland"),
+    ("Cuban", "Cuba"),
+    ("New Zealander", "New Zealand"),
+])
+def test_extract_country_falls_back_to_background_nationality(nationality, expected):
     """When Birth Place missing but Background is a known nationality → mapped country."""
-    html = '<html><body><div class="infoPiece">Background:Italian</div></body></html>'
-    assert extract_country(html) == "Italy"
+    html = f'<html><body><div class="infoPiece">Background:{nationality}</div></body></html>'
+    assert extract_country(html) == expected
 
 
 def test_extract_country_birth_place_wins_over_background():

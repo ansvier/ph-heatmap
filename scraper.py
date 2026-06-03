@@ -219,6 +219,20 @@ _NATIONALITY_TO_COUNTRY = {
     "Croatian": "Croatia",
     "Slovakian": "Slovakia",
     "Slovenian": "Slovenia",
+    "English": "United Kingdom",
+    "Irish": "Ireland",
+    "Belgian": "Belgium",
+    "Austrian": "Austria",
+    "Cuban": "Cuba",
+    "Dominican": "Dominican Republic",
+    "Puerto Rican": "Puerto Rico",
+    "Egyptian": "Egypt",
+    "Nigerian": "Nigeria",
+    "Armenian": "Armenia",
+    "Peruvian": "Peru",
+    "Venezuelan": "Venezuela",
+    "Uruguayan": "Uruguay",
+    "New Zealander": "New Zealand",
 }
 
 # Birth Place country variants → canonical name.
