@@ -1025,7 +1025,7 @@ def test_render_country_page_writes_html(tmp_path):
 
     assert "<html" in content.lower()
     assert "Russia" in content
-    assert "Top Russian" in content or "Top Russia" in content  # title pattern
+    assert "Top performers from Russia" in content  # H1 + SEO title pattern
     assert 'rel="canonical" href="https://hotmap.cam/country/russia/"' in content
     assert 'property="og:type" content="website"' in content
     # Plotly bundle embedded
