@@ -1258,3 +1258,25 @@ def test_country_page_has_share_card_wiring(tmp_path):
     assert "/share-bg/bg-" in content
     # html2canvas needs to be loaded — country page didn't have it before
     assert "html2canvas" in content
+
+
+def test_categories_page_has_share_card_wiring_and_top_meta(tmp_path):
+    """render_categories_treemap emits .share-card + the hidden #share-card-top-category
+    meta div with the day's top-mover category and delta label."""
+    df = _category_snapshots_fixture(with_baseline=True)
+    out = tmp_path / "categories.html"
+    render_categories_treemap(df, out)
+    content = out.read_text()
+
+    assert 'class="share-card"' in content
+    assert 'function buildShareCard' in content
+    assert 'data-page-type="category"' in content
+    assert 'data-updated-at=' in content
+    assert 'class="save-image-btn"' in content
+    assert "/share-bg/bg-" in content
+    assert "html2canvas" in content
+
+    # Hidden meta div with top category
+    assert 'id="share-card-top-category"' in content
+    assert 'data-name=' in content
+    assert 'data-delta-label=' in content

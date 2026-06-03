@@ -2716,6 +2716,7 @@ _CATEGORIES_PAGE_TEMPLATE = """<!doctype html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <style>
     :root {{
       --brand-orange: #ff9000;
@@ -2732,12 +2733,15 @@ _CATEGORIES_PAGE_TEMPLATE = """<!doctype html>
     .subtitle {{ color: var(--muted); margin: 0 0 24px; }}
     footer {{ margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }}
     footer a {{ color: var(--muted); text-decoration: underline; }}
+{share_card_css}
   </style>
 </head>
-<body>
+<body data-page-type="category" data-updated-at="{last_updated}" data-tracked-count="{n_categories}" data-tracked-label="categories tracked">
   {top_nav}
 <h1>Trending categories on Pornhub</h1>
 <p class="subtitle">{n_categories} categories tracked · Updated {last_updated} UTC</p>
+<button type="button" class="save-image-btn" id="save-image-btn"><span aria-hidden="true">⤓</span> Save image (PNG)</button>
+<div id="share-card-top-category" data-name="{top_category_name}" data-delta-label="{top_category_delta_label}" hidden></div>
 {treemap}
 <script>
   // Click any tile → open PH category landing page in a new tab. customdata[3]
@@ -2768,6 +2772,23 @@ _CATEGORIES_PAGE_TEMPLATE = """<!doctype html>
 <footer>
   <p>HotMap is an independent project. Category data scraped from publicly visible Pornhub HTML. <a href="/">Back to homepage</a>.</p>
 </footer>
+{share_card_html}
+<script>
+{share_card_js}
+  (function () {{
+    var btn = document.getElementById('save-image-btn');
+    if (!btn) return;
+    // Guard: if _SHARE_CARD_JS injection ever regresses, fail closed.
+    if (typeof saveShareCardImage !== 'function') return;
+    btn.addEventListener('click', function () {{
+      var stamp = new Date().toISOString().slice(0, 10);
+      var filename = 'hotmap-categories-' + stamp + '.png';
+      btn.disabled = true;
+      Promise.resolve().then(function () {{ saveShareCardImage(filename); }})
+        .finally(function () {{ setTimeout(function () {{ btn.disabled = false; }}, 1500); }});
+    }});
+  }})();
+</script>
 </body>
 </html>
 """
@@ -2850,6 +2871,22 @@ def render_categories_treemap(
 
     today["delta"] = today["video_count"] - today["prev_count"]
     today["has_delta"] = today["delta"].notna()
+
+    # Top-mover category for the share card (largest 1-day delta among the
+    # genre cohort). When no baseline available, falls back to highest video_count.
+    if "delta" in today.columns and today["delta"].notna().any():
+        top_cat_row = today.sort_values("delta", ascending=False).iloc[0]
+        top_category_name = str(top_cat_row["name"])
+        delta_val = top_cat_row["delta"]
+        if pd.notna(delta_val) and delta_val != 0:
+            sign = "+" if delta_val > 0 else ""
+            top_category_delta_label = f"{sign}{int(delta_val):,} videos today"
+        else:
+            top_category_delta_label = "no change today"
+    else:
+        top_cat_row = today.sort_values("video_count", ascending=False).iloc[0]
+        top_category_name = str(top_cat_row["name"])
+        top_category_delta_label = f"{int(top_cat_row['video_count']):,} videos"
 
     # Color metric: percentile rank of delta within categories that have one.
     # Categories without a delta get color_value=0 (neutral mid-scale).
@@ -2987,6 +3024,11 @@ def render_categories_treemap(
         n_categories=n_categories,
         treemap=treemap_html,
         last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+        share_card_css=_SHARE_CARD_CSS,
+        share_card_html=_SHARE_CARD_HTML,
+        share_card_js=_SHARE_CARD_JS,
+        top_category_name=_html.escape(top_category_name),
+        top_category_delta_label=_html.escape(top_category_delta_label),
     ), encoding="utf-8")
 
 
