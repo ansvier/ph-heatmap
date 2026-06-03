@@ -156,7 +156,11 @@ def parse_category_catalog(html: str) -> list[dict]:
             out.append({
                 "id": cid,
                 "slug": obj["slug"],
-                "name": obj["name"],
+                # Prefer the english-language name when PH serves a localized
+                # catalog (residential IP geolocation can pin PH to a regional
+                # language; the catalog JSON always includes the canonical
+                # english label alongside the localized name).
+                "name": obj.get("english") or obj["name"],
                 "video_count": obj["video_count"],
                 "points": obj.get("points"),
                 "url": obj.get("url"),

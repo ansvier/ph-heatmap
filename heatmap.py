@@ -424,7 +424,21 @@ _SHARE_CARD_JS = """
       if (pg) sourcePanel = pg.parentElement;
     }
     if (sourcePanel) {
-      slot.appendChild(sourcePanel.cloneNode(true));
+      var clone = sourcePanel.cloneNode(true);
+      slot.appendChild(clone);
+      // Remove Plotly chrome that doesn't belong in a share card.
+      // CSS display:none doesn't reliably hide SVG <g> elements (the colorbar
+      // is an SVG group), so we remove them outright. Same for the modebar.
+      clone.querySelectorAll('.modebar-container, .modebar, g.colorbar, g.legend, .infolayer')
+        .forEach(function (n) { n.remove(); });
+      // The cloned Plotly div carries its source page's pixel width inline.
+      // Force it to fit the slot so the card crops cleanly on the right.
+      clone.style.width = '100%';
+      clone.style.height = '100%';
+      clone.querySelectorAll('.plotly-graph-div, .main-svg, .svg-container').forEach(function (n) {
+        n.style.width = '100%';
+        n.style.maxWidth = '100%';
+      });
     }
 
     // Random background — best-effort. If the file 404s the gradient overlay
