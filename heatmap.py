@@ -120,15 +120,10 @@ _SHARE_CARD_CSS = """
       flex: 0 0 56px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-    }
-    .share-card-path {
-      font-family: ui-monospace, 'SF Mono', monospace;
-      font-size: 16px;
-      color: #f5f5f5;
+      justify-content: center;
     }
     .share-card-brand-strip svg {
-      height: 36px;
+      height: 40px;
     }
     /* Context strip: page label + filter on the left, compact top-mover badge
        on the right. Keeps the treemap as the dominant visual below. */
@@ -263,8 +258,7 @@ _SHARE_CARD_HTML = """
   <div class="share-card-overlay"></div>
   <div class="share-card-content">
     <div class="share-card-brand-strip">
-      <div class="share-card-path"></div>
-      <svg width="160" height="40" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+      <svg width="180" height="45" viewBox="0 0 400 100" role="img" aria-label="HotMap">
         <rect width="400" height="100" fill="#000"/>
         <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
         <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
@@ -324,10 +318,6 @@ _SHARE_CARD_JS = """
     var contextLabel = document.body.dataset.contextLabel || '';
     var trackedCount = document.body.dataset.trackedCount || '';
     var trackedLabel = document.body.dataset.trackedLabel || 'performers tracked';
-
-    // Brand strip path
-    card.querySelector('.share-card-path').textContent =
-      window.location.host + window.location.pathname;
 
     // Mode label + filter chip (page-type-specific)
     var modeLabelEl = card.querySelector('.share-card-mode-label');
@@ -429,14 +419,25 @@ _SHARE_CARD_JS = """
       // is an SVG group), so we remove them outright. Same for the modebar.
       clone.querySelectorAll('.modebar-container, .modebar, g.colorbar, g.legend, .infolayer')
         .forEach(function (n) { n.remove(); });
-      // The cloned Plotly div carries its source page's pixel width inline.
-      // Force it to fit the slot so the card crops cleanly on the right.
-      clone.style.width = '100%';
-      clone.style.height = '100%';
-      clone.querySelectorAll('.plotly-graph-div, .main-svg, .svg-container').forEach(function (n) {
-        n.style.width = '100%';
-        n.style.maxWidth = '100%';
-      });
+
+      // The cloned Plotly div carries its source page's pixel dimensions
+      // inline. Scale-to-fit preserves aspect ratio so the treemap doesn't
+      // get cropped vertically or horizontally. Measure the source BEFORE
+      // it gets reparented in case the slot has different intrinsic size.
+      var srcRect = sourcePanel.getBoundingClientRect();
+      var slotRect = slot.getBoundingClientRect();
+      if (srcRect.width > 0 && srcRect.height > 0 && slotRect.width > 0 && slotRect.height > 0) {
+        var scale = Math.min(slotRect.width / srcRect.width, slotRect.height / srcRect.height);
+        clone.style.transformOrigin = 'top left';
+        clone.style.transform = 'scale(' + scale + ')';
+        clone.style.width = srcRect.width + 'px';
+        clone.style.height = srcRect.height + 'px';
+        // Center the scaled clone in the slot.
+        var scaledW = srcRect.width * scale;
+        var scaledH = srcRect.height * scale;
+        clone.style.marginLeft = ((slotRect.width - scaledW) / 2) + 'px';
+        clone.style.marginTop = ((slotRect.height - scaledH) / 2) + 'px';
+      }
     }
 
     // Random background — best-effort. If the file 404s the gradient overlay
