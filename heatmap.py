@@ -2517,15 +2517,24 @@ def render_categories_treemap(
     rows = today.reset_index()
     # PH-side outbound URL per category. PH's catalog is heterogeneous: some
     # categories live at /video/incategories/<parent>/<slug>, others at
-    # /video/search?search=<slug>. We embed the PH-provided URL directly so the
-    # click handler can window.open() without per-category guesswork. Fallback
-    # to a generic search URL when url_by_id is missing or doesn't have this id.
+    # /video/search?search=<slug>, others at /video?c=<id>. We embed the
+    # PH-provided URL directly so the click handler can window.open() without
+    # per-category guesswork. Fallback to a search URL when url_by_id is None
+    # or the category id isn't in the lookup.
+    #
+    # We append ?o=mv&t=w (sort=most_viewed, time=week) so clicks land on
+    # this-week's top videos in the category instead of PH's default
+    # least-relevant ordering. Works across all three URL shapes — search-
+    # backed categories (Deepthroat, AI etc.) especially benefit because PH's
+    # raw search is fuzzy; the most-viewed-week sort surfaces real content.
     def _outbound_url(row) -> str:
-        if url_by_id is not None:
-            url = url_by_id.get(int(row["category_id"]))
-            if url:
-                return f"https://www.pornhub.com{url}" if url.startswith("/") else url
-        return f"https://www.pornhub.com/video/search?search={row['slug']}"
+        url = url_by_id.get(int(row["category_id"])) if url_by_id is not None else None
+        if url:
+            base = f"https://www.pornhub.com{url}" if url.startswith("/") else url
+        else:
+            base = f"https://www.pornhub.com/video/search?search={row['slug']}"
+        sep = "&" if "?" in base else "?"
+        return f"{base}{sep}o=mv&t=w"
     rows["outbound_url"] = rows.apply(_outbound_url, axis=1)
 
     figure = go.Figure(
