@@ -1239,3 +1239,22 @@ def test_main_treemap_page_save_button_uses_build_share_card(tmp_path):
     assert "document.querySelector('.hero').cloneNode" not in content
     # New path is in
     assert "buildShareCard()" in content
+
+
+def test_country_page_has_share_card_wiring(tmp_path):
+    """render_country_page emits .share-card, save button, html2canvas script,
+    data-page-type='country', and data-context-label with the country name."""
+    df = _country_snapshots_fixture()
+    out = tmp_path / "russia.html"
+    render_country_page(df, "Russia", out)
+    content = out.read_text()
+
+    assert 'class="share-card"' in content
+    assert 'function buildShareCard' in content
+    assert 'data-page-type="country"' in content
+    assert 'data-context-label="Russia"' in content
+    assert 'data-updated-at=' in content
+    assert 'class="save-image-btn"' in content
+    assert "/share-bg/bg-" in content
+    # html2canvas needs to be loaded — country page didn't have it before
+    assert "html2canvas" in content
