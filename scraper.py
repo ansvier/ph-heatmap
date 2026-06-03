@@ -133,10 +133,14 @@ _CATEGORY_BLOCK_RE = re.compile(
 def parse_category_catalog(html: str) -> list[dict]:
     """Extract the embedded category catalog from PH's /categories page HTML.
 
-    Returns [{id, slug, name, video_count, points}, ...] with:
+    Returns [{id, slug, name, video_count, points, url}, ...] with:
       - status == "active" entries only (filters soft-deleted)
       - deduped by id (PH duplicates entries in cross-category panels)
       - points may be None when the field is absent in the source JSON
+      - url is PH's per-category landing URL (heterogeneous across the
+        catalog: /video/incategories/<parent>/<slug>, /video/search?search=<slug>,
+        ?c=<id>, etc.). Always present in PH's JSON. May be None for malformed
+        rows; downstream renderers fall back to a search URL in that case.
     """
     out: list[dict] = []
     seen_ids: set[int] = set()
@@ -155,6 +159,7 @@ def parse_category_catalog(html: str) -> list[dict]:
                 "name": obj["name"],
                 "video_count": obj["video_count"],
                 "points": obj.get("points"),
+                "url": obj.get("url"),
             })
             seen_ids.add(cid)
         except (_json.JSONDecodeError, KeyError):
