@@ -879,10 +879,12 @@ def test_render_categories_treemap_writes_html(tmp_path):
     # Outbound click handler wired (Categories v1.1) — plotly_treemapclick →
     # window.open(PH URL). Without url_by_id, customdata falls back to a generic
     # search URL. Plotly JSON-encodes slashes in customdata as /, so we
-    # check for the host substring (slash-free).
+    # check for the host substring (slash-free). The sort+time params land
+    # the user on this-week's top videos in the category.
     assert "plotly_treemapclick" in content
     assert "pornhub.com" in content                    # host always present
     assert "search?search=" in content                 # fallback URL shape
+    assert "o=mv" in content and "t=w" in content      # most-viewed, week
     assert "click to open category" in content
 
 
