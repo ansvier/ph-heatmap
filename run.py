@@ -247,10 +247,14 @@ def main() -> int:
     # /categories/ — daily treemap of PH category video-counts
     category_snapshots = load_all_category_snapshots(conn)
     if not category_snapshots.empty:
+        # PH catalog provides per-category outbound URLs (heterogeneous:
+        # /video/incategories/<parent>/<slug>, /video/search?search=<slug>, etc.).
+        # We already fetched the catalog this run — reuse to build the lookup.
+        url_by_id = {row["id"]: row["url"] for row in catalog if row.get("url")} if catalog else None
         categories_dir = PUBLIC_DIR / "categories"
         categories_dir.mkdir(exist_ok=True)
         try:
-            render_categories_treemap(category_snapshots, categories_dir / "index.html")
+            render_categories_treemap(category_snapshots, categories_dir / "index.html", url_by_id=url_by_id)
             print(f"wrote /categories/index.html", flush=True)
         except ValueError as exc:
             print(f"  WARN: render_categories_treemap skipped: {exc}", file=sys.stderr)
