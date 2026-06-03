@@ -114,7 +114,7 @@ _SHARE_CARD_CSS = """
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 36px 36px 36px;
+      padding: 28px 28px 28px;
       box-sizing: border-box;
     }
     .share-card-brand-strip {
@@ -124,19 +124,19 @@ _SHARE_CARD_CSS = """
       justify-content: center;
     }
     .share-card-brand-strip svg {
-      height: 64px;
+      height: 56px;
     }
     .share-card-mode-label {
       flex: 0 0 auto;
-      font-size: 44px;
+      font-size: 40px;
       font-weight: 800;
       letter-spacing: 1px;
       text-transform: uppercase;
       line-height: 1;
       white-space: nowrap;
       text-align: center;
-      margin-top: 24px;
-      margin-bottom: 32px;
+      margin-top: 14px;
+      margin-bottom: 20px;
     }
     .share-card-treemap-area {
       flex: 1 1 auto;
@@ -245,22 +245,20 @@ _SHARE_CARD_JS = """
         .forEach(function (n) { n.remove(); });
 
       // The cloned Plotly div carries its source page's pixel dimensions
-      // inline. Scale-to-fit preserves aspect ratio so the treemap doesn't
-      // get cropped vertically or horizontally. Measure the source BEFORE
-      // it gets reparented in case the slot has different intrinsic size.
+      // inline. Force-fit by scaling X and Y independently so the treemap
+      // fills the slot exactly — no empty bands above/below or left/right.
+      // Tiles are rectangles so a slight non-uniform stretch reads fine.
       var srcRect = sourcePanel.getBoundingClientRect();
       var slotRect = slot.getBoundingClientRect();
       if (srcRect.width > 0 && srcRect.height > 0 && slotRect.width > 0 && slotRect.height > 0) {
-        var scale = Math.min(slotRect.width / srcRect.width, slotRect.height / srcRect.height);
+        var sX = slotRect.width / srcRect.width;
+        var sY = slotRect.height / srcRect.height;
         clone.style.transformOrigin = 'top left';
-        clone.style.transform = 'scale(' + scale + ')';
+        clone.style.transform = 'scale(' + sX + ', ' + sY + ')';
         clone.style.width = srcRect.width + 'px';
         clone.style.height = srcRect.height + 'px';
-        // Center the scaled clone in the slot.
-        var scaledW = srcRect.width * scale;
-        var scaledH = srcRect.height * scale;
-        clone.style.marginLeft = ((slotRect.width - scaledW) / 2) + 'px';
-        clone.style.marginTop = ((slotRect.height - scaledH) / 2) + 'px';
+        clone.style.marginLeft = '0';
+        clone.style.marginTop = '0';
       }
     }
 
