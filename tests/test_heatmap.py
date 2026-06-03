@@ -1048,6 +1048,31 @@ def test_render_country_page_raises_when_no_performers(tmp_path):
         render_country_page(df, "Nonexistentland", tmp_path / "out.html")
 
 
+def test_render_country_page_excludes_males(tmp_path):
+    """Country pages show female performers only — male slugs must not appear."""
+    df = _country_snapshots_fixture()
+    extra = pd.DataFrame([
+        {"snapshot_date": pd.Timestamp(d), "slug": "ru-dude", "name": "RuDude",
+         "total_views": 90_000_000, "rank": 5, "gender": "male", "country": "Russia"}
+        for d in (date(2026, 5, 26), date(2026, 5, 27), date(2026, 5, 28))
+    ])
+    out = tmp_path / "russia.html"
+    render_country_page(pd.concat([df, extra], ignore_index=True), "Russia", out)
+    content = out.read_text()
+    assert "ru-dude" not in content and "RuDude" not in content
+
+
+def test_render_country_page_raises_when_only_males(tmp_path):
+    """Country with no female performers → ValueError (caller skips the page)."""
+    df = pd.DataFrame([
+        {"snapshot_date": pd.Timestamp(d), "slug": "m1", "name": "M1",
+         "total_views": 100_000_000, "rank": 1, "gender": "male", "country": "Maleland"}
+        for d in (date(2026, 5, 26), date(2026, 5, 27), date(2026, 5, 28))
+    ])
+    with pytest.raises(ValueError, match="No performers for country"):
+        render_country_page(df, "Maleland", tmp_path / "out.html")
+
+
 def test_country_min_performers_constant_is_5():
     from heatmap import _COUNTRY_MIN_PERFORMERS
     assert _COUNTRY_MIN_PERFORMERS == 5
