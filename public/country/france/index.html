@@ -31,6 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <style>
     :root {
       --brand-orange: #ff9000;
@@ -126,15 +127,188 @@
 
     footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }
     footer a { color: var(--muted); text-decoration: underline; }
+
+    .share-card {
+      position: fixed;
+      top: -99999px;
+      left: 0;
+      width: 1200px;
+      height: 630px;
+      background-color: #0a0a0a;
+      background-size: cover;
+      background-position: center;
+      font-family: 'Inter', sans-serif;
+      color: #f5f5f5;
+      overflow: hidden;
+    }
+    .share-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(10,10,10,0.85), rgba(10,10,10,0.55));
+      pointer-events: none;
+    }
+    .share-card-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 0 24px;
+      box-sizing: border-box;
+    }
+    .share-card-brand-strip {
+      flex: 0 0 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .share-card-path {
+      font-family: ui-monospace, 'SF Mono', monospace;
+      font-size: 16px;
+      color: #f5f5f5;
+    }
+    .share-card-brand-strip svg {
+      height: 36px;
+    }
+    .share-card-main {
+      flex: 1 1 auto;
+      display: flex;
+      gap: 32px;
+      padding-bottom: 12px;
+    }
+    .share-card-left {
+      flex: 0 0 480px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 24px;
+    }
+    .share-card-mode-label {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .share-card-filter {
+      font-size: 16px;
+      color: #9a9a9a;
+      font-weight: 500;
+      margin-top: -16px;
+    }
+    .share-card-top-mover {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-left: 3px solid #ff9000;
+      padding: 16px 20px;
+      border-radius: 10px;
+    }
+    .share-card-photo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: #222;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 22px;
+    }
+    .share-card-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .share-card-mover-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .share-card-top-name {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .share-card-top-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #ff9000;
+    }
+    .share-card-top-growth {
+      font-size: 40px;
+      font-weight: 800;
+      color: #6cd36a;
+      line-height: 1;
+      margin-top: 4px;
+    }
+    .share-card-top-delta {
+      font-size: 14px;
+      color: #9a9a9a;
+    }
+    .share-card-right {
+      flex: 1 1 640px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .share-card-treemap-slot {
+      width: 100%;
+      height: 100%;
+    }
+    /* Hide Plotly's colorbar/legend inside the slot — clean signature visual */
+    .share-card-treemap-slot .plotly .colorbar { display: none !important; }
+    .share-card-treemap-slot .modebar-container { display: none !important; }
+    .share-card-footer {
+      flex: 0 0 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #9a9a9a;
+    }
+    /* Save Image button used on country + categories pages (the main page
+       has it inside the existing Share dropdown). */
+    .save-image-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #161616;
+      border: 1px solid #1f1f1f;
+      border-radius: 6px;
+      color: #f5f5f5;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      margin: 0 0 16px;
+    }
+    .save-image-btn:hover { border-color: #ff9000; color: #ff9000; }
+    .save-image-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
   </style>
 </head>
-<body>
+<body data-page-type="country" data-context-label="France" data-updated-at="2026-06-03 12:31" data-tracked-count="7" data-tracked-label="performers tracked">
 <nav class="topnav"><a class="brand" href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap"><rect width="400" height="100" fill="#000"/><text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text><rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/><text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text></svg></a><div class="navlinks"><a href="/" class="navlink">Map</a><a href="/stats/" class="navlink">Stats</a><a href="/categories/" class="navlink">Categories</a><a href="/countries/" class="navlink active">Countries</a><a href="/charts/" class="navlink">Charts</a></div></nav>
 <h1>Top performers from France</h1>
-<p class="subtitle">7 performers tracked · Updated 2026-06-03 09:51 UTC</p>
+<p class="subtitle">7 performers tracked · Updated 2026-06-03 12:31 UTC</p>
+<button type="button" class="save-image-btn" id="save-image-btn"><span aria-hidden="true">⤓</span> Save image (PNG)</button>
 <div class="top-perf-wrap"><a class="top-perf active" data-mode="celebs" data-gender="all" href="/r/natasha-nice" target="_blank" rel="noopener"><img src="/avatars/natasha-nice.jpg" alt="Natasha Nice" loading="lazy" referrerpolicy="no-referrer"><div class="top-perf-text"><span class="top-perf-label">Top from France</span><span class="top-perf-name">Natasha Nice</span><span class="top-perf-stat-row">Today: <strong>+0.040%</strong></span><span class="top-perf-stat-row">Usual: <strong>+0.063%</strong></span><span class="top-perf-caption">↓ Slower than usual</span></div></a></div>
 <div>                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
-        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="da54b92d-ace2-453c-8235-99d67ac1b730" class="plotly-graph-div" style="height:700px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("da54b92d-ace2-453c-8235-99d67ac1b730")) {                    Plotly.newPlot(                        "da54b92d-ace2-453c-8235-99d67ac1b730",                        [{"customdata":[["LeoLulu",949196237,0.00701821945553538,"leolulu",66612],["Ava Addams",749308152,0.01472775256850323,"ava-addams",110340],["Natasha Nice",728402220,0.04013857978131482,"natasha-nice",292253],["Clea Gaultier",197618565,0.04967485720604915,"clea-gaultier",98118],["Cassie Del Isla",121937123,0.040536489182166464,"cassie-del-isla",49409],["Tiffany Leiddi",101756779,0.021586513282011277,"tiffany-leiddi",21961],["Littleangel84",100932179,0.020288032787791736,"littleangel84",20473]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eTotal views: %{customdata[1]:,}\u003cbr\u003eGained (1d): +%{customdata[4]:,.0f} views\u003cbr\u003eGrowth: %{customdata[2]:+.3f}%\u003cbr\u003e\u003ci\u003eclick to open profile\u003c\u002fi\u003e\u003cextra\u003e\u003c\u002fextra\u003e","ids":["leolulu","ava-addams","natasha-nice","clea-gaultier","cassie-del-isla","tiffany-leiddi","littleangel84"],"labels":["\u003cb\u003eLeoLulu\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e949M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eAva Addams\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e749M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eNatasha Nice\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e728M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eClea Gaultier\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e198M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.05%\u003c\u002fspan\u003e","\u003cb\u003eCassie Del Isla\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e122M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eTiffany Leiddi\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e102M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eLittleangel84\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e101M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e"],"marker":{"cmax":0.5,"cmid":0,"cmin":-0.5,"colorbar":{"outlinewidth":0,"thickness":14,"ticktext":["bottom","low","median","high","top"],"tickvals":[-0.5,-0.25,0,0.25,0.5],"title":{"text":"Rank (1d)"}},"colors":{"dtype":"f8","bdata":"t23btm3b1r\u002fctm3btm3Lv9y2bdu2bcs\u002fAAAAAAAA4D+2bdu2bdvWP5AkSZIkSbI\u002flCRJkiRJsr8="},"colorscale":[[0.0,"rgb(165,0,38)"],[0.1,"rgb(215,48,39)"],[0.2,"rgb(244,109,67)"],[0.3,"rgb(253,174,97)"],[0.4,"rgb(254,224,139)"],[0.5,"rgb(255,255,191)"],[0.6,"rgb(217,239,139)"],[0.7,"rgb(166,217,106)"],[0.8,"rgb(102,189,99)"],[0.9,"rgb(26,152,80)"],[1.0,"rgb(0,104,55)"]],"showscale":true},"parents":["","","","","","",""],"textfont":{"color":"#000","family":"Inter, -apple-system, BlinkMacSystemFont, sans-serif","size":13},"textposition":"middle center","tiling":{"packing":"squarify","pad":0},"values":{"dtype":"f8","bdata":"gVGa8CK\u002ffD8CngB9lSmOP8vw7z4LjaQ\u002fslNEnvtuqT8hBKreMsGkP5DZUmLGGpY\u002f0YJL1WLGlD8="},"type":"treemap"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"margin":{"l":0,"r":130,"t":0,"b":0},"font":{"family":"Inter, sans-serif","color":"#f5f5f5"},"paper_bgcolor":"#0a0a0a","plot_bgcolor":"#0a0a0a","height":700},                        {"responsive": true}                    )                };            </script>        </div>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="e9c5cc75-11be-433f-ae6a-2df9b67f9179" class="plotly-graph-div" style="height:700px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("e9c5cc75-11be-433f-ae6a-2df9b67f9179")) {                    Plotly.newPlot(                        "e9c5cc75-11be-433f-ae6a-2df9b67f9179",                        [{"customdata":[["LeoLulu",949196237,0.00701821945553538,"leolulu",66612],["Ava Addams",749308152,0.01472775256850323,"ava-addams",110340],["Natasha Nice",728402220,0.04013857978131482,"natasha-nice",292253],["Clea Gaultier",197618565,0.04967485720604915,"clea-gaultier",98118],["Cassie Del Isla",121937123,0.040536489182166464,"cassie-del-isla",49409],["Tiffany Leiddi",101756779,0.021586513282011277,"tiffany-leiddi",21961],["Littleangel84",100932179,0.020288032787791736,"littleangel84",20473]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eTotal views: %{customdata[1]:,}\u003cbr\u003eGained (1d): +%{customdata[4]:,.0f} views\u003cbr\u003eGrowth: %{customdata[2]:+.3f}%\u003cbr\u003e\u003ci\u003eclick to open profile\u003c\u002fi\u003e\u003cextra\u003e\u003c\u002fextra\u003e","ids":["leolulu","ava-addams","natasha-nice","clea-gaultier","cassie-del-isla","tiffany-leiddi","littleangel84"],"labels":["\u003cb\u003eLeoLulu\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e949M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eAva Addams\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e749M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eNatasha Nice\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e728M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eClea Gaultier\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e198M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.05%\u003c\u002fspan\u003e","\u003cb\u003eCassie Del Isla\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e122M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eTiffany Leiddi\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e102M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eLittleangel84\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e101M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e"],"marker":{"cmax":0.5,"cmid":0,"cmin":-0.5,"colorbar":{"outlinewidth":0,"thickness":14,"ticktext":["bottom","low","median","high","top"],"tickvals":[-0.5,-0.25,0,0.25,0.5],"title":{"text":"Rank (1d)"}},"colors":{"dtype":"f8","bdata":"t23btm3b1r\u002fctm3btm3Lv9y2bdu2bcs\u002fAAAAAAAA4D+2bdu2bdvWP5AkSZIkSbI\u002flCRJkiRJsr8="},"colorscale":[[0.0,"rgb(165,0,38)"],[0.1,"rgb(215,48,39)"],[0.2,"rgb(244,109,67)"],[0.3,"rgb(253,174,97)"],[0.4,"rgb(254,224,139)"],[0.5,"rgb(255,255,191)"],[0.6,"rgb(217,239,139)"],[0.7,"rgb(166,217,106)"],[0.8,"rgb(102,189,99)"],[0.9,"rgb(26,152,80)"],[1.0,"rgb(0,104,55)"]],"showscale":true},"parents":["","","","","","",""],"textfont":{"color":"#000","family":"Inter, -apple-system, BlinkMacSystemFont, sans-serif","size":13},"textposition":"middle center","tiling":{"packing":"squarify","pad":0},"values":{"dtype":"f8","bdata":"gVGa8CK\u002ffD8CngB9lSmOP8vw7z4LjaQ\u002fslNEnvtuqT8hBKreMsGkP5DZUmLGGpY\u002f0YJL1WLGlD8="},"type":"treemap"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"margin":{"l":0,"r":130,"t":0,"b":0},"font":{"family":"Inter, sans-serif","color":"#f5f5f5"},"paper_bgcolor":"#0a0a0a","plot_bgcolor":"#0a0a0a","height":700},                        {"responsive": true}                    )                };            </script>        </div>
 <script>
   // Click any tile → outbound bounce through /r/<slug> (same CF Worker
   // redirect as the homepage treemap). Plotly renders asynchronously so we
@@ -162,5 +336,226 @@
 <footer>
   <p>HotMap is an independent project. <a href="/">Back to homepage</a>.</p>
 </footer>
+
+<div class="share-card" aria-hidden="true">
+  <div class="share-card-overlay"></div>
+  <div class="share-card-content">
+    <div class="share-card-brand-strip">
+      <div class="share-card-path"></div>
+      <svg width="160" height="40" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+        <rect width="400" height="100" fill="#000"/>
+        <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
+        <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
+        <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
+      </svg>
+    </div>
+    <div class="share-card-main">
+      <div class="share-card-left">
+        <div class="share-card-mode-label"></div>
+        <div class="share-card-filter"></div>
+        <div class="share-card-top-mover">
+          <div class="share-card-photo"></div>
+          <div class="share-card-mover-text">
+            <div class="share-card-top-label">TOP MOVER TODAY</div>
+            <div class="share-card-top-name"></div>
+            <div class="share-card-top-growth"></div>
+            <div class="share-card-top-delta"></div>
+          </div>
+        </div>
+      </div>
+      <div class="share-card-right">
+        <div class="share-card-treemap-slot"></div>
+      </div>
+    </div>
+    <div class="share-card-footer">
+      <div class="share-card-footer-left"></div>
+      <div class="share-card-footer-right"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  // Share Card v1 — build the 1200x630 card from current page state.
+  // Reads <body data-page-type=main|country|category>, finds the active
+  // top-perf element and the live Plotly panel, populates the hidden
+  // .share-card div, then hands it to html2canvas for download. The card
+  // background rotates between three /share-bg/bg-{1,2,3}.jpg files; if
+  // none are present (or load fails), the flat #0a0a0a background under
+  // the gradient overlay still produces a clean card.
+  var MODE_LABELS = {
+    rising: 'RISING STARS',
+    gems: 'HIDDEN GEMS',
+    celebs: 'CELEBRITIES'
+  };
+  var GENDER_LABELS = {
+    all: 'All performers',
+    female: 'Female',
+    male: 'Male'
+  };
+
+  function buildShareCard() {
+    var card = document.querySelector('.share-card');
+    if (!card) return null;
+
+    var pageType = document.body.dataset.pageType || 'main';
+    var updatedAt = document.body.dataset.updatedAt || '';
+    var contextLabel = document.body.dataset.contextLabel || '';
+    var trackedCount = document.body.dataset.trackedCount || '';
+    var trackedLabel = document.body.dataset.trackedLabel || 'performers tracked';
+
+    // Brand strip path
+    card.querySelector('.share-card-path').textContent =
+      window.location.host + window.location.pathname;
+
+    // Mode label + filter chip (page-type-specific)
+    var modeLabelEl = card.querySelector('.share-card-mode-label');
+    var filterEl = card.querySelector('.share-card-filter');
+    if (pageType === 'main' && typeof state !== 'undefined') {
+      modeLabelEl.textContent = MODE_LABELS[state.mode] || 'HOTMAP';
+      var windowText = state.window + ' day' + (state.window !== 1 ? 's' : '');
+      filterEl.textContent = (GENDER_LABELS[state.gender] || '') + ' · ' + windowText;
+    } else if (pageType === 'country') {
+      modeLabelEl.textContent = (contextLabel || 'COUNTRY').toUpperCase();
+      filterEl.textContent = '';
+    } else if (pageType === 'category') {
+      modeLabelEl.textContent = 'TRENDING CATEGORIES';
+      filterEl.textContent = '';
+    } else {
+      modeLabelEl.textContent = 'HOTMAP';
+      filterEl.textContent = '';
+    }
+
+    // Top-mover mini-card
+    var photoEl = card.querySelector('.share-card-photo');
+    var nameEl = card.querySelector('.share-card-top-name');
+    var growthEl = card.querySelector('.share-card-top-growth');
+    var deltaEl = card.querySelector('.share-card-top-delta');
+    var topMoverEl = card.querySelector('.share-card-top-mover');
+
+    photoEl.innerHTML = '';
+    nameEl.textContent = '';
+    growthEl.textContent = '';
+    deltaEl.textContent = '';
+
+    if (pageType === 'category') {
+      var catMeta = document.getElementById('share-card-top-category');
+      if (catMeta && catMeta.dataset.name) {
+        photoEl.style.background = '#ff9000';
+        photoEl.style.color = '#000';
+        photoEl.textContent = catMeta.dataset.name.charAt(0);
+        nameEl.textContent = catMeta.dataset.name;
+        growthEl.textContent = catMeta.dataset.deltaLabel || '';
+        deltaEl.textContent = '';
+      } else {
+        topMoverEl.style.display = 'none';
+      }
+    } else {
+      var activePerf = document.querySelector('.top-perf.active');
+      if (activePerf) {
+        var img = activePerf.querySelector('img');
+        if (img && img.src) {
+          var newImg = document.createElement('img');
+          newImg.src = img.src;
+          newImg.alt = '';
+          newImg.referrerPolicy = 'no-referrer';
+          photoEl.appendChild(newImg);
+        } else {
+          photoEl.style.background = '#ff9000';
+          photoEl.style.color = '#000';
+          var nm = activePerf.querySelector('.top-perf-name');
+          photoEl.textContent = nm ? nm.textContent.charAt(0) : '?';
+        }
+        var nm2 = activePerf.querySelector('.top-perf-name');
+        nameEl.textContent = nm2 ? nm2.textContent : '';
+        // First .top-perf-stat-row strong = "Today: +X%"
+        var firstRow = activePerf.querySelector('.top-perf-stat-row strong');
+        if (firstRow) {
+          growthEl.textContent = firstRow.textContent;
+        } else {
+          // Fallback to the .top-perf-stat aggregate when acceleration isn't available
+          var agg = activePerf.querySelector('.top-perf-stat strong');
+          if (agg) growthEl.textContent = agg.textContent;
+        }
+        // Second stat row OR the caption gives extra context
+        var rows = activePerf.querySelectorAll('.top-perf-stat-row');
+        if (rows.length > 1) {
+          var usualText = rows[1].textContent;
+          deltaEl.textContent = usualText;
+        }
+      } else {
+        topMoverEl.style.display = 'none';
+      }
+    }
+
+    // Treemap: clone the live Plotly panel into the right column.
+    var slot = card.querySelector('.share-card-treemap-slot');
+    slot.innerHTML = '';
+    var sourcePanel = null;
+    if (pageType === 'main') {
+      sourcePanel = document.querySelector('.panel.active');
+    } else {
+      var pg = document.querySelector('.plotly-graph-div');
+      if (pg) sourcePanel = pg.parentElement;
+    }
+    if (sourcePanel) {
+      slot.appendChild(sourcePanel.cloneNode(true));
+    }
+
+    // Random background — best-effort. If the file 404s the gradient overlay
+    // still renders the card cleanly on flat #0a0a0a.
+    var bgIdx = 1 + Math.floor(Math.random() * 3);
+    card.style.backgroundImage = "url('/share-bg/bg-" + bgIdx + ".jpg')";
+
+    // Footer
+    card.querySelector('.share-card-footer-left').textContent =
+      updatedAt ? 'Updated ' + updatedAt : '';
+    card.querySelector('.share-card-footer-right').textContent =
+      trackedCount ? trackedCount + ' ' + trackedLabel : '';
+
+    return card;
+  }
+
+  function saveShareCardImage(filename) {
+    if (typeof html2canvas === 'undefined') {
+      alert('Share library still loading — try again in a second.');
+      return;
+    }
+    if (!document.querySelector('.plotly-graph-div')) {
+      alert('Treemap still loading — try again in a moment.');
+      return;
+    }
+    var card = buildShareCard();
+    if (!card) return;
+    html2canvas(card, { backgroundColor: '#0a0a0a', scale: 2, useCORS: true })
+      .then(function (canvas) {
+        var link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      })
+      .catch(function (err) {
+        console.error('Save failed:', err);
+        alert('Could not generate image. See console.');
+      });
+  }
+
+  // Wire the Save Image button to saveShareCardImage.
+  (function () {
+    var btn = document.getElementById('save-image-btn');
+    if (!btn) return;
+    // Guard: if _SHARE_CARD_JS injection ever regresses, fail closed (button
+    // stays inert, no JS error in console, no stuck disabled state).
+    if (typeof saveShareCardImage !== 'function') return;
+    btn.addEventListener('click', function () {
+      var slug = 'france';
+      var stamp = new Date().toISOString().slice(0, 10);
+      var filename = 'hotmap-country-' + slug + '-' + stamp + '.png';
+      btn.disabled = true;
+      Promise.resolve().then(function () { saveShareCardImage(filename); })
+        .finally(function () { setTimeout(function () { btn.disabled = false; }, 1500); });
+    });
+  })();
+</script>
 </body>
 </html>

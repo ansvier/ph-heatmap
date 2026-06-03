@@ -49,6 +49,10 @@ Each performer's birth country (or nationality as fallback) is parsed from their
 
 Coverage depends on how completely each performer fills out their profile. Sample: ~85% of profiles expose either Birth Place or Background (nationality), with combined fallback. The one-off `scripts/backfill_countries.py` populates country for all existing tracked slugs; daily-scrape going forward extracts it as part of the existing profile fetch.
 
+### Share cards
+
+Every treemap-bearing page (`/`, `/rising/`, `/gems/`, `/celebs/`, every `/country/<slug>/`, and `/categories/`) has a **Save image (PNG)** button that downloads a 1200×630 "trading card" style image of the current view: HotMap logo, page context, today's top mover, and the live treemap as the signature visual. The card respects whichever mode/gender/window toggle is selected when you click. A random background from `public/share-bg/{bg-1,bg-2,bg-3}.jpg` rotates between renders — drop your own 1200×630 dark-toned JPEGs into that directory to customize; missing files fall through to a flat dark background gracefully.
+
 ## How it works
 
 1. **Daily cron** (`17 4 * * *` UTC) — GitHub Actions runs [`run.py`](run.py).
