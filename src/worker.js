@@ -25,8 +25,12 @@
  */
 
 const PH_PROFILE_BASE = "https://www.pornhub.com/pornstar/";
-const PH_CATEGORY_BASE = "https://www.pornhub.com/categories/";
+// PH's category URLs use a numeric category ID via the query param, NOT a
+// slug path (e.g. ?c=29 for MILF, not /categories/milf which 404s). Our
+// /rc/<id> route reflects that — the treemap embeds category_id in customdata.
+const PH_CATEGORY_BASE = "https://www.pornhub.com/video?c=";
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,80}$/;
+const CATEGORY_ID_RE = /^[0-9]{1,6}$/;
 
 const GH_OWNER = "ansvier";
 const GH_REPO = "ph-heatmap";
@@ -140,15 +144,15 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // /r/<slug>  → outbound profile redirect
-    // /rc/<slug> → outbound category redirect (Categories v1.1 — click tracking +
-    //              future affiliate slot, same wire shape as /r/ for symmetry)
+    // /r/<slug> → outbound profile redirect (slug path validated by SLUG_RE)
+    // /rc/<id>  → outbound category redirect (numeric category id, → ?c=N)
     if (url.pathname.startsWith("/r/") || url.pathname.startsWith("/rc/")) {
       const isCategory = url.pathname.startsWith("/rc/");
       const prefixLen = isCategory ? 4 : 3;
       const rest = url.pathname.slice(prefixLen).replace(/\/+$/, "");
-      if (!SLUG_RE.test(rest)) {
-        return new Response("Invalid slug", { status: 400 });
+      const validator = isCategory ? CATEGORY_ID_RE : SLUG_RE;
+      if (!validator.test(rest)) {
+        return new Response(isCategory ? "Invalid category id" : "Invalid slug", { status: 400 });
       }
       const target = (isCategory ? PH_CATEGORY_BASE : PH_PROFILE_BASE) + rest;
 
@@ -156,7 +160,7 @@ export default {
       const referer = request.headers.get("referer") || "-";
       const ua = (request.headers.get("user-agent") || "-").slice(0, 80);
       const kind = isCategory ? "category" : "profile";
-      console.log(`click kind=${kind} slug=${rest} ref=${referer} ua=${ua}`);
+      console.log(`click kind=${kind} key=${rest} ref=${referer} ua=${ua}`);
 
       return new Response(null, {
         status: 302,
