@@ -2420,6 +2420,7 @@ _NON_GENRE_CATEGORY_IDS = frozenset({
 def render_categories_treemap(
     category_snapshots: pd.DataFrame,
     output_path: Path | str,
+    url_by_id: dict[int, str] | None = None,
 ) -> None:
     """Render /categories/index.html — treemap of PH category video counts.
 
@@ -2431,6 +2432,13 @@ def render_categories_treemap(
 
     Filters out _NON_GENRE_CATEGORY_IDS — meta-tags like HD Porn, Verified
     Amateurs, etc. that dominate by ubiquity rather than reflect genre signal.
+
+    url_by_id: optional dict mapping category_id → PH outbound URL (from
+    parse_category_catalog's 'url' field). When provided, treemap tiles open
+    that URL on click — PH's catalog is heterogeneous, so some categories
+    redirect to /video/incategories/<parent>/<slug>, others to
+    /video/search?search=<slug>, others to ?c=<id>. PH's own JSON tells us
+    which. When None or a category_id is missing, falls back to /video/search.
 
     Raises ValueError on empty input — caller (run.py) treats as 'skip render this day'.
     """
@@ -2589,6 +2597,75 @@ def render_categories_treemap(
 
 
 _COUNTRY_MIN_PERFORMERS = 5  # countries below this don't get a /country/<slug>/ page
+
+# Canonical country name → ISO 3166-1 alpha-2 code, used to build flagcdn.com URLs.
+# Covers every value emitted by scraper._NATIONALITY_TO_COUNTRY plus the common
+# Birth Place countries we see in profiles. Unknown countries render without a flag.
+_COUNTRY_ISO2 = {
+    "United States": "us",
+    "United Kingdom": "gb",
+    "Russia": "ru",
+    "Italy": "it",
+    "France": "fr",
+    "Germany": "de",
+    "Spain": "es",
+    "Brazil": "br",
+    "Mexico": "mx",
+    "Japan": "jp",
+    "South Korea": "kr",
+    "China": "cn",
+    "Australia": "au",
+    "Canada": "ca",
+    "Czech Republic": "cz",
+    "Poland": "pl",
+    "Ukraine": "ua",
+    "Hungary": "hu",
+    "Romania": "ro",
+    "Argentina": "ar",
+    "Colombia": "co",
+    "Netherlands": "nl",
+    "Sweden": "se",
+    "Norway": "no",
+    "Finland": "fi",
+    "Denmark": "dk",
+    "Turkey": "tr",
+    "Greece": "gr",
+    "Portugal": "pt",
+    "India": "in",
+    "Philippines": "ph",
+    "Thailand": "th",
+    "Vietnam": "vn",
+    "Indonesia": "id",
+    "Bulgaria": "bg",
+    "Serbia": "rs",
+    "Croatia": "hr",
+    "Slovakia": "sk",
+    "Slovenia": "si",
+    "Ireland": "ie",
+    "Belgium": "be",
+    "Austria": "at",
+    "Cuba": "cu",
+    "Dominican Republic": "do",
+    "Puerto Rico": "pr",
+    "Egypt": "eg",
+    "Nigeria": "ng",
+    "Armenia": "am",
+    "Peru": "pe",
+    "Venezuela": "ve",
+    "Uruguay": "uy",
+    "New Zealand": "nz",
+}
+
+
+def _country_flag_html(country_name: str) -> str:
+    """Return an <img> tag for the country's flag (flagcdn.com SVG), or empty string."""
+    iso2 = _COUNTRY_ISO2.get(country_name)
+    if not iso2:
+        return ""
+    return (
+        f'<img class="cat-flag" src="https://flagcdn.com/w40/{iso2}.svg" '
+        f'width="20" height="15" alt="" loading="lazy">'
+    )
 
 
 def _country_slug(country_name: str) -> str:
@@ -2822,10 +2899,11 @@ _COUNTRIES_INDEX_TEMPLATE = """<!doctype html>
     h1 {{ font-size: 28px; font-weight: 800; margin: 0 0 8px; }}
     .subtitle {{ color: var(--muted); margin: 0 0 24px; }}
     .cat-list {{ list-style: none; padding: 0; columns: 3; column-gap: 32px; }}
-    .cat-list li {{ padding: 4px 0; break-inside: avoid; }}
+    .cat-list li {{ padding: 4px 0; break-inside: avoid; display: flex; align-items: center; gap: 8px; }}
     .cat-list a {{ color: var(--fg); text-decoration: none; font-weight: 600; }}
     .cat-list a:hover {{ color: var(--brand-orange); }}
     .cat-count {{ color: var(--muted); font-size: 13px; font-weight: 400; }}
+    .cat-flag {{ flex: 0 0 auto; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); vertical-align: middle; }}
     @media (max-width: 720px) {{ .cat-list {{ columns: 2; }} }}
     @media (max-width: 480px) {{ .cat-list {{ columns: 1; }} }}
     footer {{ margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }}
@@ -2835,7 +2913,7 @@ _COUNTRIES_INDEX_TEMPLATE = """<!doctype html>
 <body>
 {top_nav}
 <h1>All countries</h1>
-<p class="subtitle">{n_countries} countries with 5 or more tracked performers · Updated {last_updated} UTC</p>
+<p class="subtitle">{n_countries} countries with 5 or more tracked actresses · Updated {last_updated} UTC</p>
 <ul class="cat-list">
 {rows_html}
 </ul>
@@ -2851,18 +2929,30 @@ def render_countries_index(
     snapshots: pd.DataFrame,
     output_path: Path | str,
 ) -> None:
-    """Render /countries/index.html — alphabetical list of qualifying countries."""
+    """Render /countries/index.html — alphabetical list of qualifying countries.
+
+    Qualification gate still counts both genders (a country qualifies if it has
+    ≥5 tracked performers of any gender), but the displayed performer count
+    reflects only female performers — matching what the per-country page shows.
+    """
     df = snapshots[snapshots["country"].notna()].copy()
     df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
     latest_date = df["snapshot_date"].max()
     today = df[df["snapshot_date"] == latest_date]
 
-    counts = today.groupby("country")["slug"].nunique().reset_index(name="n")
-    qualifying = counts[counts["n"] >= _COUNTRY_MIN_PERFORMERS].sort_values("country")
+    counts_all = today.groupby("country")["slug"].nunique()
+    counts_female = (
+        today[today["gender"] == "female"].groupby("country")["slug"].nunique()
+    )
+    qualifying_countries = sorted(counts_all[counts_all >= _COUNTRY_MIN_PERFORMERS].index)
+    qualifying = pd.DataFrame({
+        "country": qualifying_countries,
+        "n": [int(counts_female.get(c, 0)) for c in qualifying_countries],
+    })
 
     canonical_url = "https://hotmap.cam/countries/"
     title = "All Countries — HotMap"
-    description = f"Alphabetical index of all {len(qualifying)} countries with ≥5 tracked performers on HotMap."
+    description = f"Alphabetical index of all {len(qualifying)} countries with tracked actresses on HotMap."
     collection_jsonld = {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
@@ -2885,8 +2975,9 @@ def render_countries_index(
     )
 
     rows_html = "\n".join(
-        f'<li><a href="/country/{_country_slug(row.country)}/">{_html.escape(row.country)}</a> '
-        f'<span class="cat-count">({int(row.n)} performers)</span></li>'
+        f'<li>{_country_flag_html(row.country)}'
+        f'<a href="/country/{_country_slug(row.country)}/">{_html.escape(row.country)}</a> '
+        f'<span class="cat-count">({int(row.n)} actresses)</span></li>'
         for row in qualifying.itertuples(index=False)
     )
 
