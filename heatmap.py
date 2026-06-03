@@ -3199,6 +3199,9 @@ _COUNTRY_PAGE_TEMPLATE = """<!doctype html>
   (function () {{
     var btn = document.getElementById('save-image-btn');
     if (!btn) return;
+    // Guard: if _SHARE_CARD_JS injection ever regresses, fail closed (button
+    // stays inert, no JS error in console, no stuck disabled state).
+    if (typeof saveShareCardImage !== 'function') return;
     btn.addEventListener('click', function () {{
       var slug = '{country_slug}';
       var stamp = new Date().toISOString().slice(0, 10);
