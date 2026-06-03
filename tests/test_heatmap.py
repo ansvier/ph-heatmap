@@ -1212,18 +1212,15 @@ def test_main_treemap_page_has_share_card_wiring(tmp_path):
     render_treemap_page(df, out)
     content = out.read_text()
 
-    # Hidden share card composition
+    # Hidden share card composition (minimal v1.2: brand strip + title + treemap)
     assert 'class="share-card"' in content
     assert 'class="share-card-brand-strip"' in content
     assert 'class="share-card-mode-label"' in content
-    assert 'class="share-card-top-name"' in content
     assert 'class="share-card-treemap-slot"' in content
-    assert 'class="share-card-footer"' in content
 
     # JS function + page-type wiring
     assert 'function buildShareCard' in content
     assert 'data-page-type="main"' in content
-    assert 'data-updated-at=' in content
     assert "/share-bg/bg-" in content
 
 

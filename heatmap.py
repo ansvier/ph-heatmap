@@ -113,125 +113,42 @@ _SHARE_CARD_CSS = """
       height: 100%;
       display: flex;
       flex-direction: column;
-      padding: 0 32px;
+      align-items: center;
+      padding: 36px 36px 36px;
       box-sizing: border-box;
     }
     .share-card-brand-strip {
-      flex: 0 0 80px;
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .share-card-brand-strip svg {
-      height: 52px;
-    }
-    /* Context strip: page label + filter on the left, compact top-mover badge
-       on the right. Treemap is the dominant visual below in the square 1080
-       canvas. */
-    .share-card-context-strip {
-      flex: 0 0 96px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      padding-bottom: 12px;
-    }
-    .share-card-context-left {
-      display: flex;
-      align-items: baseline;
-      gap: 14px;
-      min-width: 0;
+      height: 64px;
     }
     .share-card-mode-label {
-      font-size: 36px;
+      flex: 0 0 auto;
+      font-size: 44px;
       font-weight: 800;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
       text-transform: uppercase;
       line-height: 1;
       white-space: nowrap;
-    }
-    .share-card-filter {
-      font-size: 17px;
-      color: #9a9a9a;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .share-card-top-mover {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-left: 3px solid #ff9000;
-      padding: 8px 14px;
-      border-radius: 8px;
-      flex-shrink: 0;
-      max-width: 60%;
-    }
-    .share-card-photo {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      background: #222;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 800;
-      font-size: 22px;
-    }
-    .share-card-photo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: 50% 25%;
-    }
-    .share-card-mover-text {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-      min-width: 0;
-    }
-    .share-card-top-name {
-      font-size: 18px;
-      font-weight: 700;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 240px;
-    }
-    .share-card-top-growth {
-      font-size: 28px;
-      font-weight: 800;
-      color: #6cd36a;
-      line-height: 1;
-      white-space: nowrap;
+      text-align: center;
+      margin-top: 24px;
+      margin-bottom: 32px;
     }
     .share-card-treemap-area {
       flex: 1 1 auto;
-      background: rgba(0,0,0,0.5);
-      border-radius: 14px;
-      padding: 12px;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      margin-bottom: 12px;
     }
     .share-card-treemap-slot {
       width: 100%;
       height: 100%;
-    }
-    .share-card-footer {
-      flex: 0 0 44px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-      color: #9a9a9a;
     }
     /* Save Image button used on country + categories pages (the main page
        has it inside the existing Share dropdown). */
@@ -259,32 +176,16 @@ _SHARE_CARD_HTML = """
   <div class="share-card-overlay"></div>
   <div class="share-card-content">
     <div class="share-card-brand-strip">
-      <svg width="180" height="45" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+      <svg width="240" height="60" viewBox="0 0 400 100" role="img" aria-label="HotMap">
         <rect width="400" height="100" fill="#000"/>
         <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
         <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
         <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
       </svg>
     </div>
-    <div class="share-card-context-strip">
-      <div class="share-card-context-left">
-        <span class="share-card-mode-label"></span>
-        <span class="share-card-filter"></span>
-      </div>
-      <div class="share-card-top-mover">
-        <div class="share-card-photo"></div>
-        <div class="share-card-mover-text">
-          <div class="share-card-top-name"></div>
-          <div class="share-card-top-growth"></div>
-        </div>
-      </div>
-    </div>
+    <div class="share-card-mode-label"></div>
     <div class="share-card-treemap-area">
       <div class="share-card-treemap-slot"></div>
-    </div>
-    <div class="share-card-footer">
-      <div class="share-card-footer-left"></div>
-      <div class="share-card-footer-right"></div>
     </div>
   </div>
 </div>
@@ -304,102 +205,24 @@ _SHARE_CARD_JS = """
     gems: 'HIDDEN GEMS',
     celebs: 'CELEBRITIES'
   };
-  var GENDER_LABELS = {
-    all: 'All performers',
-    female: 'Female',
-    male: 'Male'
-  };
 
   function buildShareCard() {
     var card = document.querySelector('.share-card');
     if (!card) return null;
 
     var pageType = document.body.dataset.pageType || 'main';
-    var updatedAt = document.body.dataset.updatedAt || '';
     var contextLabel = document.body.dataset.contextLabel || '';
-    var trackedCount = document.body.dataset.trackedCount || '';
-    var trackedLabel = document.body.dataset.trackedLabel || 'performers tracked';
 
-    // Mode label + filter chip (page-type-specific)
+    // Title — minimal layout shows only the page-type label.
     var modeLabelEl = card.querySelector('.share-card-mode-label');
-    var filterEl = card.querySelector('.share-card-filter');
     if (pageType === 'main' && typeof state !== 'undefined') {
       modeLabelEl.textContent = MODE_LABELS[state.mode] || 'HOTMAP';
-      // state.window is a string ('1' / '7' / '30') — compare as string, not number.
-      var windowText = state.window + ' day' + (state.window !== '1' ? 's' : '');
-      filterEl.textContent = (GENDER_LABELS[state.gender] || '') + ' · ' + windowText;
     } else if (pageType === 'country') {
       modeLabelEl.textContent = (contextLabel || 'COUNTRY').toUpperCase();
-      filterEl.textContent = '';
     } else if (pageType === 'category') {
       modeLabelEl.textContent = 'TRENDING CATEGORIES';
-      filterEl.textContent = '';
     } else {
       modeLabelEl.textContent = 'HOTMAP';
-      filterEl.textContent = '';
-    }
-
-    // Top-mover mini-card
-    var photoEl = card.querySelector('.share-card-photo');
-    var nameEl = card.querySelector('.share-card-top-name');
-    var growthEl = card.querySelector('.share-card-top-growth');
-    var deltaEl = card.querySelector('.share-card-top-delta');  // optional in new layout
-    var topMoverEl = card.querySelector('.share-card-top-mover');
-
-    photoEl.innerHTML = '';
-    nameEl.textContent = '';
-    growthEl.textContent = '';
-    if (deltaEl) deltaEl.textContent = '';
-
-    if (pageType === 'category') {
-      var catMeta = document.getElementById('share-card-top-category');
-      if (catMeta && catMeta.dataset.name) {
-        photoEl.style.background = '#ff9000';
-        photoEl.style.color = '#000';
-        photoEl.textContent = catMeta.dataset.name.charAt(0);
-        nameEl.textContent = catMeta.dataset.name;
-        growthEl.textContent = catMeta.dataset.deltaLabel || '';
-        if (deltaEl) deltaEl.textContent = '';
-      } else {
-        topMoverEl.style.display = 'none';
-      }
-    } else {
-      var activePerf = document.querySelector('.top-perf.active');
-      if (activePerf) {
-        var img = activePerf.querySelector('img');
-        if (img && img.src) {
-          var newImg = document.createElement('img');
-          newImg.src = img.src;
-          newImg.alt = '';
-          newImg.referrerPolicy = 'no-referrer';
-          photoEl.appendChild(newImg);
-        } else {
-          photoEl.style.background = '#ff9000';
-          photoEl.style.color = '#000';
-          var nm = activePerf.querySelector('.top-perf-name');
-          photoEl.textContent = nm ? nm.textContent.charAt(0) : '?';
-        }
-        var nm2 = activePerf.querySelector('.top-perf-name');
-        nameEl.textContent = nm2 ? nm2.textContent : '';
-        // First .top-perf-stat-row strong = "Today: +X%"
-        var firstRow = activePerf.querySelector('.top-perf-stat-row strong');
-        if (firstRow) {
-          growthEl.textContent = firstRow.textContent;
-        } else {
-          // Fallback to the .top-perf-stat aggregate when acceleration isn't available
-          var agg = activePerf.querySelector('.top-perf-stat strong');
-          if (agg) growthEl.textContent = agg.textContent;
-        }
-        // Second stat row OR the caption — only used if the layout has a
-        // .share-card-top-delta element (v1 layout did; v1.1 horizontal
-        // layout omits it for compactness).
-        if (deltaEl) {
-          var rows = activePerf.querySelectorAll('.top-perf-stat-row');
-          if (rows.length > 1) deltaEl.textContent = rows[1].textContent;
-        }
-      } else {
-        topMoverEl.style.display = 'none';
-      }
     }
 
     // Treemap: clone the live Plotly panel into the right column.
@@ -445,12 +268,6 @@ _SHARE_CARD_JS = """
     // still renders the card cleanly on flat #0a0a0a.
     var bgIdx = 1 + Math.floor(Math.random() * 3);
     card.style.backgroundImage = "url('/share-bg/bg-" + bgIdx + ".jpg')";
-
-    // Footer
-    card.querySelector('.share-card-footer-left').textContent =
-      updatedAt ? 'Updated ' + updatedAt : '';
-    card.querySelector('.share-card-footer-right').textContent =
-      trackedCount ? trackedCount + ' ' + trackedLabel : '';
 
     return card;
   }

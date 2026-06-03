@@ -154,125 +154,42 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      padding: 0 32px;
+      align-items: center;
+      padding: 36px 36px 36px;
       box-sizing: border-box;
     }
     .share-card-brand-strip {
-      flex: 0 0 80px;
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .share-card-brand-strip svg {
-      height: 52px;
-    }
-    /* Context strip: page label + filter on the left, compact top-mover badge
-       on the right. Treemap is the dominant visual below in the square 1080
-       canvas. */
-    .share-card-context-strip {
-      flex: 0 0 96px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      padding-bottom: 12px;
-    }
-    .share-card-context-left {
-      display: flex;
-      align-items: baseline;
-      gap: 14px;
-      min-width: 0;
+      height: 64px;
     }
     .share-card-mode-label {
-      font-size: 36px;
+      flex: 0 0 auto;
+      font-size: 44px;
       font-weight: 800;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
       text-transform: uppercase;
       line-height: 1;
       white-space: nowrap;
-    }
-    .share-card-filter {
-      font-size: 17px;
-      color: #9a9a9a;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .share-card-top-mover {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-left: 3px solid #ff9000;
-      padding: 8px 14px;
-      border-radius: 8px;
-      flex-shrink: 0;
-      max-width: 60%;
-    }
-    .share-card-photo {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      background: #222;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 800;
-      font-size: 22px;
-    }
-    .share-card-photo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: 50% 25%;
-    }
-    .share-card-mover-text {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-      min-width: 0;
-    }
-    .share-card-top-name {
-      font-size: 18px;
-      font-weight: 700;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 240px;
-    }
-    .share-card-top-growth {
-      font-size: 28px;
-      font-weight: 800;
-      color: #6cd36a;
-      line-height: 1;
-      white-space: nowrap;
+      text-align: center;
+      margin-top: 24px;
+      margin-bottom: 32px;
     }
     .share-card-treemap-area {
       flex: 1 1 auto;
-      background: rgba(0,0,0,0.5);
-      border-radius: 14px;
-      padding: 12px;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      margin-bottom: 12px;
     }
     .share-card-treemap-slot {
       width: 100%;
       height: 100%;
-    }
-    .share-card-footer {
-      flex: 0 0 44px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-      color: #9a9a9a;
     }
     /* Save Image button used on country + categories pages (the main page
        has it inside the existing Share dropdown). */
@@ -295,14 +212,14 @@
 
   </style>
 </head>
-<body data-page-type="country" data-context-label="Russia" data-updated-at="2026-06-03 14:06" data-tracked-count="16" data-tracked-label="performers tracked">
+<body data-page-type="country" data-context-label="Russia" data-updated-at="2026-06-03 14:12" data-tracked-count="16" data-tracked-label="performers tracked">
 <nav class="topnav"><a class="brand" href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap"><rect width="400" height="100" fill="#000"/><text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text><rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/><text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text></svg></a><div class="navlinks"><a href="/" class="navlink">Map</a><a href="/stats/" class="navlink">Stats</a><a href="/categories/" class="navlink">Categories</a><a href="/countries/" class="navlink active">Countries</a><a href="/charts/" class="navlink">Charts</a></div></nav>
 <h1>Top performers from Russia</h1>
-<p class="subtitle">16 performers tracked · Updated 2026-06-03 14:06 UTC</p>
+<p class="subtitle">16 performers tracked · Updated 2026-06-03 14:12 UTC</p>
 <button type="button" class="save-image-btn" id="save-image-btn"><span aria-hidden="true">⤓</span> Save image (PNG)</button>
 <div class="top-perf-wrap"><a class="top-perf active" data-mode="celebs" data-gender="all" href="/r/skye-young" target="_blank" rel="noopener"><img src="/avatars/skye-young.jpg" alt="Skye Young" loading="lazy" referrerpolicy="no-referrer"><div class="top-perf-text"><span class="top-perf-label">Top from Russia</span><span class="top-perf-name">Skye Young</span><span class="top-perf-stat-row">Today: <strong>+0.744%</strong></span><span class="top-perf-stat-row">Usual: <strong>+0.184%</strong></span><span class="top-perf-caption">↑ Sharp turnaround</span></div></a></div>
 <div>                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
-        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="0c97a2da-d22d-4d19-8d3f-303774d6304f" class="plotly-graph-div" style="height:700px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("0c97a2da-d22d-4d19-8d3f-303774d6304f")) {                    Plotly.newPlot(                        "0c97a2da-d22d-4d19-8d3f-303774d6304f",                        [{"customdata":[["Eva Elfie",1115855412,0.01256709598701093,"eva-elfie",140213],["Crystal Rush",383105230,0.03925632014899216,"crystal-rush",150334],["Liya Silver",321837316,0.026991724363293085,"liya-silver",86846],["Nicole Murkovski",270039201,0.1728929747033243,"nicole-murkovski",466073],["Gina Gerson",252779085,0.024423331767671225,"gina-gerson",61722],["Mermaid Ivi",179079811,0.03326103853928449,"ivi-rein",59544],["Bella Mur",171778784,0.07348153335540387,"bella-mur",126133],["Skye Young",166104085,0.744375270834827,"skye-young",1227302],["Kate Rich",163842016,0.04011630131011312,"kate-rich",65701],["Monika Fox",152181557,0.05043626454992317,"monika-fox",76716],["Kvini Kim",149711187,0.20309522504211244,"kvini-kim",303440],["Lisa Fox",119274488,0.00856249695424303,"lisa-fox",10212],["Lena Reif",113109229,0.026551300922216425,"lena-reif",30024],["Misha Maver",109583286,0.015522111506588627,"misha-maver",17007],["Sasha Rose",109499118,0.02910276552094206,"sasha-rose",31858],["Lana Roy",106080120,0.03020799479783157,"lana-roy",32035]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eTotal views: %{customdata[1]:,}\u003cbr\u003eGained (1d): +%{customdata[4]:,.0f} views\u003cbr\u003eGrowth: %{customdata[2]:+.3f}%\u003cbr\u003e\u003ci\u003eclick to open profile\u003c\u002fi\u003e\u003cextra\u003e\u003c\u002fextra\u003e","ids":["eva-elfie","crystal-rush","liya-silver","nicole-murkovski","gina-gerson","ivi-rein","bella-mur","skye-young","kate-rich","monika-fox","kvini-kim","lisa-fox","lena-reif","misha-maver","sasha-rose","lana-roy"],"labels":["\u003cb\u003eEva Elfie\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.1B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eCrystal Rush\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e383M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eLiya Silver\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e322M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eNicole Murkovski\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e270M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.17%\u003c\u002fspan\u003e","\u003cb\u003eGina Gerson\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e253M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eMermaid Ivi\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e179M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eBella Mur\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e172M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.07%\u003c\u002fspan\u003e","\u003cb\u003eSkye Young\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e166M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.74%\u003c\u002fspan\u003e","\u003cb\u003eKate Rich\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e164M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eMonika Fox\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e152M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.05%\u003c\u002fspan\u003e","\u003cb\u003eKvini Kim\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e150M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.20%\u003c\u002fspan\u003e","\u003cb\u003eLisa Fox\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e119M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLena Reif\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e113M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eMisha Maver\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e110M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eSasha Rose\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e109M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eLana Roy\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e106M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e"],"marker":{"cmax":0.5,"cmid":0,"cmin":-0.5,"colorbar":{"outlinewidth":0,"thickness":14,"ticktext":["bottom","low","median","high","top"],"tickvals":[-0.5,-0.25,0,0.25,0.5],"title":{"text":"Rank (1d)"}},"colors":{"dtype":"f8","bdata":"AAAAAAAA2L8AAAAAAADAPwAAAAAAAMC\u002fAAAAAAAA2D8AAAAAAADQvwAAAAAAALA\u002fAAAAAAAA1D8AAAAAAADgPwAAAAAAAMg\u002fAAAAAAAA0D8AAAAAAADcPwAAAAAAANy\u002fAAAAAAAAyL8AAAAAAADUvwAAAAAAALC\u002fAAAAAAAAAAA="},"colorscale":[[0.0,"rgb(165,0,38)"],[0.1,"rgb(215,48,39)"],[0.2,"rgb(244,109,67)"],[0.3,"rgb(253,174,97)"],[0.4,"rgb(254,224,139)"],[0.5,"rgb(255,255,191)"],[0.6,"rgb(217,239,139)"],[0.7,"rgb(166,217,106)"],[0.8,"rgb(102,189,99)"],[0.9,"rgb(26,152,80)"],[1.0,"rgb(0,104,55)"]],"showscale":true},"parents":["","","","","","","","","","","","","","","",""],"textfont":{"color":"#000","family":"Inter, -apple-system, BlinkMacSystemFont, sans-serif","size":13},"textposition":"middle center","tiling":{"packing":"squarify","pad":0},"values":{"dtype":"f8","bdata":"18MoEse8iT9AB2eGZxmkP3ipnPW3o5s\u002fH4sHZFshxj+IV84MbgKZP6uyg0GXB6E\u002fmROfjq\u002fPsj+m+YUW7NHnP4CrU7QfiqQ\u002fOHSMNcjSqT8Fy8M6Bv\u002fJP\u002fXkH+M2iYE\u002f8zmCpEMwmz\u002fqCUmKDsqPP2XbiogdzZ0\u002fCQ3wNtjunj8="},"type":"treemap"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"margin":{"l":0,"r":130,"t":0,"b":0},"font":{"family":"Inter, sans-serif","color":"#f5f5f5"},"paper_bgcolor":"#0a0a0a","plot_bgcolor":"#0a0a0a","height":700},                        {"responsive": true}                    )                };            </script>        </div>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="71e51b76-3a51-493c-bc26-b0118ab81728" class="plotly-graph-div" style="height:700px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("71e51b76-3a51-493c-bc26-b0118ab81728")) {                    Plotly.newPlot(                        "71e51b76-3a51-493c-bc26-b0118ab81728",                        [{"customdata":[["Eva Elfie",1115855412,0.01256709598701093,"eva-elfie",140213],["Crystal Rush",383105230,0.03925632014899216,"crystal-rush",150334],["Liya Silver",321837316,0.026991724363293085,"liya-silver",86846],["Nicole Murkovski",270039201,0.1728929747033243,"nicole-murkovski",466073],["Gina Gerson",252779085,0.024423331767671225,"gina-gerson",61722],["Mermaid Ivi",179079811,0.03326103853928449,"ivi-rein",59544],["Bella Mur",171778784,0.07348153335540387,"bella-mur",126133],["Skye Young",166104085,0.744375270834827,"skye-young",1227302],["Kate Rich",163842016,0.04011630131011312,"kate-rich",65701],["Monika Fox",152181557,0.05043626454992317,"monika-fox",76716],["Kvini Kim",149711187,0.20309522504211244,"kvini-kim",303440],["Lisa Fox",119274488,0.00856249695424303,"lisa-fox",10212],["Lena Reif",113109229,0.026551300922216425,"lena-reif",30024],["Misha Maver",109583286,0.015522111506588627,"misha-maver",17007],["Sasha Rose",109499118,0.02910276552094206,"sasha-rose",31858],["Lana Roy",106080120,0.03020799479783157,"lana-roy",32035]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eTotal views: %{customdata[1]:,}\u003cbr\u003eGained (1d): +%{customdata[4]:,.0f} views\u003cbr\u003eGrowth: %{customdata[2]:+.3f}%\u003cbr\u003e\u003ci\u003eclick to open profile\u003c\u002fi\u003e\u003cextra\u003e\u003c\u002fextra\u003e","ids":["eva-elfie","crystal-rush","liya-silver","nicole-murkovski","gina-gerson","ivi-rein","bella-mur","skye-young","kate-rich","monika-fox","kvini-kim","lisa-fox","lena-reif","misha-maver","sasha-rose","lana-roy"],"labels":["\u003cb\u003eEva Elfie\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.1B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eCrystal Rush\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e383M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eLiya Silver\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e322M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eNicole Murkovski\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e270M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.17%\u003c\u002fspan\u003e","\u003cb\u003eGina Gerson\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e253M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eMermaid Ivi\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e179M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eBella Mur\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e172M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.07%\u003c\u002fspan\u003e","\u003cb\u003eSkye Young\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e166M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.74%\u003c\u002fspan\u003e","\u003cb\u003eKate Rich\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e164M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eMonika Fox\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e152M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.05%\u003c\u002fspan\u003e","\u003cb\u003eKvini Kim\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e150M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.20%\u003c\u002fspan\u003e","\u003cb\u003eLisa Fox\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e119M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLena Reif\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e113M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eMisha Maver\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e110M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eSasha Rose\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e109M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eLana Roy\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e106M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e"],"marker":{"cmax":0.5,"cmid":0,"cmin":-0.5,"colorbar":{"outlinewidth":0,"thickness":14,"ticktext":["bottom","low","median","high","top"],"tickvals":[-0.5,-0.25,0,0.25,0.5],"title":{"text":"Rank (1d)"}},"colors":{"dtype":"f8","bdata":"AAAAAAAA2L8AAAAAAADAPwAAAAAAAMC\u002fAAAAAAAA2D8AAAAAAADQvwAAAAAAALA\u002fAAAAAAAA1D8AAAAAAADgPwAAAAAAAMg\u002fAAAAAAAA0D8AAAAAAADcPwAAAAAAANy\u002fAAAAAAAAyL8AAAAAAADUvwAAAAAAALC\u002fAAAAAAAAAAA="},"colorscale":[[0.0,"rgb(165,0,38)"],[0.1,"rgb(215,48,39)"],[0.2,"rgb(244,109,67)"],[0.3,"rgb(253,174,97)"],[0.4,"rgb(254,224,139)"],[0.5,"rgb(255,255,191)"],[0.6,"rgb(217,239,139)"],[0.7,"rgb(166,217,106)"],[0.8,"rgb(102,189,99)"],[0.9,"rgb(26,152,80)"],[1.0,"rgb(0,104,55)"]],"showscale":true},"parents":["","","","","","","","","","","","","","","",""],"textfont":{"color":"#000","family":"Inter, -apple-system, BlinkMacSystemFont, sans-serif","size":13},"textposition":"middle center","tiling":{"packing":"squarify","pad":0},"values":{"dtype":"f8","bdata":"18MoEse8iT9AB2eGZxmkP3ipnPW3o5s\u002fH4sHZFshxj+IV84MbgKZP6uyg0GXB6E\u002fmROfjq\u002fPsj+m+YUW7NHnP4CrU7QfiqQ\u002fOHSMNcjSqT8Fy8M6Bv\u002fJP\u002fXkH+M2iYE\u002f8zmCpEMwmz\u002fqCUmKDsqPP2XbiogdzZ0\u002fCQ3wNtjunj8="},"type":"treemap"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"margin":{"l":0,"r":130,"t":0,"b":0},"font":{"family":"Inter, sans-serif","color":"#f5f5f5"},"paper_bgcolor":"#0a0a0a","plot_bgcolor":"#0a0a0a","height":700},                        {"responsive": true}                    )                };            </script>        </div>
 <script>
   // Click any tile → outbound bounce through /r/<slug> (same CF Worker
   // redirect as the homepage treemap). Plotly renders asynchronously so we
@@ -335,32 +252,16 @@
   <div class="share-card-overlay"></div>
   <div class="share-card-content">
     <div class="share-card-brand-strip">
-      <svg width="180" height="45" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+      <svg width="240" height="60" viewBox="0 0 400 100" role="img" aria-label="HotMap">
         <rect width="400" height="100" fill="#000"/>
         <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
         <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
         <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
       </svg>
     </div>
-    <div class="share-card-context-strip">
-      <div class="share-card-context-left">
-        <span class="share-card-mode-label"></span>
-        <span class="share-card-filter"></span>
-      </div>
-      <div class="share-card-top-mover">
-        <div class="share-card-photo"></div>
-        <div class="share-card-mover-text">
-          <div class="share-card-top-name"></div>
-          <div class="share-card-top-growth"></div>
-        </div>
-      </div>
-    </div>
+    <div class="share-card-mode-label"></div>
     <div class="share-card-treemap-area">
       <div class="share-card-treemap-slot"></div>
-    </div>
-    <div class="share-card-footer">
-      <div class="share-card-footer-left"></div>
-      <div class="share-card-footer-right"></div>
     </div>
   </div>
 </div>
@@ -379,102 +280,24 @@
     gems: 'HIDDEN GEMS',
     celebs: 'CELEBRITIES'
   };
-  var GENDER_LABELS = {
-    all: 'All performers',
-    female: 'Female',
-    male: 'Male'
-  };
 
   function buildShareCard() {
     var card = document.querySelector('.share-card');
     if (!card) return null;
 
     var pageType = document.body.dataset.pageType || 'main';
-    var updatedAt = document.body.dataset.updatedAt || '';
     var contextLabel = document.body.dataset.contextLabel || '';
-    var trackedCount = document.body.dataset.trackedCount || '';
-    var trackedLabel = document.body.dataset.trackedLabel || 'performers tracked';
 
-    // Mode label + filter chip (page-type-specific)
+    // Title — minimal layout shows only the page-type label.
     var modeLabelEl = card.querySelector('.share-card-mode-label');
-    var filterEl = card.querySelector('.share-card-filter');
     if (pageType === 'main' && typeof state !== 'undefined') {
       modeLabelEl.textContent = MODE_LABELS[state.mode] || 'HOTMAP';
-      // state.window is a string ('1' / '7' / '30') — compare as string, not number.
-      var windowText = state.window + ' day' + (state.window !== '1' ? 's' : '');
-      filterEl.textContent = (GENDER_LABELS[state.gender] || '') + ' · ' + windowText;
     } else if (pageType === 'country') {
       modeLabelEl.textContent = (contextLabel || 'COUNTRY').toUpperCase();
-      filterEl.textContent = '';
     } else if (pageType === 'category') {
       modeLabelEl.textContent = 'TRENDING CATEGORIES';
-      filterEl.textContent = '';
     } else {
       modeLabelEl.textContent = 'HOTMAP';
-      filterEl.textContent = '';
-    }
-
-    // Top-mover mini-card
-    var photoEl = card.querySelector('.share-card-photo');
-    var nameEl = card.querySelector('.share-card-top-name');
-    var growthEl = card.querySelector('.share-card-top-growth');
-    var deltaEl = card.querySelector('.share-card-top-delta');  // optional in new layout
-    var topMoverEl = card.querySelector('.share-card-top-mover');
-
-    photoEl.innerHTML = '';
-    nameEl.textContent = '';
-    growthEl.textContent = '';
-    if (deltaEl) deltaEl.textContent = '';
-
-    if (pageType === 'category') {
-      var catMeta = document.getElementById('share-card-top-category');
-      if (catMeta && catMeta.dataset.name) {
-        photoEl.style.background = '#ff9000';
-        photoEl.style.color = '#000';
-        photoEl.textContent = catMeta.dataset.name.charAt(0);
-        nameEl.textContent = catMeta.dataset.name;
-        growthEl.textContent = catMeta.dataset.deltaLabel || '';
-        if (deltaEl) deltaEl.textContent = '';
-      } else {
-        topMoverEl.style.display = 'none';
-      }
-    } else {
-      var activePerf = document.querySelector('.top-perf.active');
-      if (activePerf) {
-        var img = activePerf.querySelector('img');
-        if (img && img.src) {
-          var newImg = document.createElement('img');
-          newImg.src = img.src;
-          newImg.alt = '';
-          newImg.referrerPolicy = 'no-referrer';
-          photoEl.appendChild(newImg);
-        } else {
-          photoEl.style.background = '#ff9000';
-          photoEl.style.color = '#000';
-          var nm = activePerf.querySelector('.top-perf-name');
-          photoEl.textContent = nm ? nm.textContent.charAt(0) : '?';
-        }
-        var nm2 = activePerf.querySelector('.top-perf-name');
-        nameEl.textContent = nm2 ? nm2.textContent : '';
-        // First .top-perf-stat-row strong = "Today: +X%"
-        var firstRow = activePerf.querySelector('.top-perf-stat-row strong');
-        if (firstRow) {
-          growthEl.textContent = firstRow.textContent;
-        } else {
-          // Fallback to the .top-perf-stat aggregate when acceleration isn't available
-          var agg = activePerf.querySelector('.top-perf-stat strong');
-          if (agg) growthEl.textContent = agg.textContent;
-        }
-        // Second stat row OR the caption — only used if the layout has a
-        // .share-card-top-delta element (v1 layout did; v1.1 horizontal
-        // layout omits it for compactness).
-        if (deltaEl) {
-          var rows = activePerf.querySelectorAll('.top-perf-stat-row');
-          if (rows.length > 1) deltaEl.textContent = rows[1].textContent;
-        }
-      } else {
-        topMoverEl.style.display = 'none';
-      }
     }
 
     // Treemap: clone the live Plotly panel into the right column.
@@ -520,12 +343,6 @@
     // still renders the card cleanly on flat #0a0a0a.
     var bgIdx = 1 + Math.floor(Math.random() * 3);
     card.style.backgroundImage = "url('/share-bg/bg-" + bgIdx + ".jpg')";
-
-    // Footer
-    card.querySelector('.share-card-footer-left').textContent =
-      updatedAt ? 'Updated ' + updatedAt : '';
-    card.querySelector('.share-card-footer-right').textContent =
-      trackedCount ? trackedCount + ' ' + trackedLabel : '';
 
     return card;
   }
