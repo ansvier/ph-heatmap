@@ -1202,3 +1202,40 @@ def test_performer_page_omits_country_block_when_country_is_none(tmp_path):
     render_performer_page(df, slug="alice", output_path=out, qualifying_countries={"Russia"})
     content = out.read_text()
     assert "performer-country" not in content
+
+
+def test_main_treemap_page_has_share_card_wiring(tmp_path):
+    """render_treemap_page emits the .share-card hidden div, buildShareCard JS,
+    data-page-type='main' on body, and a /share-bg/ background URL reference."""
+    df = _snapshot_rows()
+    out = tmp_path / "out.html"
+    render_treemap_page(df, out)
+    content = out.read_text()
+
+    # Hidden share card composition
+    assert 'class="share-card"' in content
+    assert 'class="share-card-brand-strip"' in content
+    assert 'class="share-card-mode-label"' in content
+    assert 'class="share-card-top-name"' in content
+    assert 'class="share-card-treemap-slot"' in content
+    assert 'class="share-card-footer"' in content
+
+    # JS function + page-type wiring
+    assert 'function buildShareCard' in content
+    assert 'data-page-type="main"' in content
+    assert 'data-updated-at=' in content
+    assert "/share-bg/bg-" in content
+
+
+def test_main_treemap_page_save_button_uses_build_share_card(tmp_path):
+    """Save Image click handler invokes buildShareCard, not the old hero+panel
+    DOM clone."""
+    df = _snapshot_rows()
+    out = tmp_path / "out.html"
+    render_treemap_page(df, out)
+    content = out.read_text()
+
+    # Old literal-screenshot path is gone — no clone of .hero
+    assert "document.querySelector('.hero').cloneNode" not in content
+    # New path is in
+    assert "buildShareCard()" in content
