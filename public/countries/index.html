@@ -73,7 +73,7 @@
     .cat-list a { color: var(--fg); text-decoration: none; font-weight: 600; }
     .cat-list a:hover { color: var(--brand-orange); }
     .cat-count { color: var(--muted); font-size: 13px; font-weight: 400; }
-    .cat-flag { flex: 0 0 auto; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); vertical-align: middle; }
+    .cat-flag { flex: 0 0 auto; font-size: 18px; line-height: 1; }
     @media (max-width: 720px) { .cat-list { columns: 2; } }
     @media (max-width: 480px) { .cat-list { columns: 1; } }
     footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }
@@ -83,21 +83,21 @@
 <body>
 <nav class="topnav"><a class="brand" href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap"><rect width="400" height="100" fill="#000"/><text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text><rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/><text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text></svg></a><div class="navlinks"><a href="/" class="navlink">Map</a><a href="/stats/" class="navlink">Stats</a><a href="/categories/" class="navlink">Categories</a><a href="/countries/" class="navlink active">Countries</a><a href="/charts/" class="navlink">Charts</a></div></nav>
 <h1>All countries</h1>
-<p class="subtitle">13 countries with 5 or more tracked actresses · Updated 2026-06-03 07:43 UTC</p>
+<p class="subtitle">13 countries with 5 or more tracked actresses · Updated 2026-06-03 07:47 UTC</p>
 <ul class="cat-list">
-<li><img class="cat-flag" src="https://flagcdn.com/w40/ca.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/canada/">Canada</a> <span class="cat-count">(5 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/co.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/colombia/">Colombia</a> <span class="cat-count">(12 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/cz.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/czech-republic/">Czech Republic</a> <span class="cat-count">(11 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/fr.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/france/">France</a> <span class="cat-count">(6 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/de.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/germany/">Germany</a> <span class="cat-count">(5 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/hu.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/hungary/">Hungary</a> <span class="cat-count">(5 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/it.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/italy/">Italy</a> <span class="cat-count">(10 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/ru.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/russia/">Russia</a> <span class="cat-count">(14 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/es.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/spain/">Spain</a> <span class="cat-count">(6 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/ua.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/ukraine/">Ukraine</a> <span class="cat-count">(5 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/gb.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/united-kingdom/">United Kingdom</a> <span class="cat-count">(20 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/us.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/united-states/">United States</a> <span class="cat-count">(248 actresses)</span></li>
-<li><img class="cat-flag" src="https://flagcdn.com/w40/ve.svg" width="20" height="15" alt="" loading="lazy"><a href="/country/venezuela/">Venezuela</a> <span class="cat-count">(5 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇨🇦</span><a href="/country/canada/">Canada</a> <span class="cat-count">(5 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇨🇴</span><a href="/country/colombia/">Colombia</a> <span class="cat-count">(12 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇨🇿</span><a href="/country/czech-republic/">Czech Republic</a> <span class="cat-count">(11 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇫🇷</span><a href="/country/france/">France</a> <span class="cat-count">(6 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇩🇪</span><a href="/country/germany/">Germany</a> <span class="cat-count">(5 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇭🇺</span><a href="/country/hungary/">Hungary</a> <span class="cat-count">(5 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇮🇹</span><a href="/country/italy/">Italy</a> <span class="cat-count">(10 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇷🇺</span><a href="/country/russia/">Russia</a> <span class="cat-count">(14 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇪🇸</span><a href="/country/spain/">Spain</a> <span class="cat-count">(6 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇺🇦</span><a href="/country/ukraine/">Ukraine</a> <span class="cat-count">(5 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇬🇧</span><a href="/country/united-kingdom/">United Kingdom</a> <span class="cat-count">(20 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇺🇸</span><a href="/country/united-states/">United States</a> <span class="cat-count">(248 actresses)</span></li>
+<li><span class="cat-flag" aria-hidden="true">🇻🇪</span><a href="/country/venezuela/">Venezuela</a> <span class="cat-count">(5 actresses)</span></li>
 </ul>
 <footer>
   <p>HotMap is an independent project. <a href="/">Back to homepage</a>.</p>
