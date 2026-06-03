@@ -2599,6 +2599,7 @@ _COUNTRY_PAGE_TEMPLATE = """<!doctype html>
       --fg: #f5f5f5;
       --muted: #9a9a9a;
       --rule: #1f1f1f;
+      --btn-bg: #161616;
     }}
     * {{ box-sizing: border-box; }}
     html, body {{ font-family: 'Inter', sans-serif; }}
@@ -2607,16 +2608,84 @@ _COUNTRY_PAGE_TEMPLATE = """<!doctype html>
     h1 {{ font-size: 28px; font-weight: 800; margin: 0 0 8px; }}
     .subtitle {{ color: var(--muted); margin: 0 0 24px; }}
     .empty-state {{ padding: 80px 0; text-align: center; color: var(--muted); }}
+
+    /* Spike-of-Day card — mirrors the main treemap page so country pages
+       inherit the same visual identity. The treemap's colorbar reserves
+       ~120px on the right; margin-right keeps the card edge aligned. */
+    .top-perf-wrap {{ margin: 0 0 16px; }}
+    @media (max-width: 900px) {{ .top-perf-wrap {{ margin-right: 0; }} }}
+    .top-perf {{
+      display: none;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      background: var(--btn-bg);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--brand-orange);
+      border-radius: 8px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.12s, transform 0.12s;
+      max-width: 360px;
+    }}
+    .top-perf.active {{ display: flex; }}
+    .top-perf:hover {{ border-color: var(--brand-orange); transform: translateY(-1px); }}
+    .top-perf img {{
+      width: 56px; height: 56px; border-radius: 50%; object-fit: cover;
+      flex-shrink: 0; background: #222;
+    }}
+    .top-perf-text {{ display: flex; flex-direction: column; gap: 2px; min-width: 0; }}
+    .top-perf-label {{
+      color: var(--brand-orange); font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }}
+    .top-perf-name {{
+      color: var(--fg); font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }}
+    .top-perf-stat {{ color: var(--muted); font-size: 12px; font-weight: 500; }}
+    .top-perf-stat strong {{ color: #6cd36a; font-weight: 700; }}
+    .top-perf-stat-row {{ display: block; color: var(--muted); font-size: 12px; font-weight: 500; line-height: 1.35; }}
+    .top-perf-stat-row strong {{ color: var(--fg); font-weight: 700; font-variant-numeric: tabular-nums; }}
+    .top-perf-caption {{
+      display: block; color: #6cd36a; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.02em; margin-top: 2px;
+    }}
+
     footer {{ margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }}
     footer a {{ color: var(--muted); text-decoration: underline; }}
   </style>
 </head>
 <body>
 {top_nav}
-<h1>Top {country_name} performers</h1>
+<h1>Top performers from {country_name}</h1>
 <p class="subtitle">{n_performers} performers tracked · Updated {last_updated} UTC</p>
 {top_perf_card}
 {treemap}
+<script>
+  // Click any tile → outbound bounce through /r/<slug> (same CF Worker
+  // redirect as the homepage treemap). Plotly renders asynchronously so we
+  // poll briefly until the graph div is ready.
+  (function () {{
+    function attach() {{
+      document.querySelectorAll('.plotly-graph-div').forEach(function (div) {{
+        if (div._hotmapBound) return;
+        div._hotmapBound = true;
+        div.on('plotly_treemapclick', function (evt) {{
+          if (!evt || !evt.points || !evt.points.length) return;
+          var slug = evt.points[0].customdata && evt.points[0].customdata[3];
+          if (slug) window.open('/r/' + slug, '_blank', 'noopener');
+          return false;
+        }});
+      }});
+    }}
+    var n = 0;
+    var iv = setInterval(function () {{
+      attach();
+      if (++n > 20) clearInterval(iv);
+    }}, 250);
+  }})();
+</script>
 <footer>
   <p>HotMap is an independent project. <a href="/">Back to homepage</a>.</p>
 </footer>
@@ -2647,9 +2716,9 @@ def render_country_page(
 
     slug = _country_slug(country_name)
     canonical_url = f"https://hotmap.cam/country/{slug}/"
-    title = f"Top {country_name} Performers — HotMap"
+    title = f"Top performers from {country_name} — HotMap"
     description = (
-        f"Top {country_name} pornstars ranked by view-growth momentum. "
+        f"Top pornstars from {country_name} ranked by view-growth momentum. "
         f"{n_performers} performers tracked. Daily heatmap, updated automatically."
     )
     collection_jsonld = {
@@ -2688,6 +2757,11 @@ def render_country_page(
         in_country, gender_key="all", gender_filter=None, mode="celebs", is_default=True,
         label_override=f"Top from {country_name}",
     )
+    # Wrap in .top-perf-wrap so the new CSS in _COUNTRY_PAGE_TEMPLATE applies
+    # the same way it does on the homepage; skip the wrapper when the card is
+    # empty (no qualifying mover) so the page collapses cleanly.
+    if top_perf_card:
+        top_perf_card = f'<div class="top-perf-wrap">{top_perf_card}</div>'
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
