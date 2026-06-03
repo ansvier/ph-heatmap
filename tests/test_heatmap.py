@@ -1122,6 +1122,31 @@ def test_render_countries_index_lists_qualifying_countries(tmp_path):
     assert "CollectionPage" in types and "BreadcrumbList" in types
 
 
+def test_render_countries_index_counts_females_only_and_renders_flag(tmp_path):
+    """Visible count = female slugs only; flag <img> appears next to known countries."""
+    rows = []
+    # Russia qualifies (≥5 total): 4 female + 2 male — displayed count must be 4.
+    for i in range(4):
+        rows.append({
+            "snapshot_date": pd.Timestamp("2026-06-02"), "slug": f"ruf{i}", "name": f"RUF{i}",
+            "total_views": 100_000_000, "rank": 1, "gender": "female", "country": "Russia",
+        })
+    for i in range(2):
+        rows.append({
+            "snapshot_date": pd.Timestamp("2026-06-02"), "slug": f"rum{i}", "name": f"RUM{i}",
+            "total_views": 100_000_000, "rank": 1, "gender": "male", "country": "Russia",
+        })
+    df = pd.DataFrame(rows)
+    out = tmp_path / "index.html"
+    render_countries_index(df, out)
+    content = out.read_text()
+
+    assert "(4 actresses)" in content
+    assert "(6 actresses)" not in content
+    assert "flagcdn.com/w40/ru.svg" in content
+    assert 'class="cat-flag"' in content
+
+
 def test_performer_page_emits_country_cross_link(tmp_path):
     """When performer has a country AND it's in the qualifying set, /p/<slug> shows a 'From' block."""
     df = _snapshot_rows().copy()
