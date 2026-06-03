@@ -31,6 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <style>
     :root {
       --brand-orange: #ff9000;
@@ -126,15 +127,188 @@
 
     footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; }
     footer a { color: var(--muted); text-decoration: underline; }
+
+    .share-card {
+      position: fixed;
+      top: -99999px;
+      left: 0;
+      width: 1200px;
+      height: 630px;
+      background-color: #0a0a0a;
+      background-size: cover;
+      background-position: center;
+      font-family: 'Inter', sans-serif;
+      color: #f5f5f5;
+      overflow: hidden;
+    }
+    .share-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(10,10,10,0.85), rgba(10,10,10,0.55));
+      pointer-events: none;
+    }
+    .share-card-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 0 24px;
+      box-sizing: border-box;
+    }
+    .share-card-brand-strip {
+      flex: 0 0 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .share-card-path {
+      font-family: ui-monospace, 'SF Mono', monospace;
+      font-size: 16px;
+      color: #f5f5f5;
+    }
+    .share-card-brand-strip svg {
+      height: 36px;
+    }
+    .share-card-main {
+      flex: 1 1 auto;
+      display: flex;
+      gap: 32px;
+      padding-bottom: 12px;
+    }
+    .share-card-left {
+      flex: 0 0 480px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 24px;
+    }
+    .share-card-mode-label {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .share-card-filter {
+      font-size: 16px;
+      color: #9a9a9a;
+      font-weight: 500;
+      margin-top: -16px;
+    }
+    .share-card-top-mover {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-left: 3px solid #ff9000;
+      padding: 16px 20px;
+      border-radius: 10px;
+    }
+    .share-card-photo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: #222;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 22px;
+    }
+    .share-card-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .share-card-mover-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .share-card-top-name {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .share-card-top-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #ff9000;
+    }
+    .share-card-top-growth {
+      font-size: 40px;
+      font-weight: 800;
+      color: #6cd36a;
+      line-height: 1;
+      margin-top: 4px;
+    }
+    .share-card-top-delta {
+      font-size: 14px;
+      color: #9a9a9a;
+    }
+    .share-card-right {
+      flex: 1 1 640px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .share-card-treemap-slot {
+      width: 100%;
+      height: 100%;
+    }
+    /* Hide Plotly's colorbar/legend inside the slot — clean signature visual */
+    .share-card-treemap-slot .plotly .colorbar { display: none !important; }
+    .share-card-treemap-slot .modebar-container { display: none !important; }
+    .share-card-footer {
+      flex: 0 0 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #9a9a9a;
+    }
+    /* Save Image button used on country + categories pages (the main page
+       has it inside the existing Share dropdown). */
+    .save-image-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #161616;
+      border: 1px solid #1f1f1f;
+      border-radius: 6px;
+      color: #f5f5f5;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      margin: 0 0 16px;
+    }
+    .save-image-btn:hover { border-color: #ff9000; color: #ff9000; }
+    .save-image-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
   </style>
 </head>
-<body>
+<body data-page-type="country" data-context-label="United States" data-updated-at="2026-06-03 12:31" data-tracked-count="274" data-tracked-label="performers tracked">
 <nav class="topnav"><a class="brand" href="/"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-label="HotMap"><rect width="400" height="100" fill="#000"/><text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text><rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/><text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text></svg></a><div class="navlinks"><a href="/" class="navlink">Map</a><a href="/stats/" class="navlink">Stats</a><a href="/categories/" class="navlink">Categories</a><a href="/countries/" class="navlink active">Countries</a><a href="/charts/" class="navlink">Charts</a></div></nav>
 <h1>Top performers from United States</h1>
-<p class="subtitle">274 performers tracked · Updated 2026-06-03 09:51 UTC</p>
+<p class="subtitle">274 performers tracked · Updated 2026-06-03 12:31 UTC</p>
+<button type="button" class="save-image-btn" id="save-image-btn"><span aria-hidden="true">⤓</span> Save image (PNG)</button>
 <div class="top-perf-wrap"><a class="top-perf active" data-mode="celebs" data-gender="all" href="/r/lexi-lore" target="_blank" rel="noopener"><img src="/avatars/lexi-lore.jpg" alt="Lexi Lore" loading="lazy" referrerpolicy="no-referrer"><div class="top-perf-text"><span class="top-perf-label">Top from United States</span><span class="top-perf-name">Lexi Lore</span><span class="top-perf-stat-row">Today: <strong>+0.033%</strong></span><span class="top-perf-stat-row">Usual: <strong>+0.033%</strong></span><span class="top-perf-caption">→ Steady pace</span></div></a></div>
 <div>                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
-        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="c8d62c2e-f2a6-4529-89ba-eda871b497cf" class="plotly-graph-div" style="height:700px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("c8d62c2e-f2a6-4529-89ba-eda871b497cf")) {                    Plotly.newPlot(                        "c8d62c2e-f2a6-4529-89ba-eda871b497cf",                        [{"customdata":[["Abella Danger",2222783157,0.01918476814454173,"abella-danger",426354],["Lana Rhoades",2081389529,0.016476516796191276,"lana-rhoades",342884],["Riley Reid",1698875231,0.01645847833399749,"riley-reid",279563],["Adriana Chechik",1407593609,0.01939877799245412,"adriana-chechik",273003],["Cory Chase",1192681658,0.031135012328735542,"cory-chase",371226],["Alexis Fawx",1057556430,0.020599644756001356,"alexis-fawx",217808],["Emily Willis",1014143753,0.012374826343119046,"emily-willis",125483],["Brandi Love",963517657,0.019063689031387984,"brandi-love",183647],["Lena Paul",896046255,0.019595796537165918,"lena-paul",175553],["Cherie DeVille",856113679,0.03254142937321513,"cherie-deville",278501],["Violet Myers",843668307,0.049069288839917145,"violet-myers",413779],["Autumn Falls",788856043,0.01268377040895254,"autumn-falls",100044],["Kenzie Reeves",773173527,0.019705669183990478,"kenzie-reeves",152329],["Eliza Ibarra",771004903,0.023080535820157164,"eliza-ibarra",177911],["Britney Amber",761740258,0.012339323772916341,"britney-amber",93982],["Elsa Jean",750317906,0.011365941179031754,"elsa-jean",85271],["Lauren Phillips",734086708,-0.07836225119160378,"lauren-phillips",0],["Lexi Luna",698096954,0.036086660346018755,"lexi-luna",251829],["Mia Malkova",691342084,0.017736045055292124,"mia-malkova",122595],["Skylar Vox",672687875,0.02184565848758706,"skylar-vox",146921],["Dillion Harper",668096629,0.008153527316299918,"dillion-harper",54469],["Gabbie Carter",653159789,0.01703150515306622,"gabbie-carter",111224],["Kimmy Granger",652841723,0.010334966348604134,"kimmy-granger",67464],["Lela Star",635023951,0.012458089883645941,"lela-star",79102],["Nicole Aniston",630894331,0.015003970689991751,"nicole-aniston",94645],["Kira Noir",625715354,0.02426627946465417,"kira-noir",151801],["Karlee Grey",613041692,0.017609243807372013,"karlee-grey",107933],["Blake Blossom",610171229,0.029830360933219502,"blake-blossom",181962],["Megan Rain",606544730,0.011041460009599099,"megan-rain",66964],["Lexi Lore",604403722,0.03323121874657286,"lexi-lore",200784],["Lulu Chu",592859285,0.03832529121432741,"lulu-chu",227128],["Jane Wilde",582176465,0.027093627692680533,"jane-wilde",157690],["Aidra Fox",559852215,0.026199310188755383,"aidra-fox",146639],["Alina Lopez",554002769,0.01838144514190528,"alina-lopez",101815],["Scarlit Scandal",550941598,0.01873380633291174,"scarlit-scandal",103193],["Katie Kush",546059978,0.030311350813914575,"katie-kush",165468],["Chloe Temple",543311051,0.026208248201402242,"chloe-temple",142355],["Katty West",532482170,0.049039762924124194,"katty-west",261000],["Blair Williams",527026009,0.011477790696080166,"blair-williams",60484],["Kendra Lust",526657710,0.014441254805178225,"kendra-lust",76045],["Lacy Lennon",516558324,0.015335954038195895,"lacy-lennon",79207],["Haley Reed",501093511,0.020805435281191786,"haley-reed",104233],["Leana Lovings",499990446,0.04098737563259551,"leana-lovings",204849],["Lindsey Love",497981949,0.002615424245599261,"lindsey-love",13024],["Kyler Quinn",486307530,0.019648219376108444,"kyler-quinn",95532],["Janice Griffith",483491141,0.011831192366932364,"janice-griffith",57196],["Athena Faris",481372272,0.01461805943572861,"athena-faris",70357],["Gia Derza",481012575,0.02476099172735545,"gia-derza",119074],["Sydney Cole",469466901,0.009108819972024361,"sydney-cole",42759],["Abigail Mac",468976386,0.02001738055805739,"abigail-mac",93858]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eTotal views: %{customdata[1]:,}\u003cbr\u003eGained (1d): +%{customdata[4]:,.0f} views\u003cbr\u003eGrowth: %{customdata[2]:+.3f}%\u003cbr\u003e\u003ci\u003eclick to open profile\u003c\u002fi\u003e\u003cextra\u003e\u003c\u002fextra\u003e","ids":["abella-danger","lana-rhoades","riley-reid","adriana-chechik","cory-chase","alexis-fawx","emily-willis","brandi-love","lena-paul","cherie-deville","violet-myers","autumn-falls","kenzie-reeves","eliza-ibarra","britney-amber","elsa-jean","lauren-phillips","lexi-luna","mia-malkova","skylar-vox","dillion-harper","gabbie-carter","kimmy-granger","lela-star","nicole-aniston","kira-noir","karlee-grey","blake-blossom","megan-rain","lexi-lore","lulu-chu","jane-wilde","aidra-fox","alina-lopez","scarlit-scandal","katie-kush","chloe-temple","katty-west","blair-williams","kendra-lust","lacy-lennon","haley-reed","leana-lovings","lindsey-love","kyler-quinn","janice-griffith","athena-faris","gia-derza","sydney-cole","abigail-mac"],"labels":["\u003cb\u003eAbella Danger\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e2.2B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eLana Rhoades\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e2.1B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eRiley Reid\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.7B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eAdriana Chechik\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.4B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eCory Chase\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.2B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eAlexis Fawx\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.1B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eEmily Willis\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.0B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eBrandi Love\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e964M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eLena Paul\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e896M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eCherie DeVille\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e856M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eViolet Myers\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e844M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.05%\u003c\u002fspan\u003e","\u003cb\u003eAutumn Falls\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e789M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eKenzie Reeves\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e773M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eEliza Ibarra\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e771M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eBritney Amber\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e762M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eElsa Jean\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e750M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLauren Phillips\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e734M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e-0.08%\u003c\u002fspan\u003e","\u003cb\u003eLexi Luna\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e698M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eMia Malkova\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e691M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eSkylar Vox\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e673M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eDillion Harper\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e668M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eGabbie Carter\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e653M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eKimmy Granger\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e653M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLela Star\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e635M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eNicole Aniston\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e631M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eKira Noir\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e626M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eKarlee Grey\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e613M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eBlake Blossom\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e610M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eMegan Rain\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e607M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLexi Lore\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e604M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eLulu Chu\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e593M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eJane Wilde\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e582M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eAidra Fox\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e560M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eAlina Lopez\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e554M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eScarlit Scandal\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e551M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eKatie Kush\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e546M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eChloe Temple\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e543M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eKatty West\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e532M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.05%\u003c\u002fspan\u003e","\u003cb\u003eBlair Williams\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e527M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eKendra Lust\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e527M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLacy Lennon\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e517M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eHaley Reed\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e501M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eLeana Lovings\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e500M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eLindsey Love\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e498M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.00%\u003c\u002fspan\u003e","\u003cb\u003eKyler Quinn\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e486M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eJanice Griffith\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e483M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eAthena Faris\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e481M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eGia Derza\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e481M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eSydney Cole\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e469M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eAbigail Mac\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e469M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e"],"marker":{"cmax":0.5,"cmid":0,"cmin":-0.5,"colorbar":{"outlinewidth":0,"thickness":14,"ticktext":["bottom","low","median","high","top"],"tickvals":[-0.5,-0.25,0,0.25,0.5],"title":{"text":"Rank (1d)"}},"colors":{"dtype":"f8","bdata":"gBSuR+F6lD+4HoXrUbi+v+xRuB6F68G\u002fgBSuR+F6pD8K16NwPQrXP+xRuB6F68E\u002f7FG4HoXr0b8AAAAAAAAAAMAehetRuK4\u002fUrgehetR2D8AAAAAAADgP7gehetRuM6\u002fmJmZmZmZuT+YmZmZmZnJPzMzMzMzM9O\u002fCtejcD0K17+4HoXrUbjev+J6FK5H4do\u002fuB6F61G4rr8M16NwPQrHPylcj8L1KNy\u002fmJmZmZmZub+amZmZmZnZv6RwPQrXo9C\u002fCtejcD0Kx78oXI\u002fC9SjMP3wUrkfherS\u002fehSuR+F61D9SuB6F61HYv5qZmZmZmdk\u002fKFyPwvUo3D80MzMzMzPTP6RwPQrXo9A\u002feBSuR+F6pL+AFK5H4XqUv8L1KFyPwtU\u002f7FG4HoXr0T+4HoXrUbjeP8L1KFyPwtW\u002fKFyPwvUozL96FK5H4XrEv3wUrkfhesQ\u002fcD0K16Nw3T9xPQrXo3Ddv3gUrkfherQ\u002fexSuR+F61L+amZmZmZnJv7gehetRuM4\u002f4XoUrkfh2r+4HoXrUbi+Pw=="},"colorscale":[[0.0,"rgb(165,0,38)"],[0.1,"rgb(215,48,39)"],[0.2,"rgb(244,109,67)"],[0.3,"rgb(253,174,97)"],[0.4,"rgb(254,224,139)"],[0.5,"rgb(255,255,191)"],[0.6,"rgb(217,239,139)"],[0.7,"rgb(166,217,106)"],[0.8,"rgb(102,189,99)"],[0.9,"rgb(26,152,80)"],[1.0,"rgb(0,104,55)"]],"showscale":true},"parents":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"textfont":{"color":"#000","family":"Inter, -apple-system, BlinkMacSystemFont, sans-serif","size":13},"textposition":"middle center","tiling":{"packing":"squarify","pad":0},"values":{"dtype":"f8","bdata":"4HAM\u002fyulkz+woipTON+QPx\u002frvsh92pA\u002f12Q99EXdkz9Mk9lO2+GfPxMdJcISGJU\u002fxL5\u002fE\u002flXiT98RLmDboWTPx+WEKXrEJQ\u002fX5rYLUWpoD9DYJwdnB+pP8t5xdjy+Yk\u002fcp7DErktlD\u002fMQBaKbKKXP\u002fi2eQBcRYk\u002fMbU3zQZHhz8AAAAAAAAAAPcZBGTzeaI\u002f\u002fDXk1WUpkj8NGg5TtV6WP7xJXenLsoA\u002f7UqJ9rRwkT8ZtsezfyqFPwGU94Sgg4k\u002fWaZj22a6jj82\u002f8hyQtmYPzQxClkoCJI\u002fsFGLotmLnj9ebCGt55yGP58McquuA6E\u002f1RvAYF+foz\u002fA8XqTbr6bP7L8wPH905o\u002f9Wfz5pXSkj8WKR529C6TP4T8xVHwCZ8\u002fJ1Okw1XWmj\u002fm5+xjvRupP5cnXP2qgYc\u002fhcHPaGCTjT8LR2DodGiPPxNyciAFTpU\u002fdh\u002fIG0z8pD8vUTMz8WxlP\u002fB\u002flK6pHpQ\u002foCxPwvM6iD+R1ai5EvCNP3z4vQbyWpk\u002f7HgUH6Wngj8rzmSrb3+UPw=="},"type":"treemap"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"margin":{"l":0,"r":130,"t":0,"b":0},"font":{"family":"Inter, sans-serif","color":"#f5f5f5"},"paper_bgcolor":"#0a0a0a","plot_bgcolor":"#0a0a0a","height":700},                        {"responsive": true}                    )                };            </script>        </div>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="58ecd856-e721-4903-bb56-e472f8d65250" class="plotly-graph-div" style="height:700px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("58ecd856-e721-4903-bb56-e472f8d65250")) {                    Plotly.newPlot(                        "58ecd856-e721-4903-bb56-e472f8d65250",                        [{"customdata":[["Abella Danger",2222783157,0.01918476814454173,"abella-danger",426354],["Lana Rhoades",2081389529,0.016476516796191276,"lana-rhoades",342884],["Riley Reid",1698875231,0.01645847833399749,"riley-reid",279563],["Adriana Chechik",1407593609,0.01939877799245412,"adriana-chechik",273003],["Cory Chase",1192681658,0.031135012328735542,"cory-chase",371226],["Alexis Fawx",1057556430,0.020599644756001356,"alexis-fawx",217808],["Emily Willis",1014143753,0.012374826343119046,"emily-willis",125483],["Brandi Love",963517657,0.019063689031387984,"brandi-love",183647],["Lena Paul",896046255,0.019595796537165918,"lena-paul",175553],["Cherie DeVille",856113679,0.03254142937321513,"cherie-deville",278501],["Violet Myers",843668307,0.049069288839917145,"violet-myers",413779],["Autumn Falls",788856043,0.01268377040895254,"autumn-falls",100044],["Kenzie Reeves",773173527,0.019705669183990478,"kenzie-reeves",152329],["Eliza Ibarra",771004903,0.023080535820157164,"eliza-ibarra",177911],["Britney Amber",761740258,0.012339323772916341,"britney-amber",93982],["Elsa Jean",750317906,0.011365941179031754,"elsa-jean",85271],["Lauren Phillips",734086708,-0.07836225119160378,"lauren-phillips",0],["Lexi Luna",698096954,0.036086660346018755,"lexi-luna",251829],["Mia Malkova",691342084,0.017736045055292124,"mia-malkova",122595],["Skylar Vox",672687875,0.02184565848758706,"skylar-vox",146921],["Dillion Harper",668096629,0.008153527316299918,"dillion-harper",54469],["Gabbie Carter",653159789,0.01703150515306622,"gabbie-carter",111224],["Kimmy Granger",652841723,0.010334966348604134,"kimmy-granger",67464],["Lela Star",635023951,0.012458089883645941,"lela-star",79102],["Nicole Aniston",630894331,0.015003970689991751,"nicole-aniston",94645],["Kira Noir",625715354,0.02426627946465417,"kira-noir",151801],["Karlee Grey",613041692,0.017609243807372013,"karlee-grey",107933],["Blake Blossom",610171229,0.029830360933219502,"blake-blossom",181962],["Megan Rain",606544730,0.011041460009599099,"megan-rain",66964],["Lexi Lore",604403722,0.03323121874657286,"lexi-lore",200784],["Lulu Chu",592859285,0.03832529121432741,"lulu-chu",227128],["Jane Wilde",582176465,0.027093627692680533,"jane-wilde",157690],["Aidra Fox",559852215,0.026199310188755383,"aidra-fox",146639],["Alina Lopez",554002769,0.01838144514190528,"alina-lopez",101815],["Scarlit Scandal",550941598,0.01873380633291174,"scarlit-scandal",103193],["Katie Kush",546059978,0.030311350813914575,"katie-kush",165468],["Chloe Temple",543311051,0.026208248201402242,"chloe-temple",142355],["Katty West",532482170,0.049039762924124194,"katty-west",261000],["Blair Williams",527026009,0.011477790696080166,"blair-williams",60484],["Kendra Lust",526657710,0.014441254805178225,"kendra-lust",76045],["Lacy Lennon",516558324,0.015335954038195895,"lacy-lennon",79207],["Haley Reed",501093511,0.020805435281191786,"haley-reed",104233],["Leana Lovings",499990446,0.04098737563259551,"leana-lovings",204849],["Lindsey Love",497981949,0.002615424245599261,"lindsey-love",13024],["Kyler Quinn",486307530,0.019648219376108444,"kyler-quinn",95532],["Janice Griffith",483491141,0.011831192366932364,"janice-griffith",57196],["Athena Faris",481372272,0.01461805943572861,"athena-faris",70357],["Gia Derza",481012575,0.02476099172735545,"gia-derza",119074],["Sydney Cole",469466901,0.009108819972024361,"sydney-cole",42759],["Abigail Mac",468976386,0.02001738055805739,"abigail-mac",93858]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eTotal views: %{customdata[1]:,}\u003cbr\u003eGained (1d): +%{customdata[4]:,.0f} views\u003cbr\u003eGrowth: %{customdata[2]:+.3f}%\u003cbr\u003e\u003ci\u003eclick to open profile\u003c\u002fi\u003e\u003cextra\u003e\u003c\u002fextra\u003e","ids":["abella-danger","lana-rhoades","riley-reid","adriana-chechik","cory-chase","alexis-fawx","emily-willis","brandi-love","lena-paul","cherie-deville","violet-myers","autumn-falls","kenzie-reeves","eliza-ibarra","britney-amber","elsa-jean","lauren-phillips","lexi-luna","mia-malkova","skylar-vox","dillion-harper","gabbie-carter","kimmy-granger","lela-star","nicole-aniston","kira-noir","karlee-grey","blake-blossom","megan-rain","lexi-lore","lulu-chu","jane-wilde","aidra-fox","alina-lopez","scarlit-scandal","katie-kush","chloe-temple","katty-west","blair-williams","kendra-lust","lacy-lennon","haley-reed","leana-lovings","lindsey-love","kyler-quinn","janice-griffith","athena-faris","gia-derza","sydney-cole","abigail-mac"],"labels":["\u003cb\u003eAbella Danger\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e2.2B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eLana Rhoades\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e2.1B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eRiley Reid\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.7B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eAdriana Chechik\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.4B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eCory Chase\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.2B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eAlexis Fawx\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.1B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eEmily Willis\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e1.0B\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eBrandi Love\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e964M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eLena Paul\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e896M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eCherie DeVille\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e856M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eViolet Myers\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e844M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.05%\u003c\u002fspan\u003e","\u003cb\u003eAutumn Falls\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e789M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eKenzie Reeves\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e773M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eEliza Ibarra\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e771M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eBritney Amber\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e762M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eElsa Jean\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e750M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLauren Phillips\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e734M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e-0.08%\u003c\u002fspan\u003e","\u003cb\u003eLexi Luna\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e698M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eMia Malkova\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e691M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eSkylar Vox\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e673M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eDillion Harper\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e668M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eGabbie Carter\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e653M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eKimmy Granger\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e653M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLela Star\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e635M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eNicole Aniston\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e631M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eKira Noir\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e626M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eKarlee Grey\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e613M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eBlake Blossom\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e610M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eMegan Rain\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e607M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLexi Lore\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e604M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eLulu Chu\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e593M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eJane Wilde\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e582M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eAidra Fox\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e560M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eAlina Lopez\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e554M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eScarlit Scandal\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e551M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eKatie Kush\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e546M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eChloe Temple\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e543M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.03%\u003c\u002fspan\u003e","\u003cb\u003eKatty West\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e532M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.05%\u003c\u002fspan\u003e","\u003cb\u003eBlair Williams\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e527M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eKendra Lust\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e527M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eLacy Lennon\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e517M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eHaley Reed\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e501M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eLeana Lovings\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e500M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.04%\u003c\u002fspan\u003e","\u003cb\u003eLindsey Love\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e498M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.00%\u003c\u002fspan\u003e","\u003cb\u003eKyler Quinn\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e486M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eJanice Griffith\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e483M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eAthena Faris\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e481M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eGia Derza\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e481M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e","\u003cb\u003eSydney Cole\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e469M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.01%\u003c\u002fspan\u003e","\u003cb\u003eAbigail Mac\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:rgba(0,0,0,0.55)'\u003e469M\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-size:16px;font-weight:700'\u003e+0.02%\u003c\u002fspan\u003e"],"marker":{"cmax":0.5,"cmid":0,"cmin":-0.5,"colorbar":{"outlinewidth":0,"thickness":14,"ticktext":["bottom","low","median","high","top"],"tickvals":[-0.5,-0.25,0,0.25,0.5],"title":{"text":"Rank (1d)"}},"colors":{"dtype":"f8","bdata":"gBSuR+F6lD+4HoXrUbi+v+xRuB6F68G\u002fgBSuR+F6pD8K16NwPQrXP+xRuB6F68E\u002f7FG4HoXr0b8AAAAAAAAAAMAehetRuK4\u002fUrgehetR2D8AAAAAAADgP7gehetRuM6\u002fmJmZmZmZuT+YmZmZmZnJPzMzMzMzM9O\u002fCtejcD0K17+4HoXrUbjev+J6FK5H4do\u002fuB6F61G4rr8M16NwPQrHPylcj8L1KNy\u002fmJmZmZmZub+amZmZmZnZv6RwPQrXo9C\u002fCtejcD0Kx78oXI\u002fC9SjMP3wUrkfherS\u002fehSuR+F61D9SuB6F61HYv5qZmZmZmdk\u002fKFyPwvUo3D80MzMzMzPTP6RwPQrXo9A\u002feBSuR+F6pL+AFK5H4XqUv8L1KFyPwtU\u002f7FG4HoXr0T+4HoXrUbjeP8L1KFyPwtW\u002fKFyPwvUozL96FK5H4XrEv3wUrkfhesQ\u002fcD0K16Nw3T9xPQrXo3Ddv3gUrkfherQ\u002fexSuR+F61L+amZmZmZnJv7gehetRuM4\u002f4XoUrkfh2r+4HoXrUbi+Pw=="},"colorscale":[[0.0,"rgb(165,0,38)"],[0.1,"rgb(215,48,39)"],[0.2,"rgb(244,109,67)"],[0.3,"rgb(253,174,97)"],[0.4,"rgb(254,224,139)"],[0.5,"rgb(255,255,191)"],[0.6,"rgb(217,239,139)"],[0.7,"rgb(166,217,106)"],[0.8,"rgb(102,189,99)"],[0.9,"rgb(26,152,80)"],[1.0,"rgb(0,104,55)"]],"showscale":true},"parents":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"textfont":{"color":"#000","family":"Inter, -apple-system, BlinkMacSystemFont, sans-serif","size":13},"textposition":"middle center","tiling":{"packing":"squarify","pad":0},"values":{"dtype":"f8","bdata":"4HAM\u002fyulkz+woipTON+QPx\u002frvsh92pA\u002f12Q99EXdkz9Mk9lO2+GfPxMdJcISGJU\u002fxL5\u002fE\u002flXiT98RLmDboWTPx+WEKXrEJQ\u002fX5rYLUWpoD9DYJwdnB+pP8t5xdjy+Yk\u002fcp7DErktlD\u002fMQBaKbKKXP\u002fi2eQBcRYk\u002fMbU3zQZHhz8AAAAAAAAAAPcZBGTzeaI\u002f\u002fDXk1WUpkj8NGg5TtV6WP7xJXenLsoA\u002f7UqJ9rRwkT8ZtsezfyqFPwGU94Sgg4k\u002fWaZj22a6jj82\u002f8hyQtmYPzQxClkoCJI\u002fsFGLotmLnj9ebCGt55yGP58McquuA6E\u002f1RvAYF+foz\u002fA8XqTbr6bP7L8wPH905o\u002f9Wfz5pXSkj8WKR529C6TP4T8xVHwCZ8\u002fJ1Okw1XWmj\u002fm5+xjvRupP5cnXP2qgYc\u002fhcHPaGCTjT8LR2DodGiPPxNyciAFTpU\u002fdh\u002fIG0z8pD8vUTMz8WxlP\u002fB\u002flK6pHpQ\u002foCxPwvM6iD+R1ai5EvCNP3z4vQbyWpk\u002f7HgUH6Wngj8rzmSrb3+UPw=="},"type":"treemap"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"margin":{"l":0,"r":130,"t":0,"b":0},"font":{"family":"Inter, sans-serif","color":"#f5f5f5"},"paper_bgcolor":"#0a0a0a","plot_bgcolor":"#0a0a0a","height":700},                        {"responsive": true}                    )                };            </script>        </div>
 <script>
   // Click any tile → outbound bounce through /r/<slug> (same CF Worker
   // redirect as the homepage treemap). Plotly renders asynchronously so we
@@ -162,5 +336,226 @@
 <footer>
   <p>HotMap is an independent project. <a href="/">Back to homepage</a>.</p>
 </footer>
+
+<div class="share-card" aria-hidden="true">
+  <div class="share-card-overlay"></div>
+  <div class="share-card-content">
+    <div class="share-card-brand-strip">
+      <div class="share-card-path"></div>
+      <svg width="160" height="40" viewBox="0 0 400 100" role="img" aria-label="HotMap">
+        <rect width="400" height="100" fill="#000"/>
+        <text x="20" y="78" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="76" fill="#fff" letter-spacing="-3">HOT</text>
+        <rect x="198" y="14" width="184" height="72" rx="14" fill="#ff9000"/>
+        <text x="214" y="72" font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="900" font-size="60" fill="#000" letter-spacing="-3">MAP</text>
+      </svg>
+    </div>
+    <div class="share-card-main">
+      <div class="share-card-left">
+        <div class="share-card-mode-label"></div>
+        <div class="share-card-filter"></div>
+        <div class="share-card-top-mover">
+          <div class="share-card-photo"></div>
+          <div class="share-card-mover-text">
+            <div class="share-card-top-label">TOP MOVER TODAY</div>
+            <div class="share-card-top-name"></div>
+            <div class="share-card-top-growth"></div>
+            <div class="share-card-top-delta"></div>
+          </div>
+        </div>
+      </div>
+      <div class="share-card-right">
+        <div class="share-card-treemap-slot"></div>
+      </div>
+    </div>
+    <div class="share-card-footer">
+      <div class="share-card-footer-left"></div>
+      <div class="share-card-footer-right"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  // Share Card v1 — build the 1200x630 card from current page state.
+  // Reads <body data-page-type=main|country|category>, finds the active
+  // top-perf element and the live Plotly panel, populates the hidden
+  // .share-card div, then hands it to html2canvas for download. The card
+  // background rotates between three /share-bg/bg-{1,2,3}.jpg files; if
+  // none are present (or load fails), the flat #0a0a0a background under
+  // the gradient overlay still produces a clean card.
+  var MODE_LABELS = {
+    rising: 'RISING STARS',
+    gems: 'HIDDEN GEMS',
+    celebs: 'CELEBRITIES'
+  };
+  var GENDER_LABELS = {
+    all: 'All performers',
+    female: 'Female',
+    male: 'Male'
+  };
+
+  function buildShareCard() {
+    var card = document.querySelector('.share-card');
+    if (!card) return null;
+
+    var pageType = document.body.dataset.pageType || 'main';
+    var updatedAt = document.body.dataset.updatedAt || '';
+    var contextLabel = document.body.dataset.contextLabel || '';
+    var trackedCount = document.body.dataset.trackedCount || '';
+    var trackedLabel = document.body.dataset.trackedLabel || 'performers tracked';
+
+    // Brand strip path
+    card.querySelector('.share-card-path').textContent =
+      window.location.host + window.location.pathname;
+
+    // Mode label + filter chip (page-type-specific)
+    var modeLabelEl = card.querySelector('.share-card-mode-label');
+    var filterEl = card.querySelector('.share-card-filter');
+    if (pageType === 'main' && typeof state !== 'undefined') {
+      modeLabelEl.textContent = MODE_LABELS[state.mode] || 'HOTMAP';
+      var windowText = state.window + ' day' + (state.window !== 1 ? 's' : '');
+      filterEl.textContent = (GENDER_LABELS[state.gender] || '') + ' · ' + windowText;
+    } else if (pageType === 'country') {
+      modeLabelEl.textContent = (contextLabel || 'COUNTRY').toUpperCase();
+      filterEl.textContent = '';
+    } else if (pageType === 'category') {
+      modeLabelEl.textContent = 'TRENDING CATEGORIES';
+      filterEl.textContent = '';
+    } else {
+      modeLabelEl.textContent = 'HOTMAP';
+      filterEl.textContent = '';
+    }
+
+    // Top-mover mini-card
+    var photoEl = card.querySelector('.share-card-photo');
+    var nameEl = card.querySelector('.share-card-top-name');
+    var growthEl = card.querySelector('.share-card-top-growth');
+    var deltaEl = card.querySelector('.share-card-top-delta');
+    var topMoverEl = card.querySelector('.share-card-top-mover');
+
+    photoEl.innerHTML = '';
+    nameEl.textContent = '';
+    growthEl.textContent = '';
+    deltaEl.textContent = '';
+
+    if (pageType === 'category') {
+      var catMeta = document.getElementById('share-card-top-category');
+      if (catMeta && catMeta.dataset.name) {
+        photoEl.style.background = '#ff9000';
+        photoEl.style.color = '#000';
+        photoEl.textContent = catMeta.dataset.name.charAt(0);
+        nameEl.textContent = catMeta.dataset.name;
+        growthEl.textContent = catMeta.dataset.deltaLabel || '';
+        deltaEl.textContent = '';
+      } else {
+        topMoverEl.style.display = 'none';
+      }
+    } else {
+      var activePerf = document.querySelector('.top-perf.active');
+      if (activePerf) {
+        var img = activePerf.querySelector('img');
+        if (img && img.src) {
+          var newImg = document.createElement('img');
+          newImg.src = img.src;
+          newImg.alt = '';
+          newImg.referrerPolicy = 'no-referrer';
+          photoEl.appendChild(newImg);
+        } else {
+          photoEl.style.background = '#ff9000';
+          photoEl.style.color = '#000';
+          var nm = activePerf.querySelector('.top-perf-name');
+          photoEl.textContent = nm ? nm.textContent.charAt(0) : '?';
+        }
+        var nm2 = activePerf.querySelector('.top-perf-name');
+        nameEl.textContent = nm2 ? nm2.textContent : '';
+        // First .top-perf-stat-row strong = "Today: +X%"
+        var firstRow = activePerf.querySelector('.top-perf-stat-row strong');
+        if (firstRow) {
+          growthEl.textContent = firstRow.textContent;
+        } else {
+          // Fallback to the .top-perf-stat aggregate when acceleration isn't available
+          var agg = activePerf.querySelector('.top-perf-stat strong');
+          if (agg) growthEl.textContent = agg.textContent;
+        }
+        // Second stat row OR the caption gives extra context
+        var rows = activePerf.querySelectorAll('.top-perf-stat-row');
+        if (rows.length > 1) {
+          var usualText = rows[1].textContent;
+          deltaEl.textContent = usualText;
+        }
+      } else {
+        topMoverEl.style.display = 'none';
+      }
+    }
+
+    // Treemap: clone the live Plotly panel into the right column.
+    var slot = card.querySelector('.share-card-treemap-slot');
+    slot.innerHTML = '';
+    var sourcePanel = null;
+    if (pageType === 'main') {
+      sourcePanel = document.querySelector('.panel.active');
+    } else {
+      var pg = document.querySelector('.plotly-graph-div');
+      if (pg) sourcePanel = pg.parentElement;
+    }
+    if (sourcePanel) {
+      slot.appendChild(sourcePanel.cloneNode(true));
+    }
+
+    // Random background — best-effort. If the file 404s the gradient overlay
+    // still renders the card cleanly on flat #0a0a0a.
+    var bgIdx = 1 + Math.floor(Math.random() * 3);
+    card.style.backgroundImage = "url('/share-bg/bg-" + bgIdx + ".jpg')";
+
+    // Footer
+    card.querySelector('.share-card-footer-left').textContent =
+      updatedAt ? 'Updated ' + updatedAt : '';
+    card.querySelector('.share-card-footer-right').textContent =
+      trackedCount ? trackedCount + ' ' + trackedLabel : '';
+
+    return card;
+  }
+
+  function saveShareCardImage(filename) {
+    if (typeof html2canvas === 'undefined') {
+      alert('Share library still loading — try again in a second.');
+      return;
+    }
+    if (!document.querySelector('.plotly-graph-div')) {
+      alert('Treemap still loading — try again in a moment.');
+      return;
+    }
+    var card = buildShareCard();
+    if (!card) return;
+    html2canvas(card, { backgroundColor: '#0a0a0a', scale: 2, useCORS: true })
+      .then(function (canvas) {
+        var link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      })
+      .catch(function (err) {
+        console.error('Save failed:', err);
+        alert('Could not generate image. See console.');
+      });
+  }
+
+  // Wire the Save Image button to saveShareCardImage.
+  (function () {
+    var btn = document.getElementById('save-image-btn');
+    if (!btn) return;
+    // Guard: if _SHARE_CARD_JS injection ever regresses, fail closed (button
+    // stays inert, no JS error in console, no stuck disabled state).
+    if (typeof saveShareCardImage !== 'function') return;
+    btn.addEventListener('click', function () {
+      var slug = 'united-states';
+      var stamp = new Date().toISOString().slice(0, 10);
+      var filename = 'hotmap-country-' + slug + '-' + stamp + '.png';
+      btn.disabled = true;
+      Promise.resolve().then(function () { saveShareCardImage(filename); })
+        .finally(function () { setTimeout(function () { btn.disabled = false; }, 1500); });
+    });
+  })();
+</script>
 </body>
 </html>
