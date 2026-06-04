@@ -245,13 +245,18 @@ _SHARE_CARD_JS = """
         .forEach(function (n) { n.remove(); });
 
       // The cloned Plotly div carries its source page's pixel dimensions
-      // inline. Force-fit by scaling X and Y independently so the treemap
-      // fills the slot exactly — no empty bands above/below or left/right.
-      // Tiles are rectangles so a slight non-uniform stretch reads fine.
+      // inline. Plotly's layout reserves 130px right-margin for the colorbar
+      // (heatmap.py: margin=dict(l=0, r=130, ...) in _build_treemap_figure
+      // and the categories equivalent). We just removed the colorbar above,
+      // so that 130px is empty space. Subtract it from the effective source
+      // width so the scale calc fills the share-card slot edge-to-edge; the
+      // overflow on the right gets clipped by .share-card { overflow: hidden }.
+      var COLORBAR_MARGIN = 130;
       var srcRect = sourcePanel.getBoundingClientRect();
       var slotRect = slot.getBoundingClientRect();
       if (srcRect.width > 0 && srcRect.height > 0 && slotRect.width > 0 && slotRect.height > 0) {
-        var sX = slotRect.width / srcRect.width;
+        var effectiveSrcW = Math.max(srcRect.width - COLORBAR_MARGIN, srcRect.width * 0.5);
+        var sX = slotRect.width / effectiveSrcW;
         var sY = slotRect.height / srcRect.height;
         clone.style.transformOrigin = 'top left';
         clone.style.transform = 'scale(' + sX + ', ' + sY + ')';
