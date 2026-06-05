@@ -46,12 +46,27 @@
     <changefreq>daily</changefreq>
   </url>
   <url>
+    <loc>https://hotmap.cam/country/brazil/</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
     <loc>https://hotmap.cam/country/canada/</loc>
     <lastmod>2026-06-05</lastmod>
     <changefreq>daily</changefreq>
   </url>
   <url>
+    <loc>https://hotmap.cam/country/china/</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
     <loc>https://hotmap.cam/country/colombia/</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://hotmap.cam/country/cuba/</loc>
     <lastmod>2026-06-05</lastmod>
     <changefreq>daily</changefreq>
   </url>
