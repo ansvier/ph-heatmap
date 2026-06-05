@@ -1267,7 +1267,7 @@ _MODE_LANDING_META = {
     },
     "home": {
         "title": "HotMap — who's growing fastest on Pornhub",
-        "description": "Live heatmap of view-growth momentum across the top-500 performers. Tile size = % growth in the window, color = rank within the cohort. Updated daily.",
+        "description": "Live heatmap of view-growth momentum across Pornhub's top 1000 performers (top 500 female + top 500 male). Tile size = % growth in the window, color = rank within the cohort. Updated daily.",
     },
 }
 
@@ -1344,8 +1344,8 @@ def render_treemap_page(
     dataset_jsonld = {
         "@context": "https://schema.org",
         "@type": "Dataset",
-        "name": "HotMap — Pornhub top-500 view growth",
-        "description": "Daily snapshot of cumulative video views for the top-500 Pornhub performers, broken down by gender, with day-over-day growth rates over 1d / 7d / 30d windows.",
+        "name": "HotMap — Pornhub top 1000 view growth",
+        "description": "Daily snapshot of cumulative video views for Pornhub's top 1000 performers (top 500 female + top 500 male), with day-over-day growth rates over 1d / 7d / 30d windows.",
         "url": "https://hotmap.cam/",
         "license": "https://creativecommons.org/publicdomain/zero/1.0/",
         "creator": {"@type": "Person", "name": "ansvier"},
@@ -1597,7 +1597,7 @@ _PERFORMER_PAGE_TEMPLATE = """<!doctype html>
   </div>
 
   <footer>
-    Updated {last_date} · Part of the <a href="/">HotMap top-500 tracker</a> · Data collected from publicly visible profile pages.
+    Updated {last_date} · Part of the <a href="/">HotMap top 1000 tracker</a> · Data collected from publicly visible profile pages.
   </footer>
 </body>
 </html>
@@ -1724,7 +1724,7 @@ def render_performer_page(
     seo_title = f"{name} — view statistics, growth, ranking | HotMap"
     seo_description = (
         f"{name} has {total_views:,} cumulative video views as of {last_date}. "
-        f"Daily growth: {growth_labels[1]}. Ranked #{rank} on HotMap's top-500 tracker. Updated daily."
+        f"Daily growth: {growth_labels[1]}. Ranked #{rank} on HotMap's top 1000 tracker. Updated daily."
     )
 
     seo_head = _render_seo_head(
