@@ -2098,6 +2098,11 @@ def render_stats_page(snapshots: pd.DataFrame, output_path: Path | str, gender: 
     qualified = window[window["total_views"] >= _TOP_PERF_MIN_VIEWS]
     if qualified.empty:
         qualified = window
+    if qualified.empty:
+        raise ValueError(
+            "No qualifying performers for stats hero — likely a partial snapshot "
+            "or first-day deploy. Caller should treat as 'skip render this day'."
+        )
     hero = qualified.sort_values("growth_pct", ascending=False).iloc[0]
     hero_slug = hero.name
     hero_name = hero["name"]
