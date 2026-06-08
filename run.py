@@ -235,8 +235,11 @@ def main() -> int:
     # /stats summary page — single-image hook for social shares (female-focused).
     stats_dir = PUBLIC_DIR / "stats"
     stats_dir.mkdir(exist_ok=True)
-    render_stats_page(snapshots_df, stats_dir / "index.html")
-    print(f"wrote /stats/index.html", flush=True)
+    try:
+        render_stats_page(snapshots_df, stats_dir / "index.html")
+        print(f"wrote /stats/index.html", flush=True)
+    except ValueError as exc:
+        print(f"  WARN: render_stats_page skipped: {exc}", file=sys.stderr)
 
     # /charts alphabetical performer index — search + gender filter.
     charts_dir = PUBLIC_DIR / "charts"
