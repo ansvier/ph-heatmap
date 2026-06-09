@@ -14,17 +14,17 @@ concurrency:
 
 jobs:
   scrape:
-    # Self-hosted macOS runner (residential IP). The GitHub-hosted Ubuntu
-    # pool gets Cloudflare-challenged by Pornhub.
-    runs-on: [self-hosted, macOS, arm64]
+    # Self-hosted Linux runner on Hetzner Cloud CX23 (~$5/mo, Falkenstein DE).
+    # Datacenter IP passes PH's Cloudflare challenge thanks to curl-cffi
+    # TLS-fingerprint impersonation + v2 retry-on-stripped-page fallback
+    # (commit 6ff99d79). Mac mini retired 2026-06-09.
+    runs-on: [self-hosted, linux, x64, hotmap]
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
-      # On self-hosted macOS we use the system Python 3.13 directly. The
-      # actions/setup-python action hardcodes paths like /Users/runner that
-      # don't exist on our Mac. We persist a venv in $HOME/.cache so deps
-      # install once and reuse on subsequent runs.
+      # System Python 3 from Ubuntu 26.04. Persist venv in $HOME/.cache so
+      # deps install once and reuse across runs.
       - name: Install dependencies (cached venv)
         run: |
           set -e
