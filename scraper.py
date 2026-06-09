@@ -397,8 +397,26 @@ def fetch_top_pornstars(limit: int = 50, gender: str = "female") -> list[str]:
 
 
 def fetch_profile(slug: str) -> ProfileData:
-    body, _status = _fetch(_PROFILE_URL_TEMPLATE.format(slug=slug))
-    return parse_profile(body)
+    """Fetch a profile page and parse it. PH selectively serves stripped
+    pages without 'Video Views' to suspected automation on the residential
+    runner IP; retry with each fallback TLS-fingerprint when parsing fails
+    (matches the same defensive pattern fetch_top_pornstars uses for the
+    page-1-empty case)."""
+    url = _PROFILE_URL_TEMPLATE.format(slug=slug)
+    attempts = [_IMPERSONATE] + [i for i in _IMPERSONATE_FALLBACKS if i != _IMPERSONATE]
+    last_exc: Exception | None = None
+    for imp in attempts:
+        body, _status = _fetch(url, impersonate=imp)
+        try:
+            return parse_profile(body)
+        except ValueError as exc:
+            # Parser couldn't find 'Video Views' — likely a stripped page.
+            # Try the next TLS fingerprint.
+            last_exc = exc
+            continue
+    # Exhausted all fallbacks — bubble up the last parse error.
+    assert last_exc is not None
+    raise last_exc
 
 
 _CATEGORIES_CATALOG_URL = "https://www.pornhub.com/categories"
