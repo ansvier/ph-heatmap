@@ -1014,7 +1014,11 @@ def _build_treemap_figure(window: pd.DataFrame, window_days: int) -> go.Figure:
         rows["color_value"] = 0.0
 
     rows["views_label"] = rows["total_views"].apply(_format_views)
-    rows["pct_label"] = rows["growth_pct"].apply(lambda v: f"{v:+.2f}%")
+    # 3 decimals so tiles with visibly different colors don't all read as
+    # "+0.02%" — at our scale (large performer total_views) day-over-day
+    # growth often lands in the 0.01-0.10% band where 2-decimal rounding
+    # smooshes meaningfully different ranks into the same label.
+    rows["pct_label"] = rows["growth_pct"].apply(lambda v: f"{v:+.3f}%")
     # Visual hierarchy: name bold, views muted-small, growth large+bold.
     rows["tile_text"] = (
         "<b>" + rows["name"] + "</b>"
@@ -2705,23 +2709,21 @@ def render_categories_treemap(
     latest_date = df["snapshot_date"].max()
     today = df[df["snapshot_date"] == latest_date].set_index("category_id")
 
-    # Baseline = exactly 1 day prior. If yesterday's scrape was missed (gap > 1),
-    # the displayed "today" delta would be a lie — fall back to no-baseline state
-    # (neutral color, "—" label) instead of silently inflating deltas.
+    # Baseline = the most recent prior snapshot we have. Originally we
+    # required exactly 1 day; that produced empty deltas after a missed
+    # scrape day. Now use the closest available prior regardless of gap —
+    # same fallback as compute_window_growth applies for performer pages.
+    # The tile-label still says "today" (minor imprecision is acceptable
+    # to keep the page populated through scraping gaps).
     prior_dates = df[df["snapshot_date"] < latest_date]["snapshot_date"]
     if not prior_dates.empty:
         baseline_date = prior_dates.max()
-        gap_days = (latest_date - baseline_date).days
-        if gap_days == 1:
-            baseline = (
-                df[df["snapshot_date"] == baseline_date]
-                .set_index("category_id")["video_count"]
-                .rename("prev_count")
-            )
-            today = today.join(baseline, how="left")
-        else:
-            # Gap > 1 (missed scrape) — refuse to compute a misleading "today" delta.
-            today["prev_count"] = pd.NA
+        baseline = (
+            df[df["snapshot_date"] == baseline_date]
+            .set_index("category_id")["video_count"]
+            .rename("prev_count")
+        )
+        today = today.join(baseline, how="left")
     else:
         today["prev_count"] = pd.NA
 
