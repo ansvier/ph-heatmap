@@ -765,13 +765,31 @@ def compute_window_growth(
             return pd.DataFrame(columns=["name", "total_views", "prev_views", "growth_pct", "gender"])
 
     latest_date = snapshots["snapshot_date"].max()
-    baseline_date = latest_date - pd.Timedelta(days=window_days)
+    target_date = latest_date - pd.Timedelta(days=window_days)
 
     today_cols = ["name", "total_views"]
     if "gender" in snapshots.columns:
         today_cols.append("gender")
 
     today = snapshots[snapshots["snapshot_date"] == latest_date].set_index("slug")
+
+    # Try exact target_date first. If that snapshot is missing (e.g., a daily-
+    # scrape got skipped), fall back to the closest available snapshot within
+    # ±2 days of the target. The window label stays "{window_days}d" in the
+    # UI — minor imprecision is acceptable to keep the page populated through
+    # scraping gaps. Without this fallback, a single missed scrape day blanks
+    # out the entire 1d view for the next 24 hours.
+    prior_dates = snapshots[snapshots["snapshot_date"] < latest_date]["snapshot_date"].unique()
+    if len(prior_dates) == 0:
+        baseline_date = target_date  # no priors at all — let join produce empty baseline
+    elif (snapshots["snapshot_date"] == target_date).any():
+        baseline_date = target_date
+    else:
+        # Pick the prior snapshot closest to target_date.
+        baseline_date = pd.Series(prior_dates).iloc[
+            (pd.Series(prior_dates) - target_date).abs().argmin()
+        ]
+
     baseline = (
         snapshots[snapshots["snapshot_date"] == baseline_date]
         .set_index("slug")["total_views"]
