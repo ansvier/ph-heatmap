@@ -236,10 +236,25 @@ def test_window_growth_only_includes_today_slugs():
     assert set(result.index) == {"alice", "carol"}
 
 
-def test_window_growth_nan_when_no_baseline():
+def test_window_growth_nan_when_no_priors_at_all():
+    """When the dataset has only the latest snapshot date (no prior rows
+    anywhere), growth_pct stays NaN. The single-day fixture covers this."""
+    df = _snapshot_rows()
+    one_day = df[df["snapshot_date"] == df["snapshot_date"].max()].copy()
+    result = compute_window_growth(one_day, window_days=1)
+    assert result["growth_pct"].isna().all()
+    assert result.loc["alice", "total_views"] == 1_200_000_000
+
+
+def test_window_growth_falls_back_to_closest_prior_when_target_missing():
+    """When the exact target_date snapshot is missing but other priors
+    exist, growth is computed against the closest available date. Fixture:
+    request window_days=30, but only ~2 days of history exist → fallback
+    finds the oldest available snapshot and computes growth from there.
+    Without the fallback this would all be NaN."""
     df = _snapshot_rows()
     result = compute_window_growth(df, window_days=30)
-    assert result["growth_pct"].isna().all()
+    assert result["growth_pct"].notna().any(), "should fall back to nearest prior"
     assert result.loc["alice", "total_views"] == 1_200_000_000
 
 
