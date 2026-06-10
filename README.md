@@ -61,7 +61,7 @@ Every treemap-bearing page (`/`, `/rising/`, `/gems/`, `/celebs/`, every `/count
 4. **Render** — `heatmap.py` computes per-window growth, builds 27 precomputed Plotly treemaps (3 modes × 3 genders × 3 windows), the stats and charts pages, and a per-performer page for every slug ever seen.
 5. **Deploy** — workflow commits artifacts back to `main`. Cloudflare Pages auto-deploys on push; the Worker handles `/r/<slug>` outbound redirects.
 
-Everything runs on free tiers — GitHub Actions (public repo = unlimited minutes), Cloudflare Pages + Worker (static + edge logic), Cloudflare's automatic SSL. The only ongoing cost is the domain (~$15/year).
+The scrape runs on a single Hetzner Cloud CX23 (~$5/mo, Falkenstein DE, Ubuntu 26.04 LTS) as a GitHub Actions self-hosted runner; the public site is served by Cloudflare Pages + Worker on their free tier (unlimited bandwidth, automatic SSL). The runner's residential-Mac-mini predecessor is retired as of 2026-06-09. See [`docs/runner-bootstrap.md`](docs/runner-bootstrap.md) for the runbook. Ongoing costs: Hetzner (~$50/year), domain (~$15/year).
 
 **SEO:** Every rendered page emits a complete head block — title, meta description, canonical, Open Graph quintet, Twitter Cards triple, robots meta, and JSON-LD (`WebSite` + `BreadcrumbList` + page-specific `Dataset` / `Person` / `CollectionPage`). Default OG image is `/og.png` (1200×630); per-performer and stats pages use avatar fallbacks. Sitemap submitted to Google Search Console and Bing Webmaster Tools (Yandex skipped — not targeting RF). See [`docs/seo-submission-checklist.md`](docs/seo-submission-checklist.md) for the submission steps.
 
