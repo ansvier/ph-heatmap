@@ -157,9 +157,9 @@ def parse_category_catalog(html: str) -> list[dict]:
                 "id": cid,
                 "slug": obj["slug"],
                 # Prefer the english-language name when PH serves a localized
-                # catalog (local IP geolocation can pin PH to a regional
-                # language; the catalog JSON always includes the canonical
-                # english label alongside the localized name).
+                # catalog (IP geolocation can pin PH to a regional language;
+                # the catalog JSON always includes the canonical english
+                # label alongside the localized name).
                 "name": obj.get("english") or obj["name"],
                 "video_count": obj["video_count"],
                 "points": obj.get("points"),
@@ -398,10 +398,9 @@ def fetch_top_pornstars(limit: int = 50, gender: str = "female") -> list[str]:
 
 def fetch_profile(slug: str) -> ProfileData:
     """Fetch a profile page and parse it. PH selectively serves stripped
-    pages without 'Video Views' to suspected automation on the residential
-    runner IP; retry with each fallback TLS-fingerprint when parsing fails
-    (matches the same defensive pattern fetch_top_pornstars uses for the
-    page-1-empty case)."""
+    pages without 'Video Views' to suspected automation; retry with each
+    fallback TLS-fingerprint when parsing fails (matches the same defensive
+    pattern fetch_top_pornstars uses for the page-1-empty case)."""
     url = _PROFILE_URL_TEMPLATE.format(slug=slug)
     attempts = [_IMPERSONATE] + [i for i in _IMPERSONATE_FALLBACKS if i != _IMPERSONATE]
     last_exc: Exception | None = None

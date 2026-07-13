@@ -12,3 +12,4 @@ tests/fixtures/*.live.html
 !.dev.vars.example
 .env*
 !.env.example
+docs/

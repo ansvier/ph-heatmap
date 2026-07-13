@@ -3,24 +3,19 @@
  *
  * Routes:
  *   /r/<slug>  → 302 redirect to https://www.pornhub.com/pornstar/<slug>
- *               (logged for click-tracking; future affiliate-tag insertion point)
+ *               (logged for click tracking)
+ *   /rc/<id>   → 302 redirect to the corresponding category page
  *   anything else → serve from public/ static assets binding (ASSETS)
- *
- * The redirect is intentionally a thin layer right now — no affiliate tag yet.
- * When the Paxum / TrafficJunky / Pornhub Premium PPS wiring is in place,
- * change the target URL builder to append the appropriate tracking param.
- * No frontend change required at that point.
  *
  * Scheduled cron:
  *   Daily at 04:17 UTC — fires a workflow_dispatch on the daily-scrape.yml
- *   GitHub Action. GitHub's own cron is unreliable (skips runs under load,
- *   delays under no guarantee), so we use Cloudflare's industrial-grade
- *   scheduler as the primary trigger. The GH-side schedule stays as a
- *   secondary backup; concurrency: cancel-in-progress: false in the workflow
- *   prevents double runs if both fire within minutes.
+ *   GitHub Action. GitHub's own cron offers no timing guarantees, so the
+ *   Cloudflare scheduler acts as the primary trigger; the GH-side schedule
+ *   stays as a secondary backup. concurrency: cancel-in-progress: false in
+ *   the workflow prevents double runs if both fire within minutes.
  *
  * Required secret:
- *   GITHUB_TOKEN — fine-grained PAT with Actions:write on ansvier/ph-heatmap
+ *   GITHUB_TOKEN — fine-grained PAT with Actions:write on this repository.
  *   Set via:  npx wrangler secret put GITHUB_TOKEN
  */
 

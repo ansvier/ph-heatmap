@@ -1,10 +1,10 @@
 # HotMap
 
-**A daily treemap of view-growth momentum across the top-500 performers on Pornhub.**
+**A daily treemap of view-growth momentum across the top 1,000 performers on Pornhub (top 500 per gender).**
 
 [![Live site](https://img.shields.io/badge/live-hotmap.cam-ff9000?style=flat-square)](https://hotmap.cam)
 [![daily scrape](https://img.shields.io/github/actions/workflow/status/ansvier/ph-heatmap/daily-scrape.yml?branch=main&label=daily%20scrape&style=flat-square)](https://github.com/ansvier/ph-heatmap/actions/workflows/daily-scrape.yml)
-[![tests](https://img.shields.io/badge/tests-26%20passing-brightgreen?style=flat-square)](#testing)
+[![tests](https://img.shields.io/badge/tests-111%20passing-brightgreen?style=flat-square)](#testing)
 [![license](https://img.shields.io/badge/data-CC0-blue?style=flat-square)](#license)
 
 🔗 **Live site:** [hotmap.cam](https://hotmap.cam) · 📦 **Raw data:** [hotmap.cam/data.json](https://hotmap.cam/data.json)
@@ -21,7 +21,7 @@
 | [`/stats`](https://hotmap.cam/stats) | Single-page summary: hero numbers + biggest mover + leaderboards (female-focused) |
 | [`/charts`](https://hotmap.cam/charts) | A–Z performer index with search + gender filter |
 | [`/p/<slug>`](https://hotmap.cam/p/lana-rhoades) | Per-performer page with sparkline + 1d/7d/30d growth + share buttons |
-| `/r/<slug>` | CF Worker outbound redirect (click tracking, future affiliate slot) |
+| `/r/<slug>` | Cloudflare Worker outbound redirect with click logging |
 | [`/data.json`](https://hotmap.cam/data.json) | Full snapshot dataset, CC0 |
 | [`/sitemap.xml`](https://hotmap.cam/sitemap.xml) | All 874+ URLs for search engines |
 
@@ -61,9 +61,9 @@ Every treemap-bearing page (`/`, `/rising/`, `/gems/`, `/celebs/`, every `/count
 4. **Render** — `heatmap.py` computes per-window growth, builds 27 precomputed Plotly treemaps (3 modes × 3 genders × 3 windows), the stats and charts pages, and a per-performer page for every slug ever seen.
 5. **Deploy** — workflow commits artifacts back to `main`. Cloudflare Pages auto-deploys on push; the Worker handles `/r/<slug>` outbound redirects.
 
-The scrape runs on a single a cloud VM (~$5/mo, EU region, Ubuntu 26.04 LTS) as a GitHub Actions self-hosted runner; the public site is served by Cloudflare Pages + Worker on their free tier (unlimited bandwidth, automatic SSL). The runner's previous runner is retired as of 2026-06-09. See [`docs/runner-bootstrap.md`](docs/runner-bootstrap.md) for the runbook. Ongoing costs: the cloud provider (~$50/year), domain (~$15/year).
+The scraper runs on a self-hosted GitHub Actions runner. The public site is served by Cloudflare Pages; a Cloudflare Worker handles outbound redirects and scheduled triggers.
 
-**SEO:** Every rendered page emits a complete head block — title, meta description, canonical, Open Graph quintet, Twitter Cards triple, robots meta, and JSON-LD (`WebSite` + `BreadcrumbList` + page-specific `Dataset` / `Person` / `CollectionPage`). Default OG image is `/og.png` (1200×630); per-performer and stats pages use avatar fallbacks. Sitemap submitted to Google Search Console and Bing Webmaster Tools (Yandex skipped — secondary engines skipped). See [`docs/seo-submission-checklist.md`](docs/seo-submission-checklist.md) for the submission steps.
+**SEO:** Every rendered page emits a complete head block — title, meta description, canonical, Open Graph quintet, Twitter Cards triple, robots meta, and JSON-LD (`WebSite` + `BreadcrumbList` + page-specific `Dataset` / `Person` / `CollectionPage`). Default OG image is `/og.png` (1200×630); per-performer and stats pages use avatar fallbacks. Sitemap is submitted to Google Search Console and Bing Webmaster Tools.
 
 ## Tech stack
 
@@ -72,7 +72,7 @@ The scrape runs on a single a cloud VM (~$5/mo, EU region, Ubuntu 26.04 LTS) as 
 - [`selectolax`](https://github.com/rushter/selectolax) — fast HTML parsing
 - [`pandas`](https://pandas.pydata.org/) — growth-window math
 - [`plotly`](https://plotly.com/python/) — treemap and sparkline rendering
-- [`pytest`](https://docs.pytest.org/) — 26 tests
+- [`pytest`](https://docs.pytest.org/) — 111 tests
 - **Cloudflare Workers** — `/r/<slug>` outbound redirect with click logging
 - **GitHub Actions** — daily cron + commit/push
 - **Cloudflare Pages** — static hosting + CDN + SSL
@@ -85,8 +85,8 @@ cd ph-heatmap
 python3 -m venv venv
 ./venv/bin/pip install -r requirements.txt
 
-./venv/bin/pytest -q                # 26 tests, ~1 sec
-./venv/bin/python run.py            # full scrape + render (~40 min for top-500)
+./venv/bin/pytest -q                # 111 tests, ~5 sec
+./venv/bin/python run.py            # full scrape + render (~40 min)
 open public/index.html              # eyeball locally
 ```
 
@@ -125,7 +125,7 @@ If HotMap branding changes (logo, tagline, color), regenerate the default Open G
 
 ### Cron watchdog
 
-GitHub Actions self-hosted runners occasionally leave a queued job without picking it up (observed: one job sat queued 1h57m before manual intervention). A second CF Worker cron fires at 04:35 UTC and checks the latest `daily-scrape.yml` run via the GitHub API: if status is `queued` and age > 15 minutes, the watchdog cancels the stuck run and triggers a fresh `workflow_dispatch`. Both cron entries live in `wrangler.jsonc:triggers.crons`.
+GitHub Actions self-hosted runners occasionally leave a queued job without picking it up. A second Cloudflare Worker cron fires at 04:35 UTC and checks the latest `daily-scrape.yml` run via the GitHub API: if status is `queued` and age > 15 minutes, the watchdog cancels the stuck run and triggers a fresh `workflow_dispatch`. Both cron entries live in `wrangler.jsonc:triggers.crons`.
 
 To smoke-test without waiting for the cron:
 
