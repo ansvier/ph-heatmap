@@ -56,6 +56,11 @@
     <changefreq>daily</changefreq>
   </url>
   <url>
+    <loc>https://hotmap.cam/country/china/</loc>
+    <lastmod>2026-08-01</lastmod>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
     <loc>https://hotmap.cam/country/colombia/</loc>
     <lastmod>2026-08-01</lastmod>
     <changefreq>daily</changefreq>
